@@ -107,30 +107,82 @@ export default function StudentsPage() {
           </div>
         </form>
         {!submitted ? (<div className='text-center py-16'><p className='text-gray-500'>Use the filters above and click Submit.</p></div>) : (
-          <div className='grid gap-6'>
+          <div className='bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden'>
             {students.length === 0 ? (
               <div className='text-center py-12'>
                 <Users className='mx-auto h-12 w-12 text-gray-400'/>
                 <h3 className='mt-2 text-sm font-medium'>No students found</h3>
               </div>
             ) : (
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {students.map(s => (
-                  <motion.div key={s._id} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.3}} className='card p-6'>
-                    <h3 className='text-lg font-semibold'>{s.academicInfo?.name || s.email.split('@')[0]}</h3>
-                    <p className='text-sm text-gray-600 dark:text-gray-400'>{s.email}</p>
-                    <div className='mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400'>
-                      {visibleFields.includes('department') && <p><span className='font-medium'>Dept:</span> {s.department}</p>}
-                      {visibleFields.includes('university') && <p><span className='font-medium'>Uni:</span> {s.university||'—'}</p>}
-                      {visibleFields.includes('institute') && <p><span className='font-medium'>Inst:</span> {s.institute||'—'}</p>}
-                      {visibleFields.includes('semester') && <p><span className='font-medium'>Sem:</span> {s.academicInfo?.semester}</p>}
-                      {/* admissionYear removed from visible fields */}
-                      {visibleFields.includes('roll') && s.academicInfo?.rollNumber && <p><span className='font-medium'>Roll:</span> {s.academicInfo.rollNumber}</p>}
-                      {visibleFields.includes('phone') && s.academicInfo?.phoneNumber && <p><span className='font-medium'>Phone:</span> {s.academicInfo.phoneNumber}</p>}
-                      {visibleFields.includes('address') && s.academicInfo?.address && <p className='line-clamp-2'><span className='font-medium'>Addr:</span> {s.academicInfo.address}</p>}
-                    </div>
-                  </motion.div>
-                ))}
+              <div className='overflow-x-auto'>
+                <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+                  <thead className='bg-gray-50 dark:bg-gray-700'>
+                    <tr>
+                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Name</th>
+                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Email</th>
+                      {visibleFields.includes('roll') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Roll Number</th>}
+                      {visibleFields.includes('phone') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Phone</th>}
+                      {visibleFields.includes('semester') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Semester</th>}
+                      {visibleFields.includes('department') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Department</th>}
+                      {visibleFields.includes('university') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>University</th>}
+                      {visibleFields.includes('institute') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Institute</th>}
+                      {visibleFields.includes('address') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Address</th>}
+                    </tr>
+                  </thead>
+                  <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                    {students.map((s, index) => (
+                      <motion.tr
+                        key={s._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150'
+                      >
+                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>
+                          {s.academicInfo?.name || s.email.split('@')[0]}
+                        </td>
+                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                          {s.email}
+                        </td>
+                        {visibleFields.includes('roll') && (
+                          <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                            {s.academicInfo?.rollNumber || '—'}
+                          </td>
+                        )}
+                        {visibleFields.includes('phone') && (
+                          <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                            {s.academicInfo?.phoneNumber || '—'}
+                          </td>
+                        )}
+                        {visibleFields.includes('semester') && (
+                          <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                            {s.academicInfo?.semester || '—'}
+                          </td>
+                        )}
+                        {visibleFields.includes('department') && (
+                          <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                            {s.department || '—'}
+                          </td>
+                        )}
+                        {visibleFields.includes('university') && (
+                          <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                            {s.university || '—'}
+                          </td>
+                        )}
+                        {visibleFields.includes('institute') && (
+                          <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>
+                            {s.institute || '—'}
+                          </td>
+                        )}
+                        {visibleFields.includes('address') && (
+                          <td className='px-6 py-4 text-sm text-gray-900 dark:text-gray-300 max-w-xs truncate'>
+                            {s.academicInfo?.address || '—'}
+                          </td>
+                        )}
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
