@@ -21,24 +21,17 @@ import {
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import toast from 'react-hot-toast'
+import dynamic from 'next/dynamic'
+
+const ChatWithAdmin = dynamic(() => import('@/components/chat/ChatWithAdmin'), { ssr:false })
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin', 'hod'] },
-  { name: 'Faculty', href: '/dashboard/faculty', icon: User, roles: ['admin','hod'] },
-<<<<<<< HEAD
-  { name: 'Subjects', href: '/dashboard/subjects', icon: BookOpen, roles: ['faculty', 'hod'] },
-  { name: 'Assignments', href: '/dashboard/assignments', icon: Calendar, roles: ['admin', 'faculty', 'student', 'hod'] },
-  { name: 'Grades', href: '/dashboard/grades', icon: BarChart3, roles: ['faculty', 'student', 'hod'] },
-  { name: 'Timetable', href: '/dashboard/timetable', icon: Calendar, roles: ['admin', 'faculty', 'student', 'hod'] },
-=======
-  { name: 'Subjects', href: '/dashboard/subjects', icon: BookOpen, roles: ['admin', 'faculty', 'hod'] },
-  // { name: 'Assignments', href: '/dashboard/assignments', icon: Calendar, roles: ['admin', 'faculty', 'student', 'hod'] },
-  // { name: 'Grades', href: '/dashboard/grades', icon: BarChart3, roles: ['admin', 'faculty', 'student', 'hod'] },
-  // { name: 'Timetable', href: '/dashboard/timetable', icon: Calendar, roles: ['admin', 'faculty', 'student', 'hod'] },
->>>>>>> main
-  { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student', 'hod', 'faculty', 'admin'] },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin', 'faculty', 'student'] },
+  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal','hod'] },
+  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal','hod'] },
+  { name: 'Subjects', href: '/dashboard/subjects', icon: BookOpen, roles: ['admin','guide','hod','mainadmin','principal'] },
+  { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal'] },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin','mainadmin','principal','guide','student','hod'] },
 ]
 
 export default function DashboardLayout({ children }) {
@@ -302,6 +295,8 @@ export default function DashboardLayout({ children }) {
           >
             {children}
           </motion.div>
+          {/* Principal/Admin contextual chat */}
+          <ChatWithAdmin />
         </main>
       </div>
     </div>

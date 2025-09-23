@@ -1,5 +1,8 @@
+// Add main admin and 4 additional admins
+// Credentials: admin@charusat.edu.in, principal@charusat.ac.in, hodcse@charusat.ac.in, hodce@charusat.ac.in, hodit@charusat.ac.in
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
+import { parseStudentEmail } from '@/lib/validation'
 
 // Force recompile during dev so schema changes (like required flags) apply
 if (mongoose.models.User) {
@@ -21,8 +24,9 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['student', 'admin', 'faculty', 'hod', 'counselor'],
+  enum: ['student','mainadmin','admin','guide','principal','hod'],
     default: 'student',
+    index: true,
   },
   counselorId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -31,7 +35,7 @@ const userSchema = new mongoose.Schema({
   },
   department: {
     type: String,
-    enum: ['CSE', 'CE', 'IT', 'ME', 'EC', 'CH', 'DIT'],
+  enum: ['CSE', 'CE', 'IT', 'ME', 'EC', 'CIVIL'],
     required: false,
   },
   university: {
@@ -53,7 +57,7 @@ const userSchema = new mongoose.Schema({
       min: 1,
       max: 8,
     },
-    section: {
+    batch: {
       type: String,
       enum: ['A', 'B', 'C', 'D'],
     },
@@ -85,6 +89,22 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  // Email verification
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationOTP: String,
+  emailVerificationExpires: Date,
+  emailVerificationResendCount: {
+    type: Number,
+    default: 0,
+  },
+  emailVerificationLastSent: Date,
+  emailVerificationAttemptCount: {
+    type: Number,
+    default: 0,
+  },
   lastLogin: {
     type: Date,
     default: Date.now,
@@ -109,10 +129,18 @@ const userSchema = new mongoose.Schema({
 // Extract department and admission year from email
 userSchema.pre('save', function(next) {
   if (this.isModified('email') && this.role === 'student') {
-    const emailMatch = this.email.match(/^(\d{2})([A-Z]{2,3})(\d{3})@charusat\.edu\.in$/)
-    if (emailMatch) {
-      this.admissionYear = this.admissionYear || (2000 + parseInt(emailMatch[1]))
-      this.department = this.department || emailMatch[2]
+    const parsed = parseStudentEmail(this.email)
+    if(parsed){
+      this.admissionYear = parsed.admissionYear
+      this.department = parsed.department
+      this.institute = parsed.institute
+      // Ensure academicInfo exists
+      this.academicInfo = this.academicInfo || {}
+      if(!this.academicInfo.rollNumber){
+        this.academicInfo.rollNumber = parsed.rollNumber
+      }
+    } else {
+      return next(new Error('Invalid student email format. Expected yydeprol@charusat.edu.in'))
     }
   }
   next()
@@ -171,7 +199,7 @@ userSchema.virtual('studentInfo').get(function() {
     department: this.department,
     admissionYear: this.admissionYear,
     semester: this.academicInfo?.semester,
-    section: this.academicInfo?.section,
+    batch: this.academicInfo?.batch,
     rollNumber: this.academicInfo?.rollNumber
   }
 })

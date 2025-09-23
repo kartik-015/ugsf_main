@@ -48,6 +48,30 @@ app.prepare().then(() => {
       // console.debug(`Keepalive from ${socket.id}`)
     })
 
+    // Allow client to join its user room for targeted events
+    socket.on('auth:identify', (userId) => {
+      if (!userId) return
+      try {
+        socket.join(`user-${userId}`)
+      } catch (e) {
+        console.error('Failed joining user room', userId, e)
+      }
+    })
+
+    // Principal -> Admin message (already persisted via HTTP). This is optional real-time relay if UI chooses sockets directly.
+    socket.on('principal:message', (payload) => {
+      // Expect: { toUserId, fromUserId, page, message, tempId }
+      if (!payload?.toUserId || !payload?.fromUserId) return
+      io.to(`user-${payload.toUserId}`).emit('principal:message', payload)
+    })
+
+    // Admin -> Principal reply
+    socket.on('admin:reply', (payload) => {
+      // Expect: { toUserId, fromUserId, page, message, tempId }
+      if (!payload?.toUserId || !payload?.fromUserId) return
+      io.to(`user-${payload.toUserId}`).emit('admin:reply', payload)
+    })
+
     socket.on('disconnect', (reason) => {
       console.log('Client disconnected:', socket.id, 'reason:', reason)
     })
@@ -57,8 +81,8 @@ app.prepare().then(() => {
   global.io = io
 
   const PORT = process.env.PORT || 3000
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`> Ready on http://0.0.0.0:${PORT}`)
+  server.listen(PORT, "localhost", () => {
+    console.log(`> Ready on http://localhost:${PORT}`)
   })
 })
 

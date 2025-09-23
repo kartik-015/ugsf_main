@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 
-export default function FacultyDirectoryPage(){
+export default function GuidesDirectoryPage(){
   const { data: session } = useSession()
   const [results, setResults] = useState([])
   const [dept, setDept] = useState('')
@@ -13,8 +13,8 @@ export default function FacultyDirectoryPage(){
   const [role, setRole] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const isAdmin = session?.user?.role === 'admin'
-  const isHod = session?.user?.role === 'hod'
+  const [selectedInstitute, setSelectedInstitute] = useState('')
+  const isAdmin = ['admin','mainadmin'].includes(session?.user?.role)
 
   const instituteDepartments = {
     'DEPSTAR': ['CSE','CE','IT'],
@@ -29,17 +29,17 @@ export default function FacultyDirectoryPage(){
     e.preventDefault()
     setLoading(true)
     try {
-      let url = '/api/faculty'
+  let url = '/api/guides'
       const qs = []
       if (dept) qs.push(`department=${dept}`)
       if (search) qs.push(`search=${encodeURIComponent(search)}`)
       // default to faculty if no role selected to avoid returning students
-      const roleToUse = role || 'faculty'
+  const roleToUse = role || 'guide'
       if (roleToUse) qs.push(`role=${roleToUse}`)
       if (qs.length) url += `?${qs.join('&')}`
       const res = await fetch(url)
       if (res.ok) {
-        const data = await res.json(); setResults(data.faculty || [])
+        const data = await res.json(); setResults(data.guides || [])
         setSubmitted(true)
       } else {
         const err = await res.json()
@@ -58,17 +58,15 @@ export default function FacultyDirectoryPage(){
     setSubmitted(false)
   }
 
-  if (!session || (!isAdmin && !isHod)) return null
+  if (!session || !isAdmin) return null
 
   // departments list will be derived from selected institute or defaults
   const roles = [
     { value: '', label: 'All Roles' },
-    { value: 'student', label: 'Student' },
-    { value: 'faculty', label: 'Faculty' },
-    { value: 'hod', label: 'HOD' }
+    { value: 'guide', label: 'Guide' },
+    { value: 'admin', label: 'Admin' }
   ]
   const defaultDepartments = ['CSE','IT','CE','ME','EC','CH','DIT']
-  const [selectedInstitute, setSelectedInstitute] = useState('')
   const departments = selectedInstitute && instituteDepartments[selectedInstitute] ? instituteDepartments[selectedInstitute] : defaultDepartments
 
   return (

@@ -45,11 +45,11 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
               ><GraduationCap className="w-4 h-4" /> Student</motion.button>
               <motion.button
-                onClick={() => goRegister('faculty')}
+                onClick={() => goRegister('guide')}
                 className="p-3 rounded-xl bg-gradient-to-r from-green-600 to-blue-600 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-              ><Users className="w-4 h-4" /> Faculty</motion.button>
+              ><Users className="w-4 h-4" /> Guide</motion.button>
             </div>
           </div>
         </motion.div>

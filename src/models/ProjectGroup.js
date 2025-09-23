@@ -35,6 +35,12 @@ const weeklyReportSchema = new mongoose.Schema({
 }, { _id: true })
 
 const projectGroupSchema = new mongoose.Schema({
+  approvals: {
+    type: Map,
+    of: String, // 'approved', 'rejected', 'pending'
+    default: function() { return { hodcse: 'pending', hodce: 'pending', hodit: 'pending' } }
+  },
+  // Helper to get overall status
   groupId: {
     type: String,
     unique: true,
@@ -45,7 +51,7 @@ const projectGroupSchema = new mongoose.Schema({
   domain: String,
   department: {
     type: String,
-    enum: ['CSE', 'CE', 'IT', 'ME', 'EC', 'CH', 'DIT'],
+    enum: ['CSE', 'CE', 'IT'],
     required: true,
   },
   semester: { type: Number, min: 1, max: 8, required: true },
@@ -66,7 +72,28 @@ const projectGroupSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   chatRoomId: { type: String, index: true },
   weeklyReports: [weeklyReportSchema],
+  // Lightweight progress & report tracking (separate from detailed weeklyReports)
+  progressScore: { type: Number, min: 0, max: 10, default: 0 },
+  reports: [{
+    week: { type: Number, min: 1 },
+    pdfUrl: String,
+    submittedAt: { type: Date, default: Date.now },
+    submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    feedback: String,
+    feedbackAt: Date,
+    feedbackBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  }],
 }, { timestamps: true })
+
+// Helper to get overall status
+projectGroupSchema.methods.getStatus = function() {
+  const values = Object.values(this.approvals || {})
+  if (values.length === 0) return 'submitted'
+  if (values.every(v => v === 'approved')) return 'approved'
+  if (values.some(v => v === 'rejected')) return 'rejected'
+  if (values.some(v => v === 'pending')) return 'pending'
+  return 'submitted'
+}
 
 projectGroupSchema.pre('save', function(next) {
   if (!this.groupId) {

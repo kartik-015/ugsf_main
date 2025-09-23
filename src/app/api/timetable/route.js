@@ -49,7 +49,7 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!['admin', 'faculty'].includes(session.user.role)) {
+  if (!['admin', 'guide'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 })
     }
 
@@ -63,13 +63,13 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 })
     }
 
-    // Validate subject exists and faculty has access
+  // Validate subject exists and guide has access
     const subject = await Subject.findById(subjectId)
     if (!subject) {
       return NextResponse.json({ message: 'Subject not found' }, { status: 404 })
     }
 
-    if (session.user.role === 'faculty' && subject.faculty?.toString() !== session.user.id) {
+  if (session.user.role === 'guide' && subject.faculty?.toString() !== session.user.id) {
       return NextResponse.json({ message: 'Access denied to this subject' }, { status: 403 })
     }
 

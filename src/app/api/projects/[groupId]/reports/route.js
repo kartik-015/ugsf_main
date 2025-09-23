@@ -73,12 +73,12 @@ export async function GET(request, { params }) {
     const role = session.user.role
     const memberIds = project.members.map(m => String(m.student))
 
-    if (!memberIds.includes(uid) && !['admin','hod','faculty'].includes(role) && String(project.internalGuide) !== uid) {
+  if (!memberIds.includes(uid) && !['admin','hod','guide'].includes(role) && String(project.internalGuide) !== uid) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Faculty/internalGuide can only view if they are assigned
-    if (role === 'faculty' && project.internalGuide && String(project.internalGuide) !== uid && !memberIds.includes(uid)) {
+  // Guide/internalGuide can only view if they are assigned
+  if (role === 'guide' && project.internalGuide && String(project.internalGuide) !== uid && !memberIds.includes(uid)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -89,7 +89,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// PATCH: guide/faculty provide feedback
+// PATCH: guide provide feedback
 export async function PATCH(request, { params }) {
   try {
     const session = await getServerSession(authOptions)
@@ -97,7 +97,7 @@ export async function PATCH(request, { params }) {
     await dbConnect()
 
     const role = session.user.role
-    if (!['faculty','admin','hod'].includes(role)) {
+  if (!['guide','admin','hod'].includes(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -109,7 +109,7 @@ export async function PATCH(request, { params }) {
     const project = await ProjectGroup.findOne({ groupId })
     if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    if (role === 'faculty' && String(project.internalGuide) !== session.user.id) {
+  if (role === 'guide' && String(project.internalGuide) !== session.user.id) {
       return NextResponse.json({ error: 'Not assigned guide' }, { status: 403 })
     }
 

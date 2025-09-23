@@ -3,16 +3,13 @@ const bcrypt = require('bcryptjs')
 require('dotenv').config({ path: '.env.local' })
 
 // Import models - using dynamic import for ES6 modules
-let User, Subject, Assignment
+let User, Subject
 
 async function importModels() {
   const UserModule = await import('../src/models/User.js')
   const SubjectModule = await import('../src/models/Subject.js')
-  const AssignmentModule = await import('../src/models/Assignment.js')
-  
   User = UserModule.default
   Subject = SubjectModule.default
-  Assignment = AssignmentModule.default
 }
 
 async function seed() {
@@ -25,25 +22,52 @@ async function seed() {
     console.log('Connected to MongoDB')
 
     // Clear existing data
-    await User.deleteMany({})
-    await Subject.deleteMany({})
-    await Assignment.deleteMany({})
-    console.log('Cleared existing data')
+  await User.deleteMany({})
+  await Subject.deleteMany({})
+  console.log('Cleared existing data')
 
-    // Create ONLY admin user
-    const admin = new User({
-      email: 'admin@charusat.edu.in',
-      password: 'admin123',
-      role: 'admin',
-      academicInfo: {
-        name: 'System Administrator',
-        phoneNumber: '1234567890',
-        address: 'Charusat University'
+    // Create admin and 4 additional admins (principal, HODs)
+    const users = [
+      {
+        email: 'admin@charusat.edu.in',
+        password: 'charusat@123',
+        role: 'admin',
+        academicInfo: { name: 'System Administrator', phoneNumber: '1234567890', address: 'Charusat University' },
       },
-      isOnboarded: true
-    })
-    await admin.save()
-    console.log('✅ Created admin user')
+      {
+        email: 'principal@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'principal',
+        academicInfo: { name: 'Principal', phoneNumber: '1234567891', address: 'Charusat University' },
+      },
+      {
+        email: 'hodcse@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'hod',
+        academicInfo: { name: 'HOD CSE', phoneNumber: '1234567892', address: 'Charusat University', department: 'CSE' },
+      },
+      {
+        email: 'hodce@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'hod',
+        academicInfo: { name: 'HOD CE', phoneNumber: '1234567893', address: 'Charusat University', department: 'CE' },
+      },
+      {
+        email: 'hodit@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'hod',
+        academicInfo: { name: 'HOD IT', phoneNumber: '1234567894', address: 'Charusat University', department: 'IT' },
+      }
+    ]
+    for (const userData of users) {
+      const user = new User({
+        ...userData,
+        isOnboarded: true,
+        isEmailVerified: true
+      })
+      await user.save()
+      console.log(`✅ Created user: ${user.email}`)
+    }
 
     // Create sample subjects (for faculty to assign later)
     const subjects = [

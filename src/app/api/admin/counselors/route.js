@@ -13,8 +13,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Return academic staff (faculty + hod) for admin UI
-    const counselors = await User.find({ role: { $in: ['faculty','hod'] } })
+  // Return academic staff (guide + hod) for admin UI
+  const counselors = await User.find({ role: { $in: ['guide','hod'] } })
       .select('-password')
       .sort({ createdAt: -1 })
 

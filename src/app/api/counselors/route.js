@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]/route'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
+import { validateName, validatePhone } from '@/lib/validation'
 
 export async function GET(request) {
   try {
@@ -23,12 +24,12 @@ export async function GET(request) {
     const roleParam = searchParams.get('role')
     const department = searchParams.get('department')
 
-    // Default to academic staff (faculty + hod + students optionally)
+  // Default to academic staff (guide + hod + students optionally)
     let query = {}
     if (roleParam) {
       query.role = roleParam
     } else {
-      query.role = { $in: ['faculty', 'hod', 'student'] }
+  query.role = { $in: ['guide', 'hod', 'student'] }
     }
 
     if (department) query.department = department
@@ -78,6 +79,12 @@ export async function POST(request) {
     if (!email || !password || !name || !department) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 })
     }
+    if(!validateName(name)) {
+      return NextResponse.json({ message: 'Invalid name format' }, { status:400 })
+    }
+    if(phoneNumber && !validatePhone(phoneNumber)) {
+      return NextResponse.json({ message: 'Invalid phone number (must start with +91...)' }, { status:400 })
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() })
@@ -85,11 +92,11 @@ export async function POST(request) {
       return NextResponse.json({ message: 'User already exists' }, { status: 400 })
     }
 
-    // Create as faculty (counselor role removed)
+  // Create as guide (counselor role removed)
     const counselor = new User({
       email: email.toLowerCase(),
       password,
-      role: 'faculty',
+  role: 'guide',
       department,
       admissionYear: new Date().getFullYear(), // Default to current year
       academicInfo: {

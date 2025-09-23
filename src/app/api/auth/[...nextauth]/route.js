@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
+import { ROLES } from '@/lib/roles'
 
 const authOptions = {
   providers: [
@@ -20,11 +21,14 @@ const authOptions = {
 
         const user = await User.findOne({ email: credentials.email.toLowerCase() })
         
-        if (!user) {
+  if (!user) {
           throw new Error('User not found')
         }
 
-        // Allow sign-in even if not yet approved/active (for onboarding & approval workflow)
+        // Block sign-in until email verified
+        if (!user.isEmailVerified) {
+          throw new Error('Email not verified')
+        }
 
         const isValidPassword = await user.comparePassword(credentials.password)
         

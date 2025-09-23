@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
+import { ROLES } from '@/lib/roles'
+import { validateName, validatePhone, validateRollNumber, parseStudentEmail, validateSemicolonList } from '@/lib/validation'
 
 export async function POST(request) {
   try {
@@ -13,15 +15,17 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 })
     }
 
-    const body = await request.json()
+  const body = await request.json()
     const {
       name,
       phoneNumber,
       address,
       department,
+    university,
+    institute,
       admissionYear,
       semester,
-      section,
+  batch,
       rollNumber,
       interests,
       experience,
@@ -32,15 +36,28 @@ export async function POST(request) {
 
     // Role-based validation
     const role = session.user.role
-  const isStudent = role === 'student'
-  const isStaff = ['faculty', 'hod'].includes(role)
-    const missingCommon = !name || !phoneNumber || !address || !department
+  const isStudent = role === ROLES.STUDENT
+  const isStaff = [ROLES.GUIDE, ROLES.ADMIN, ROLES.MAIN_ADMIN].includes(role)
+    const missingCommon = !name || !phoneNumber || !address || !department || !university || !institute
     if (missingCommon) {
       return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Name, phone number, address and department are required' } }, { status: 400 })
     }
+
+    // Field-level validation
+    if(!validateName(name)) {
+      return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Invalid name format'}}, { status:400 })
+    }
+    if(!validatePhone(phoneNumber)) {
+      return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Invalid phone number: must start with +91 and contain 12 characters total'}}, { status:400 })
+    }
     if (isStudent) {
-      if (!rollNumber || !admissionYear || !semester || !section) {
-        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Student academic fields are required' } }, { status: 400 })
+      // Derive from email, ensure consistency
+      const parsed = parseStudentEmail(session.user.email)
+      if(!parsed) {
+        return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Student email not in required format'}}, { status:400 })
+      }
+      if(!semester || !batch) {
+        return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Semester and batch required' } }, { status:400 })
       }
     } else if (isStaff) {
       if (!specialization || !education) {
@@ -49,28 +66,55 @@ export async function POST(request) {
     }
 
     // Update user with academic info
-    const updatedUser = await User.findByIdAndUpdate(
-      session.user.id,
-      {
-        academicInfo: {
-          name,
-          phoneNumber,
-          address,
-          semester: isStudent ? semester : undefined,
-          section: isStudent ? section : undefined,
-          rollNumber: isStudent ? rollNumber : undefined
-        },
-        department,
-  admissionYear: isStudent ? admissionYear : undefined,
-        domain: domain || undefined,
-        specialization: specialization || undefined,
-        education: education || undefined,
-        interests: interests || [],
-        experience: experience || '',
-        isOnboarded: true
+    const parsed = isStudent ? parseStudentEmail(session.user.email) : null
+
+    // Interests & experience semicolon enforcement if strings provided
+    let interestsArray = interests
+    if (typeof interests === 'string') {
+      const v = validateSemicolonList(interests)
+      if(!v.ok) return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:v.error } }, { status:400 })
+      interestsArray = v.values
+    }
+    let experienceText = experience
+    if (typeof experience === 'string' && /[,|]/.test(experience)) {
+      return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Use semicolons (;) as separator in experience field if listing multiple entries' } }, { status:400 })
+    }
+    // Ensure semester is a number for students
+    const semesterNumber = isStudent ? parseInt(semester, 10) : undefined
+    
+    const updateDoc = {
+      academicInfo: {
+        name,
+        phoneNumber,
+        address,
+        semester: semesterNumber,
+        batch: isStudent ? batch : undefined,
+        rollNumber: isStudent ? parsed.rollNumber : undefined
       },
-      { new: true, runValidators: true }
-    )
+      department: isStudent ? parsed.department : department,
+      university: isStudent ? (university || 'CHARUSAT') : university,
+      institute: isStudent ? parsed.institute : institute,
+      admissionYear: isStudent ? parsed.admissionYear : admissionYear,
+      domain: domain || undefined,
+      specialization: specialization || undefined,
+      education: education || undefined,
+  interests: Array.isArray(interestsArray) ? interestsArray : (interestsArray ? [interestsArray] : []),
+  experience: experienceText || '',
+      isOnboarded: true
+    }
+    
+    // Debug logging to see what's being saved
+    console.log('Saving semester data:', {
+      isStudent,
+      originalSemester: semester,
+      semesterNumber,
+      semesterType: typeof semesterNumber,
+      updateDocSemester: updateDoc.academicInfo.semester,
+      parsedInstitute: parsed?.institute,
+      parsedDepartment: parsed?.department
+    })
+    
+    const updatedUser = await User.findByIdAndUpdate(session.user.id, updateDoc, { new: true, runValidators: true })
 
     if (!updatedUser) {
       return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'User not found' } }, { status: 404 })

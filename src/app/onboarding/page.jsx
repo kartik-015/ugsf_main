@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { parseStudentEmail } from '@/lib/validation'
 import { useSession } from 'next-auth/react'
+import { validatePhoneRuntime, validateNameRuntime } from '@/lib/clientValidation'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -29,6 +31,8 @@ export default function OnboardingPage() {
     phoneNumber: '',
     address: '',
     department: '',
+    university: '',
+    institute: '',
     admissionYear: new Date().getFullYear(),
     semester: 1,
     section: 'A',
@@ -36,21 +40,27 @@ export default function OnboardingPage() {
     interests: [],
     experience: '',
     specialization: '',
-    education: ''
+  education: '',
+    batch: '',
   })
   const role = session?.user?.role
 
-  const departments = [
-    { code: 'CSE', name: 'Computer Science Engineering' },
-    { code: 'IT', name: 'Information Technology' },
-    { code: 'CE', name: 'Civil Engineering' },
+  const baseDepartments = [
+    { code: 'CSE', name: 'Computer Science and Engineering' },
+    { code: 'CE', name: 'Computer Engineering' },
+    { code: 'IT', name: 'Information Technology' }
+  ]
+  const cspitExtras = [
     { code: 'ME', name: 'Mechanical Engineering' },
     { code: 'EC', name: 'Electronics & Communication' },
-    { code: 'CH', name: 'Chemical Engineering' },
-    { code: 'DIT', name: 'Data Science & IT' }
+    { code: 'CIVIL', name: 'Civil Engineering' }
   ]
+  const departments = formData.institute === 'CSPIT' ? [...baseDepartments, ...cspitExtras] : baseDepartments
+  const universities = ['CHARUSAT','Others']
+  const institutes = ['CSPIT','DEPSTAR','Others']
 
-  const sections = ['A', 'B', 'C', 'D']
+  const batches = ['A', 'B', 'C', 'D']
+  const sections = ['1', '2', '3', '4']
   const interests = [
     'Web Development', 'Mobile Development', 'Data Science', 'AI/ML',
     'Cybersecurity', 'Cloud Computing', 'DevOps', 'UI/UX Design',
@@ -78,7 +88,48 @@ export default function OnboardingPage() {
     }
   }, [role, session, formData.department])
 
+  // Load existing user data if available
+  useEffect(() => {
+    if (session?.user) {
+      const user = session.user
+      console.log('Loading existing user data:', user)
+      
+      const updates = {}
+      
+      // Load academic info if exists
+      if (user.academicInfo) {
+        if (user.academicInfo.name) updates.name = user.academicInfo.name
+        if (user.academicInfo.phoneNumber) updates.phoneNumber = user.academicInfo.phoneNumber
+        if (user.academicInfo.address) updates.address = user.academicInfo.address
+        if (user.academicInfo.semester) updates.semester = user.academicInfo.semester
+        if (user.academicInfo.batch) updates.batch = user.academicInfo.batch
+        if (user.academicInfo.rollNumber) updates.rollNumber = user.academicInfo.rollNumber
+      }
+      
+      // Load other user data
+      if (user.department) updates.department = user.department
+      if (user.university) updates.university = user.university
+      if (user.institute) updates.institute = user.institute
+      if (user.admissionYear) updates.admissionYear = user.admissionYear
+      if (user.specialization) updates.specialization = user.specialization
+      if (user.education) updates.education = user.education
+      if (user.experience) updates.experience = user.experience
+      if (user.interests && Array.isArray(user.interests)) updates.interests = user.interests
+      
+      console.log('Form updates to apply:', updates)
+      
+      // Update form data with existing values
+      if (Object.keys(updates).length > 0) {
+        setFormData(prev => ({ ...prev, ...updates }))
+      }
+    }
+  }, [session])
+
   const handleInputChange = (field, value) => {
+    if(role==='student'){
+      // Prevent editing derived fields
+      if(['admissionYear','department','institute','rollNumber'].includes(field)) return
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -96,6 +147,13 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     try {
+      // Debug logging
+      console.log('Submitting form data:', {
+        semester: formData.semester,
+        semesterType: typeof formData.semester,
+        fullFormData: formData
+      })
+      
       const response = await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: {
@@ -116,9 +174,14 @@ export default function OnboardingPage() {
           router.push('/dashboard')
         }
       } else {
-  let error
-  try { error = await response.json() } catch {}
-  toast.error(error?.error || error?.message || 'Failed to update profile')
+        let error
+        try { error = await response.json() } catch {}
+        // Fix: Only pass string to toast.error
+        if (typeof error === 'object') {
+          toast.error(error.message || error.error?.message || 'Failed to update profile')
+        } else {
+          toast.error(String(error))
+        }
       }
     } catch (error) {
       toast.error('An error occurred while updating profile')
@@ -126,12 +189,35 @@ export default function OnboardingPage() {
   }
 
   const nextStep = () => {
+    if (step === 1) {
+      // Phone number validation: must start with +91 and 12 chars
+      const phone = formData.phoneNumber.trim()
+      if (!/^\+91[1-9]\d{9}$/.test(phone)) {
+        toast.error('Enter phone like +919876543210')
+        return
+      }
+    }
     if (step < 3) setStep(step + 1)
   }
 
   const prevStep = () => {
     if (step > 1) setStep(step - 1)
   }
+
+  useEffect(()=>{
+    if(role==='student' && session?.user?.email){
+      const parsed = parseStudentEmail(session.user.email)
+      if(parsed){
+        setFormData(prev=>({
+          ...prev,
+          admissionYear: parsed.admissionYear,
+          department: parsed.department,
+          institute: parsed.institute,
+          rollNumber: parsed.rollNumber
+        }))
+      }
+    }
+  },[role, session?.user?.email])
 
   if (status === 'loading') {
     return (
@@ -210,7 +296,7 @@ export default function OnboardingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              Let's get to know you better to personalize your experience
+              Let&apos;s get to know you better to personalize your experience
             </motion.p>
           </div>
 
@@ -278,9 +364,12 @@ export default function OnboardingPage() {
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className={`w-full px-4 py-3 rounded-xl border ${formData.name && !validateNameRuntime(formData.name)?'border-red-500':'border-gray-300 dark:border-gray-600'} dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your full name"
                     />
+                    {formData.name && !validateNameRuntime(formData.name) && (
+                      <p className="text-xs text-red-600 mt-1">Name must contain only letters/spaces and start & end with a letter</p>
+                    )}
                   </div>
 
                   <div>
@@ -291,9 +380,12 @@ export default function OnboardingPage() {
                       type="tel"
                       value={formData.phoneNumber}
                       onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      placeholder="Enter your phone number"
+                      className={`w-full px-4 py-3 rounded-xl border ${formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) ? 'border-red-500':'border-gray-300 dark:border-gray-600'} dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
+                      placeholder="+919876543210"
                     />
+                    {formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) && (
+                      <p className="text-xs text-red-600 mt-1">Must start with +91 and have 10 digits after</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -339,46 +431,60 @@ export default function OnboardingPage() {
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Department *
+                          University *
                         </label>
                         <select
-                          value={formData.department}
-                          onChange={(e) => handleInputChange('department', e.target.value)}
+                          value={formData.university}
+                          onChange={(e) => handleInputChange('university', e.target.value)}
                           className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         >
-                          <option value="">Select Department</option>
-                          {departments.map((dept) => (
-                            <option key={dept.code} value={dept.code}>
-                              {dept.code} - {dept.name}
-                            </option>
-                          ))}
+                          <option value="">Select University</option>
+                          {universities.map(u=> <option key={u} value={u}>{u}</option>)}
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Institute *
+                        </label>
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                          <span>{formData.institute||'-'}</span>
+                          <span className="text-[10px] uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2 py-0.5 rounded">Derived</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Department *
+                        </label>
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                          <span>{formData.department||'-'}</span>
+                          <span className="text-[10px] uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded">Derived</span>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Admission Year *
                         </label>
-                        <input
-                          type="number"
-                          value={formData.admissionYear}
-                          onChange={(e) => handleInputChange('admissionYear', parseInt(e.target.value))}
-                          min={2020}
-                          max={new Date().getFullYear()}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                        />
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                          <span>{formData.admissionYear}</span>
+                          <span className="text-[10px] uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded">Derived</span>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Semester *
                         </label>
-                        <input
-                          type="number"
+                        <select
                           value={formData.semester}
                           onChange={(e) => handleInputChange('semester', parseInt(e.target.value))}
-                          min={1}
-                          max={8}
                           className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                        />
+                        >
+                          <option value="" className="text-gray-900 bg-white">Select Semester</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                            <option key={sem} value={sem} className="text-gray-900 bg-white">
+                              Semester {sem}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -387,10 +493,11 @@ export default function OnboardingPage() {
                         <select
                           value={formData.section}
                           onChange={(e) => handleInputChange('section', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-gray-100"
                         >
+                          <option value="" className="text-gray-900 bg-white">Select Section</option>
                           {sections.map((section) => (
-                            <option key={section} value={section}>
+                            <option key={section} value={section} className="text-gray-900 bg-white">
                               Section {section}
                             </option>
                           ))}
@@ -400,17 +507,55 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Roll Number *
                         </label>
-                        <input
-                          type="text"
-                          value={formData.rollNumber}
-                          onChange={(e) => handleInputChange('rollNumber', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                          placeholder="Enter your roll number"
-                        />
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                          <span>{formData.rollNumber}</span>
+                          <span className="text-[10px] uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-2 py-0.5 rounded">Auto</span>
+                        </div>
+                      </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Batch *
+                          </label>
+                          <select
+                            value={formData.batch}
+                            onChange={(e) => handleInputChange('batch', e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-gray-100"
+                          >
+                            <option value="" className="text-gray-900 bg-white">Select Batch</option>
+                            {batches.map((b) => (
+                              <option key={b} value={b} className="text-gray-900 bg-white">{b}</option>
+                            ))}
+                          </select>
                       </div>
                     </>
                   ) : (
                     <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          University *
+                        </label>
+                        <select
+                          value={formData.university}
+                          onChange={(e) => handleInputChange('university', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        >
+                          <option value="">Select University</option>
+                          {universities.map(u=> <option key={u} value={u}>{u}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Institute *
+                        </label>
+                        <select
+                          value={formData.institute}
+                          onChange={(e) => handleInputChange('institute', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        >
+                          <option value="">Select Institute</option>
+                          {institutes.map(i=> <option key={i} value={i}>{i}</option>)}
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Department *

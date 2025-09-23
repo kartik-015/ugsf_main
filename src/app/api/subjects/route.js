@@ -27,7 +27,7 @@ export async function GET(request) {
       if (session.user.academicInfo?.semester) {
         query.semester = session.user.academicInfo.semester
       }
-    } else if (session.user.role === 'faculty') {
+    } else if (session.user.role === 'guide') {
       query.faculty = session.user.id
     }
 
@@ -55,7 +55,7 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 })
     }
 
-    if (!['admin', 'faculty'].includes(session.user.role)) {
+  if (![ 'admin', 'mainadmin', 'guide' ].includes(session.user.role)) {
       return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Access denied' } }, { status: 403 })
     }
 
@@ -77,12 +77,12 @@ export async function POST(request) {
 
     // Validate faculty exists if provided
     let facultyId = faculty
-    if (faculty && session.user.role === 'admin') {
-      const facultyUser = await User.findById(faculty)
-      if (!facultyUser || facultyUser.role !== 'faculty') {
-        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Invalid faculty ID' } }, { status: 400 })
+    if (faculty && ['admin','mainadmin'].includes(session.user.role)) {
+      const guideUser = await User.findById(faculty)
+      if (!guideUser || guideUser.role !== 'guide') {
+        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Invalid guide ID' } }, { status: 400 })
       }
-    } else if (session.user.role === 'faculty') {
+    } else if (session.user.role === 'guide') {
       facultyId = session.user.id
     }
 

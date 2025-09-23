@@ -34,7 +34,7 @@ export async function GET() {
         activities = await getStudentActivities(userId)
         break
       
-      case 'faculty':
+      case 'guide':
         stats = await getFacultyStats(userId)
         activities = await getFacultyActivities(userId)
         break
@@ -73,7 +73,7 @@ async function getAdminStats() {
   ] = await Promise.all([
   User.countDocuments({ role: 'student' }),
   // count academic staff (faculty + hod)
-  User.countDocuments({ role: { $in: ['faculty','hod'] } }),
+  User.countDocuments({ role: { $in: ['guide','hod'] } }),
     Subject.countDocuments({ isActive: true }),
     Assignment.countDocuments({ dueDate: { $gte: new Date() } })
   ])
@@ -92,11 +92,11 @@ async function getHodStats(userId) {
   const department = user.department
   const [
     students,
-    faculty,
+  faculty,
     projectsPending
   ] = await Promise.all([
     User.countDocuments({ role: 'student', department }),
-    User.countDocuments({ role: 'faculty', department, isApproved: true }),
+  User.countDocuments({ role: 'guide', department, isApproved: true }),
     (await import('@/models/ProjectGroup')).default.countDocuments({ department, status: { $in: ['submitted', 'under-review'] }})
   ])
   return { department, students, faculty, projectsPending }

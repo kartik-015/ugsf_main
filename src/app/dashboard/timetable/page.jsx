@@ -31,7 +31,7 @@ export default function TimetablePage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedDay])
+  }, [selectedDay, department, session?.user?.department, session?.user?.role])
 
 
   useEffect(() => {
@@ -283,7 +283,7 @@ export default function TimetablePage() {
               <Clock className="h-4 w-4 text-white" />
             </motion.div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Today's Schedule
+              Today&apos;s Schedule
             </h2>
           </div>
           

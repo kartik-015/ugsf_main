@@ -154,7 +154,7 @@ export default function AssignmentsPage() {
               }}
             />
           </div>
-          {session?.user?.role === 'faculty' && (
+          {session?.user?.role === 'guide' && (
             <motion.button 
               className="relative group overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               whileHover={{ scale: 1.05 }}
@@ -238,7 +238,7 @@ export default function AssignmentsPage() {
                 No assignments found
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                {session?.user?.role === 'faculty' 
+                {session?.user?.role === 'guide' 
                   ? 'Create your first assignment to get started.'
                   : 'No assignments have been posted yet.'
                 }
@@ -322,7 +322,7 @@ export default function AssignmentsPage() {
                         Submit
                       </motion.button>
                     )}
-                    {session?.user?.role === 'faculty' && (
+                    {session?.user?.role === 'guide' && (
                       <motion.button 
                         className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm hover:bg-green-50 dark:hover:bg-green-900/30 transition-all duration-300 flex items-center gap-2"
                         whileHover={{ scale: 1.05 }}

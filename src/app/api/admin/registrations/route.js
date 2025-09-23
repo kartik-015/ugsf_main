@@ -56,7 +56,7 @@ export async function PATCH(request) {
       user.isApproved = true
       user.approvalStatus = 'approved'
       user.isActive = true
-      if (role && ['faculty', 'hod', 'student'].includes(role)) {
+  if (role && ['guide', 'hod', 'student'].includes(role)) {
         user.role = role
       }
     } else {

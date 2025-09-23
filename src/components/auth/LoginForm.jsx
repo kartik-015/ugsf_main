@@ -29,7 +29,7 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateEmail(email)) {
-      toast.error('Use your Charusat email (@charusat.edu.in for students, @charusat.ac.in for faculty/HOD)')
+  toast.error('Use your Charusat email (@charusat.edu.in for students, @charusat.ac.in for guide/HOD)')
       return
     }
     setIsLoading(true)

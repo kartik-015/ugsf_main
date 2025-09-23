@@ -117,7 +117,7 @@ export default function DashboardPage() {
       ]
     }
 
-    if (role === 'faculty') {
+  if (role === 'guide') {
       return [
         {
           title: 'My Subjects',
@@ -150,11 +150,11 @@ export default function DashboardPage() {
       ]
     }
 
-    if (role === 'hod') {
+  if (role === 'hod') {
       return [
         { title: 'Department', value: stats.department || '-', icon: Users, color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30' },
         { title: 'Students', value: stats.students || 0, icon: Users, color: 'from-green-500 to-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30' },
-        { title: 'Faculty', value: stats.faculty || 0, icon: Users, color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
+  { title: 'Guides', value: stats.faculty || 0, icon: Users, color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
         { title: 'Pending Projects', value: stats.projectsPending || 0, icon: FileText, color: 'from-purple-500 to-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30' }
       ]
     }
@@ -169,11 +169,11 @@ export default function DashboardPage() {
     if (role === 'admin') {
       actions.push(
         { name: 'Add Student', icon: Plus, href: '/dashboard/students', color: 'bg-blue-500' },
-        { name: 'Manage Faculty', icon: Users, href: '/dashboard/faculty', color: 'bg-green-500' },
+  { name: 'Manage Guides', icon: Users, href: '/dashboard/guides', color: 'bg-green-500' },
         { name: 'View Reports', icon: BarChart3, href: '/dashboard/reports', color: 'bg-purple-500' },
         { name: 'System Settings', icon: Settings, href: '/dashboard/settings', color: 'bg-gray-500' }
       )
-    } else if (role === 'faculty') {
+  } else if (role === 'guide') {
       actions.push(
         { name: 'Create Assignment', icon: Plus, href: '/dashboard/assignments', color: 'bg-blue-500' },
         { name: 'Grade Submissions', icon: CheckCircle, href: '/dashboard/grades', color: 'bg-green-500' },
@@ -218,7 +218,7 @@ export default function DashboardPage() {
               Welcome back, {session?.user?.academicInfo?.name || session?.user?.email.split('@')[0]}!
             </h1>
             <p className="text-blue-100">
-              Here's what's happening in your {session?.user?.role === 'student' ? 'academic' : 'administrative'} world today.
+              Here&apos;s what&apos;s happening in your {session?.user?.role === 'student' ? 'academic' : 'administrative'} world today.
             </p>
           </div>
           <div className="hidden md:block">

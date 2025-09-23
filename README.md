@@ -251,3 +251,30 @@ For support, please contact the development team or create an issue in the repos
 ---
 
 **Note**: This is a comprehensive student portal system designed for Charusat University. Make sure to customize the email domain validation and other institution-specific features according to your requirements. 
+
+## Principal Role (Read-Only) & Feedback Chat
+
+The `principal` role has cross-module visibility (students, guides, subjects, projects, settings) but is intentionally prevented from performing write operations. Any protected POST/PATCH endpoints should check `canWrite(role)` from `src/lib/permissions.js`.
+
+### How Feedback Works
+
+1. A floating "Chat with Admin" button is available on all dashboard pages for principals.
+2. Messages are stored with the originating page path so admins see full context.
+3. Real-time delivery occurs through Socket.IO using events:
+   - `principal:message` (to admins)
+   - `admin:reply` (to principal)
+4. Admins can view a summary of active pages with principal feedback at: `/dashboard/admin/principal-chats`.
+
+### Key Files
+
+| Feature | File |
+|---------|------|
+| Chat UI | `src/components/chat/ChatWithAdmin.jsx` |
+| API (list/send) | `src/app/api/principal-chat/route.js` |
+| Model | `src/models/PrincipalChat.js` |
+| Socket wiring | `server.js` |
+| Permissions helper | `src/lib/permissions.js` |
+
+### Extending Read-Only Enforcement
+
+Import and use `canWrite` (or `assertCanWrite`) in any new mutating API route to automatically block principal actions.

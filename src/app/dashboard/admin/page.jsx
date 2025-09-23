@@ -16,7 +16,8 @@ import {
   Target,
   Award,
   TrendingUp,
-  Calendar
+  Calendar,
+  ListChecks
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -26,6 +27,8 @@ export default function AdminDashboard() {
   const [registrations, setRegistrations] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState('registrations')
+  const [guideSummary, setGuideSummary] = useState([])
+  const [loadingSummary, setLoadingSummary] = useState(false)
   const { scrollY } = useScroll()
   const y = useTransform(scrollY, [0, 300], [0, 50])
 
@@ -58,12 +61,28 @@ export default function AdminDashboard() {
       setRegistrations([])
     }
   }, [])
+  const fetchGuideSummary = useCallback(async ()=>{
+    setLoadingSummary(true)
+    try{
+      const res = await fetch('/api/projects/summary')
+      if(res.ok){
+        const data = await res.json()
+        setGuideSummary(data.guides||[])
+      } else {
+        const e = await res.json().catch(()=>({}))
+        toast.error(e.error?.message||'Failed summary')
+      }
+    } catch {
+      toast.error('Network error summary')
+    } finally { setLoadingSummary(false) }
+  },[])
 
   
 
   useEffect(() => {
   let mounted = true
   fetchRegistrations().finally(() => { if (mounted) setLoading(false) })
+  fetchGuideSummary()
   return () => { mounted = false }
   }, [fetchRegistrations])
 
@@ -90,7 +109,7 @@ export default function AdminDashboard() {
 
   const getStats = () => {
     const totalStudents = registrations.filter(r => r.role === 'student').length
-  const totalFaculty = registrations.filter(r => ['faculty','hod'].includes(r.role)).length
+  const totalFaculty = registrations.filter(r => ['guide','hod'].includes(r.role)).length
     const pendingOnboarding = registrations.filter(r => !r.isOnboarded).length
   const assignedStudents = registrations.filter(r => r.role === 'student' && r.isApproved).length
 
@@ -102,7 +121,7 @@ export default function AdminDashboard() {
         color: 'from-blue-600 to-purple-600'
       },
       {
-        name: 'Total Faculty',
+  name: 'Total Guides',
         value: totalFaculty,
         icon: Shield,
         color: 'from-green-600 to-blue-600'
@@ -254,7 +273,7 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <div className="flex space-x-4 mb-6">
+          <div className="flex space-x-4 mb-6 flex-wrap">
             <motion.button
               onClick={() => setSelectedTab('registrations')}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
@@ -268,8 +287,19 @@ export default function AdminDashboard() {
               <Users className="w-4 h-4 inline mr-2" />
               Registrations
             </motion.button>
-            
-            {/* Assignments tab removed (no counselor role) */}
+            <motion.button
+              onClick={() => { setSelectedTab('guide-summary'); fetchGuideSummary() }}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                selectedTab === 'guide-summary'
+                  ? 'bg-gradient-to-r from-green-600 to-blue-600 text-white shadow-lg'
+                  : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-white/20'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ListChecks className="w-4 h-4 inline mr-2" />
+              Guide Allocation
+            </motion.button>
           </div>
 
           {/* Content */}
@@ -371,7 +401,7 @@ export default function AdminDashboard() {
                             <span className="text-sm text-gray-500">Student</span>
                           )}
 
-                          {['faculty','hod'].includes(user.role) && (
+                          {['guide','hod'].includes(user.role) && (
                             <div className="flex gap-2">
                               {user.approvalStatus !== 'approved' && (
                                 <motion.button
@@ -399,6 +429,39 @@ export default function AdminDashboard() {
                       </div>
                     </motion.div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+          {selectedTab === 'guide-summary' && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Guide Allocation Summary</h3>
+              {loadingSummary ? (
+                <div className="text-sm text-gray-500">Loading...</div>
+              ) : guideSummary.length===0 ? (
+                <div className="text-sm text-gray-500">No guide allocations yet.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-100 dark:bg-gray-700/50">
+                        <th className="text-left p-2 font-medium">Guide</th>
+                        <th className="text-left p-2 font-medium">Department</th>
+                        <th className="text-left p-2 font-medium">Projects</th>
+                        <th className="text-left p-2 font-medium">Students</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {guideSummary.map(g => (
+                        <tr key={g.guideId} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                          <td className="p-2">{g.guideName||g.guideEmail}</td>
+                          <td className="p-2">{g.department||'-'}</td>
+                          <td className="p-2">{g.projectCount}</td>
+                          <td className="p-2">{g.totalStudents}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

@@ -48,7 +48,12 @@ export default function Subjects() {
         fetchSubjects()
       } else {
         const error = await response.json()
-        toast.error(error.message || 'Failed to create subject')
+        // Fix: Only pass string to toast.error
+        if (typeof error === 'object') {
+          toast.error(error.message || error.error?.message || 'Failed to create subject')
+        } else {
+          toast.error(String(error))
+        }
       }
     } catch (error) {
       toast.error('An error occurred')
@@ -79,7 +84,7 @@ export default function Subjects() {
           </p>
         </div>
 
-        {['admin', 'faculty'].includes(session?.user.role) && (
+  {['admin', 'guide'].includes(session?.user.role) && (
           <button
             onClick={() => setShowCreateForm(true)}
             className="btn btn-primary"
@@ -92,7 +97,7 @@ export default function Subjects() {
 
       {/* Subjects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subjects.map((subject, index) => (
+        {(Array.isArray(subjects) ? subjects : []).map((subject, index) => (
           <motion.div
             key={subject._id}
             initial={{ opacity: 0, y: 20 }}
@@ -125,7 +130,7 @@ export default function Subjects() {
               </p>
               {subject.faculty && (
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">Faculty:</span> {subject.faculty.academicInfo?.name || subject.faculty.email}
+                  <span className="font-medium">Guide:</span> {subject.faculty.academicInfo?.name || subject.faculty.email}
                 </p>
               )}
             </div>
@@ -148,7 +153,7 @@ export default function Subjects() {
                 )}
               </div>
 
-              {['admin', 'faculty'].includes(session?.user.role) && (
+              {['admin', 'guide'].includes(session?.user.role) && (
                 <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                   <Edit className="h-4 w-4" />
                 </button>
@@ -158,7 +163,7 @@ export default function Subjects() {
         ))}
       </div>
 
-      {subjects.length === 0 && (
+  {(Array.isArray(subjects) && subjects.length === 0) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
