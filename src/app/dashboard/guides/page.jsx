@@ -30,11 +30,11 @@ export default function GuidesPage(){
   const [visibleFields, setVisibleFields] = useState(['department','role','email','university','institute'])
 
   const baseDepartments = ['CSE','CE','IT']
-  const cspitExtras = ['ME','EC','CIVIL']
+  //const cspitExtras = ['ME','EC','CIVIL']
   const departments = institute === 'CSPIT' ? [...baseDepartments, ...cspitExtras] : baseDepartments
   const roleOptions = ['guide','hod','admin','mainadmin']
   const universities = ['CHARUSAT','Others']
-  const institutes = ['CSPIT','DEPSTAR','Others']
+  const institutes = ['DEPSTAR','Others']
   const toggleExclusive = (current,setter,val)=> setter(current===val?'':val)
   const toggleField = key => setVisibleFields(prev => prev.includes(key)? prev.filter(k=>k!==key):[...prev,key])
 

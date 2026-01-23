@@ -7,6 +7,10 @@ import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import ProjectGroup from '@/models/ProjectGroup'
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions)
@@ -87,7 +91,7 @@ export async function GET(request) {
 
     const students = await User.find(query)
       .select('-password')
-      .sort({ 'academicInfo.name': 1 })
+      .sort({ 'academicInfo.rollNumber': 1, 'academicInfo.name': 1 })
 
     // For admin, mainadmin, principal, hod include project membership summary
   if ([ROLES.ADMIN, ROLES.MAIN_ADMIN, ROLES.PRINCIPAL, ROLES.HOD].includes(session.user.role)) {

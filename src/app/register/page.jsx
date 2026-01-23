@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   User, 
@@ -21,6 +21,9 @@ import { studentEmailPattern, deriveFromStudentEmail, passwordStrength } from '@
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const roleFromUrl = searchParams.get('role') // Get role from URL parameter
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -28,6 +31,14 @@ export default function RegisterPage() {
     role: ''
   })
   const [roleChosen, setRoleChosen] = useState(false)
+
+  // Auto-select role from URL parameter
+  useEffect(() => {
+    if (roleFromUrl && (roleFromUrl === 'student' || roleFromUrl === 'guide')) {
+      setFormData(prev => ({ ...prev, role: roleFromUrl }))
+      setRoleChosen(true)
+    }
+  }, [roleFromUrl])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

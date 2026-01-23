@@ -88,6 +88,15 @@ export async function POST(request) {
     })
 
     await project.save()
+    
+    console.log('✅ Project created successfully:', {
+      projectId: project._id.toString(),
+      title: project.title,
+      department: project.department,
+      leader: project.leader.toString(),
+      memberCount: project.members.length,
+      status: project.status
+    })
 
     return NextResponse.json({ ok: true, data: project }, { status: 201 })
   } catch (error) {
@@ -103,11 +112,26 @@ export async function GET(request) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ success: false, error: 'Unauthorized', projects: [] }, { status: 401 })
 
+    console.log('🔐 Session details:', {
+      userId: session.user.id,
+      email: session.user.email,
+      role: session.user.role,
+      department: session.user.department
+    })
+
     const { searchParams } = new URL(request.url)
     const qDept = searchParams.get('department')
     const qYear = searchParams.get('year')
     const role = session.user.role
     let filter = {}
+
+    console.log('🔍 Project GET request:', { 
+      userId: session.user.id, 
+      role, 
+      email: session.user.email,
+      qDept, 
+      qYear 
+    })
 
     if (role === 'student') {
       filter = { 'members.student': session.user.id }
@@ -117,15 +141,31 @@ export async function GET(request) {
       const hodDept = session.user.department ? session.user.department.toUpperCase() : '';
       filter = { department: hodDept }
       if (qDept) filter.department = qDept.toUpperCase()
+      // HOD can see all projects in their department (pending, approved, rejected)
+      console.log('🏢 HOD Filter Applied:', { 
+        hodRole: role, 
+        hodDept, 
+        sessionDept: session.user.department,
+        filter,
+        email: session.user.email 
+      })
     } else if (role === 'admin') {
+      // Admin can only see projects that have been approved by HOD
+      filter = { hodApproval: 'approved' }
+      if (qDept) filter.department = qDept.toUpperCase()
+    } else if (role === 'mainadmin') {
+      // Main admin can see all projects regardless of approval status
       if (qDept) filter.department = qDept.toUpperCase()
     }
+
+    console.log('📊 Project filter applied:', filter)
 
     if (qYear && (role === 'admin' || role === 'hod')) {
       const yearUsers = await User.find({ admissionYear: Number(qYear) }).select('_id')
       const yearIds = yearUsers.map(u => u._id)
       filter.$and = [ { ...(filter.department ? { department: filter.department } : {}) }, { 'members.student': { $in: yearIds } } ]
       delete filter.department
+      console.log('📅 Year filter applied:', filter)
     }
 
     const projects = await ProjectGroup.find(filter)
@@ -133,6 +173,12 @@ export async function GET(request) {
       .populate('members.student', 'academicInfo.name email department admissionYear university institute')
       .populate('internalGuide', 'academicInfo.name email')
       .sort({ createdAt: -1 })
+
+    console.log('🚀 Projects found:', {
+      count: projects.length,
+      projectIds: projects.map(p => p._id.toString()),
+      titles: projects.map(p => p.title)
+    })
 
     console.log('Projects returned for user', session.user.id, projects.map(p => ({ id: p._id.toString(), members: p.members.map(m => m.student._id.toString()) })))
 
@@ -154,7 +200,7 @@ export async function PATCH(request) {
 
     await dbConnect()
     const body = await request.json()
-  const { projectId, approve, internalGuideId, externalGuide, addMember, removeMember, progressScore, addReport, reportWeek, reportPdfUrl, feedback, feedbackReportId } = body
+  const { projectId, approve, internalGuideId, externalGuide, addMember, removeMember, progressScore, addReport, reportWeek, reportPdfUrl, feedback, feedbackReportId, hodApproval } = body
     const project = await ProjectGroup.findById(projectId)
   if (!project) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'Project not found' } }, { status: 404 })
 
@@ -198,7 +244,35 @@ export async function PATCH(request) {
   return NextResponse.json({ ok: true, data: project })
     }
 
-  if (!['admin','hod'].includes(session.user.role)) {
+    // HOD approval logic
+    if (hodApproval !== undefined) {
+      // Only HOD of the same department can approve/reject
+      if (session.user.role !== 'hod') {
+        return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only HOD can approve projects' } }, { status: 403 })
+      }
+      
+      const hodDept = session.user.department ? session.user.department.toUpperCase() : ''
+      if (project.department !== hodDept) {
+        return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'HOD can only approve projects in their department' } }, { status: 403 })
+      }
+      
+      project.hodApproval = hodApproval // 'approved' or 'rejected'
+      project.status = hodApproval === 'approved' ? 'approved' : 'rejected'
+      
+      await project.save()
+      
+      console.log('✅ HOD approval updated:', {
+        projectId: project._id.toString(),
+        hodApproval: project.hodApproval,
+        status: project.status,
+        department: project.department,
+        hodDept
+      })
+      
+      return NextResponse.json({ ok: true, data: project })
+    }
+
+  if (!['admin','hod','mainadmin'].includes(session.user.role)) {
       return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
     }
 
@@ -206,6 +280,11 @@ export async function PATCH(request) {
       project.status = approve ? 'approved' : 'rejected'
     }
     if (internalGuideId) {
+      // Admins can only assign guides to approved projects, HODs can assign anytime
+      if (session.user.role === 'admin' && project.hodApproval !== 'approved') {
+        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Project must be approved by HOD before assigning guide' } }, { status: 400 })
+      }
+      
       const guide = await User.findById(internalGuideId)
       if (!guide || guide.role !== 'guide') {
         return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Invalid internal guide' } }, { status: 400 })

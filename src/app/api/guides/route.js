@@ -49,8 +49,8 @@ export async function GET(request) {
     }
 
     const guides = await User.find(query)
-      .select('email academicInfo.name department role specialization education isApproved university institute')
-      .sort({ 'academicInfo.name': 1, email: 1 })
+      .select('email academicInfo department role specialization researchAreas interests isApproved university institute isActive')
+      .sort({ department: 1, 'academicInfo.name': 1 })
     return NextResponse.json({ guides })
   } catch (error) {
     console.error('Guides GET error:', error)

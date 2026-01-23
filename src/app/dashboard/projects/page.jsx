@@ -39,6 +39,14 @@ export default function ProjectsPage(){
   const [guide, setGuide] = useState('')
   const [search, setSearch] = useState('')
 
+  // Sorting state
+  const [sortField, setSortField] = useState('')
+  const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
   // Field visibility
   const FIELD_OPTIONS = [
     { key: 'department', label: 'Department' },
@@ -47,10 +55,11 @@ export default function ProjectsPage(){
     { key: 'internal', label: 'Internal Guide' },
     { key: 'external', label: 'External Guide' },
     { key: 'progress', label: 'Progress' },
+    { key: 'status', label: 'HOD Status' },
     { key: 'description', label: 'Description' },
     { key: 'members', label: 'Members Count' }
   ]
-  const [visibleFields, setVisibleFields] = useState(['department','semester','domain','internal','progress'])
+  const [visibleFields, setVisibleFields] = useState(['department','semester','domain','internal','status','progress','members'])
   const toggleField = key => setVisibleFields(prev => prev.includes(key) ? prev.filter(k=>k!==key) : [...prev,key])
   const toggleExclusive = (current,setter,val)=> setter(current===val?'':val)
 
@@ -63,28 +72,56 @@ export default function ProjectsPage(){
   const [addingMember, setAddingMember] = useState('')
   const [modalTab, setModalTab] = useState('overview')
 
-  // Static option sets
+  // Static option sets with HOD filtering
   const universities = ['CHARUSAT','Others']
-  const institutes = ['CSPIT','DEPSTAR','Others']
-  const departmentsList = ['CSE','CE','IT']
+  const institutes = isHod 
+    ? [session?.user?.academicInfo?.institute].filter(Boolean) // HOD sees only their institute
+    : ['CSPIT','DEPSTAR','Others'] // Admin sees all institutes
+  const departmentsList = isHod 
+    ? [session?.user?.academicInfo?.department].filter(Boolean) // HOD sees only their department
+    : ['CSE','CE','IT'] // Admin sees all departments
   const semesters = ['1','2','3','4','5','6','7','8']
   const statuses = ['submitted','under-review','approved','rejected']
 
   const loadProjects = useCallback(async ()=>{
     setLoading(true)
     try {
+      console.log('🔄 Loading projects for user:', { 
+        role: session?.user?.role, 
+        email: session?.user?.email,
+        isStudent, 
+        isAdmin 
+      })
+      
       const res = await fetch('/api/projects')
+      
       if(res.ok){
         const data = await res.json()
         const list = data.projects||[]
+        
+        console.log('📦 Projects loaded:', { 
+          totalCount: list.length,
+          projects: list.map(p => ({ 
+            id: p._id, 
+            title: p.title, 
+            department: p.department,
+            status: p.status,
+            memberCount: p.members?.length,
+            members: p.members
+          }))
+        })
+        
         setProjects(list)
         if(isStudent){
           const my = list.filter(p=> p.members.some(m=> String(m.student?._id||m.student)===String(session.user.id)))
           setMine(my)
+          console.log('👨‍🎓 Student projects filtered:', my.length)
         }
+      } else {
+        console.error('❌ Failed to load projects:', res.status)
       }
     } finally { setLoading(false) }
-  },[isStudent, session?.user?.id])
+  },[isStudent, isAdmin, session?.user?.id, session?.user?.role, session?.user?.email])
 
   const loadGuides = useCallback(async ()=>{
     if(!isHod) return
@@ -272,8 +309,16 @@ export default function ProjectsPage(){
   }
 
   const approveProject = async (projectId, approve) => {
-    const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId, approve }) })
-    if(res.ok){ toast.success('Updated'); loadProjects() } else { const e=await res.json(); toast.error(e.error?.message||'Error') }
+    // For HOD approval workflow
+    if (session?.user?.role === 'hod') {
+      const approval = approve ? 'approved' : 'rejected'
+      const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId, hodApproval: approval }) })
+      if(res.ok){ toast.success(`Project ${approval}`); loadProjects() } else { const e=await res.json(); toast.error(e.error?.message||'Error') }
+    } else {
+      // Legacy approval for other roles
+      const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId, approve }) })
+      if(res.ok){ toast.success('Updated'); loadProjects() } else { const e=await res.json(); toast.error(e.error?.message||'Error') }
+    }
   }
   const assignInternal = async (projectId, internalGuideId, externalGuide) => {
     const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId, internalGuideId, externalGuide }) })
@@ -289,15 +334,35 @@ export default function ProjectsPage(){
     if(res.ok){ toast.success('Removed'); loadProjects() } else { const e=await res.json(); toast.error(e.error?.message||'Failed') }
   }
 
-  // Derived lists
+  // Derived lists with HOD filtering
   let base = projects
   if (isStudent) {
     base = studentView === 'mine' ? mine : projects
+  } else if (isHod) {
+    // HOD can only see projects from their department and institute
+    const hodDepartment = session?.user?.academicInfo?.department
+    const hodInstitute = session?.user?.academicInfo?.institute
+    base = projects.filter(p => {
+      const matchesDepartment = hodDepartment ? p.department === hodDepartment : true
+      const matchesInstitute = hodInstitute ? p.leader?.institute === hodInstitute : true
+      return matchesDepartment && matchesInstitute
+    })
   } else if (!isAdmin) {
     base = projects
   }
   
-  const domainsAll = Array.from(new Set(projects.map(p=>p.domain).filter(Boolean)))
+  // Filter available guides for HOD (only their department)
+  const availableGuides = isHod 
+    ? guides.filter(g => {
+        const hodDepartment = session?.user?.academicInfo?.department
+        const hodInstitute = session?.user?.academicInfo?.institute
+        const matchesDepartment = hodDepartment ? g.department === hodDepartment : true
+        const matchesInstitute = hodInstitute ? g.academicInfo?.institute === hodInstitute : true
+        return matchesDepartment && matchesInstitute
+      })
+    : guides
+  
+  const domainsAll = Array.from(new Set(base.map(p=>p.domain).filter(Boolean)))
   const filtered = base.filter(p => !university || p.leader?.university===university)
     .filter(p => !institute || p.leader?.institute===institute)
     .filter(p => !department || p.department===department)
@@ -307,8 +372,263 @@ export default function ProjectsPage(){
     .filter(p => !guide || (p.internalGuide && String(p.internalGuide._id)===guide))
     .filter(p => !search || (p.title||'').toLowerCase().includes(search.toLowerCase()))
 
+  // Sort filtered results
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    if (!sortField) return 0
+    
+    let aValue, bValue
+    
+    switch (sortField) {
+      case 'title':
+        aValue = a.title || ''
+        bValue = b.title || ''
+        break
+      case 'department':
+        aValue = a.department || ''
+        bValue = b.department || ''
+        break
+      case 'semester':
+        aValue = a.semester || 0
+        bValue = b.semester || 0
+        break
+      case 'domain':
+        aValue = a.domain || ''
+        bValue = b.domain || ''
+        break
+      case 'progress':
+        aValue = a.progressScore || 0
+        bValue = b.progressScore || 0
+        break
+      case 'status':
+        aValue = a.hodApproval || 'pending'
+        bValue = b.hodApproval || 'pending'
+        break
+      case 'members':
+        aValue = a.members?.length || 0
+        bValue = b.members?.length || 0
+        break
+      case 'leader':
+        aValue = a.leader?.academicInfo?.name || a.leader?.email || ''
+        bValue = b.leader?.academicInfo?.name || b.leader?.email || ''
+        break
+      default:
+        return 0
+    }
+    
+    // Handle different data types
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue
+    } else {
+      const comparison = String(aValue).localeCompare(String(bValue))
+      return sortDirection === 'asc' ? comparison : -comparison
+    }
+  })
+
+  // Sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  // Sort icon component
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) {
+      return (
+        <svg className='w-3 h-3 text-gray-400 group-hover:text-gray-600' fill='currentColor' viewBox='0 0 20 20'>
+          <path d='M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z'></path>
+        </svg>
+      )
+    }
+    
+    return sortDirection === 'asc' ? (
+      <svg className='w-3 h-3 text-blue-600' fill='currentColor' viewBox='0 0 20 20'>
+        <path d='M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM9 12a1 1 0 011-1h6a1 1 0 110 2h-6a1 1 0 01-1-1zM11 16a1 1 0 011-1h4a1 1 0 110 2h-4a1 1 0 01-1-1z'></path>
+      </svg>
+    ) : (
+      <svg className='w-3 h-3 text-blue-600' fill='currentColor' viewBox='0 0 20 20'>
+        <path d='M3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM9 8a1 1 0 011-1h6a1 1 0 110 2h-6a1 1 0 01-1-1zM11 4a1 1 0 011-1h4a1 1 0 110 2h-4a1 1 0 01-1-1z'></path>
+      </svg>
+    )
+  }
+
+  // Pagination logic
+  const totalItems = sortedFiltered.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = sortedFiltered.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [university, institute, department, semester, status, domain, guide, search])
+
+  // Pagination component
+  const Pagination = () => {
+    const maxVisiblePages = 5
+    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+    
+    const pages = []
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+
+    return (
+      <div className='flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 sm:px-6'>
+        <div className='flex justify-between flex-1 sm:hidden'>
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className='relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className='relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            Next
+          </button>
+        </div>
+        <div className='hidden sm:flex sm:flex-1 sm:items-center sm:justify-between'>
+          <div className='flex items-center gap-4'>
+            <p className='text-sm text-gray-700 dark:text-gray-300'>
+              Showing <span className='font-medium'>{startIndex + 1}</span> to <span className='font-medium'>{Math.min(endIndex, totalItems)}</span> of{' '}
+              <span className='font-medium'>{totalItems}</span> results
+            </p>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className='px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            >
+              <option value={5}>5 per page</option>
+              <option value={10}>10 per page</option>
+              <option value={25}>25 per page</option>
+              <option value={50}>50 per page</option>
+            </select>
+          </div>
+          <div>
+            <nav className='relative z-0 inline-flex rounded-md shadow-sm -space-x-px' aria-label='Pagination'>
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className='relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                Previous
+              </button>
+              
+              {startPage > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    className='relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  >
+                    1
+                  </button>
+                  {startPage > 2 && (
+                    <span className='relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300'>
+                      ...
+                    </span>
+                  )}
+                </>
+              )}
+              
+              {pages.map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border ${
+                    currentPage === page
+                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              {endPage < totalPages && (
+                <>
+                  {endPage < totalPages - 1 && (
+                    <span className='relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300'>
+                      ...
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    className='relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  >
+                    {totalPages}
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className='relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                Next
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const submitFilters = e => { e.preventDefault(); setSubmitted(true) }
-  const resetFilters = () => { setUniversity(''); setInstitute(''); setDepartment(''); setSemester(''); setStatus(''); setDomain(''); setGuide(''); setSearch(''); setSubmitted(false) }
+  const resetFilters = () => { 
+    setUniversity(''); 
+    setInstitute(''); 
+    setDepartment(''); 
+    setSemester(''); 
+    setStatus(''); 
+    setDomain(''); 
+    setGuide(''); 
+    setSearch(''); 
+    setSubmitted(false);
+    setSortField('');
+    setSortDirection('asc');
+    setCurrentPage(1);
+  }
+
+  // Export functionality
+  const exportToCSV = () => {
+    const headers = ['Title', 'Group ID', 'Leader', 'Department', 'Semester', 'Domain', 'HOD Status', 'Progress', 'Members Count']
+    const rows = sortedFiltered.map(p => [
+      p.title || '',
+      p.groupId || '',
+      p.leader?.academicInfo?.name || p.leader?.email || '',
+      p.department || '',
+      p.semester || '',
+      p.domain || '',
+      p.hodApproval || 'pending',
+      p.progressScore || 0,
+      p.members?.length || 0
+    ])
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `projects-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Projects exported successfully!')
+  }
 
   return (
     <div className='space-y-6'>
@@ -384,7 +704,7 @@ export default function ProjectsPage(){
                 <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Guide</p>
                 <select value={guide} onChange={e=>setGuide(e.target.value)} className='w-full px-4 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 h-11 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all duration-200 text-gray-700 dark:text-gray-300 font-semibold'>
                   <option value=''>All</option>
-                  {guides.filter(g=> !department || g.department===department).map(g=> <option key={g._id} value={g._id}>{g.academicInfo?.name || g.email}</option>)}
+                  {availableGuides.filter(g=> !department || g.department===department).map(g=> <option key={g._id} value={g._id}>{g.academicInfo?.name || g.email}</option>)}
                 </select>
               </div>
               <div className='w-full'>
@@ -402,9 +722,21 @@ export default function ProjectsPage(){
           </div>
         <FieldSelector fields={FIELD_OPTIONS} visible={visibleFields} toggle={toggleField} />
         <div className='flex items-center gap-2'>
-          <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white'>Apply</button>
-          <button type='button' onClick={resetFilters} className='px-3 py-2 rounded border'>Reset</button>
-          <div className='ml-auto text-sm text-gray-600'>{submitted ? `${filtered.length} result(s)` : 'No results yet'}</div>
+          <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors'>Apply</button>
+          <button type='button' onClick={resetFilters} className='px-3 py-2 rounded border border-gray-300 hover:bg-gray-50 transition-colors'>Reset</button>
+          {sortedFiltered.length > 0 && (
+            <button 
+              type='button' 
+              onClick={exportToCSV} 
+              className='px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2'
+            >
+              <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'>
+                <path fillRule='evenodd' d='M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z' clipRule='evenodd'></path>
+              </svg>
+              Export
+            </button>
+          )}
+          <div className='ml-auto text-sm text-gray-600'>{submitted ? `${sortedFiltered.length} result(s)` : 'No results yet'}</div>
         </div>
       </form>
       )}
@@ -461,51 +793,357 @@ export default function ProjectsPage(){
       ) : loading ? (
         <div className='text-center py-12 text-gray-500'>Loading...</div>
       ) : (
-        <div className='grid gap-6'>
-          {filtered.length===0 ? <div className='text-center py-8 text-gray-500'>No projects match filters.</div> : (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {filtered.map(p => (
-                <motion.div key={p._id} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className='card p-5 flex flex-col group relative'>
-                  <div className='flex items-start justify-between gap-4'>
-                    <div className='flex flex-col gap-1'>
-                      <div className='font-semibold text-lg flex items-center gap-2'>
-                        <span>{p.title}</span>
-                        <span className='text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-100'>{p.groupId}</span>
-                      </div>
-                      <div className='text-[12px] text-gray-600 dark:text-gray-400'>Leader: {p.leader?.academicInfo?.name || p.leader?.email?.split('@')[0]}</div>
-                    </div>
-                    {visibleFields.includes('progress') && (
-                      <div className='flex flex-col items-end gap-1'>
-                        <StatusBadge status={p.status} />
-                        <div className='flex items-center gap-2 text-[10px] font-medium'>
-                          <span className='px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700'>{p.progressScore ?? 0}/10</span>
-                          <div className='h-1.5 w-20 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden'>
-                            <div className='h-full bg-blue-600' style={{ width: `${(p.progressScore||0)*10}%` }}/>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className='grid grid-cols-2 gap-3 text-[11px] mt-3'>
-                    {visibleFields.includes('department') && <div><span className='font-medium'>Dept:</span> {p.department||'—'}</div>}
-                    {visibleFields.includes('semester') && <div><span className='font-medium'>Sem:</span> {p.semester||'—'}</div>}
-                    {visibleFields.includes('domain') && <div className='col-span-2'><span className='font-medium'>Domain:</span> {p.domain||'—'}</div>}
-                    {visibleFields.includes('internal') && <div className='col-span-2'><span className='font-medium'>Internal:</span> {p.internalGuide?.academicInfo?.name || p.internalGuide?.email || '—'}</div>}
-                    {visibleFields.includes('external') && <div className='col-span-2'><span className='font-medium'>External:</span> {p.externalGuide?.name || '—'}</div>}
-                    {visibleFields.includes('members') && <div><span className='font-medium'>Members:</span> {p.members?.length||0}</div>}
-                    {visibleFields.includes('description') && <div className='col-span-2 line-clamp-2'><span className='font-medium'>Desc:</span> {p.description||'—'}</div>}
-                  </div>
-                  {(isAdmin || isHod) && (
-                    <div className='flex gap-2 mt-3'>
-                      {p.status!=='approved' && <button onClick={()=>approveProject(p._id,true)} className='px-3 py-1 text-[11px] rounded bg-green-600 text-white'>Approve</button>}
-                      {p.status!=='rejected' && <button onClick={()=>approveProject(p._id,false)} className='px-3 py-1 text-[11px] rounded bg-red-600 text-white'>Reject</button>}
-                      {isHod && !p.internalGuide && <button onClick={()=>setSelected(p)} className='px-3 py-1 text-[11px] rounded bg-indigo-600 text-white'>Assign Guide</button>}
-                    </div>
-                  )}
-                  <button onClick={()=>setSelected(p)} className='mt-3 text-[11px] text-blue-600 underline self-start'>Open</button>
-                </motion.div>
-              ))}
-            </div>
+        <div className='space-y-6'>
+          {sortedFiltered.length === 0 ? (
+            <div className='text-center py-8 text-gray-500'>No projects match filters.</div>
+          ) : (
+            <>
+              {/* Results summary */}
+              <div className='flex justify-between items-center'>
+                <div className='text-sm text-gray-600 dark:text-gray-400'>
+                  Showing {sortedFiltered.length} project{sortedFiltered.length !== 1 ? 's' : ''}
+                  {sortField && <span className='ml-2 text-blue-600'>• Sorted by {sortField} ({sortDirection})</span>}
+                </div>
+                <div className='flex gap-2 text-xs'>
+                  <span className='px-2 py-1 bg-green-100 text-green-700 rounded'>✓ Approved: {sortedFiltered.filter(p => p.hodApproval === 'approved').length}</span>
+                  <span className='px-2 py-1 bg-orange-100 text-orange-700 rounded'>⏳ Pending: {sortedFiltered.filter(p => p.hodApproval === 'pending' || !p.hodApproval).length}</span>
+                  <span className='px-2 py-1 bg-red-100 text-red-700 rounded'>✗ Rejected: {sortedFiltered.filter(p => p.hodApproval === 'rejected').length}</span>
+                </div>
+              </div>
+              
+              {/* Enhanced table */}
+              <div className='card p-0 overflow-hidden shadow-lg'>
+                <div className='overflow-x-auto'>
+                  <table className='w-full min-w-[1000px]'>
+                    <thead className='bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800'>
+                      <tr>
+                        <th className='px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                          <button 
+                            onClick={() => handleSort('title')}
+                            className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                          >
+                            📋 Project Details
+                            <SortIcon field='title' />
+                          </button>
+                        </th>
+                        {visibleFields.includes('department') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            <button 
+                              onClick={() => handleSort('department')}
+                              className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                            >
+                              🏢 Department
+                              <SortIcon field='department' />
+                            </button>
+                          </th>
+                        )}
+                        {visibleFields.includes('semester') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            <button 
+                              onClick={() => handleSort('semester')}
+                              className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                            >
+                              📚 Semester
+                              <SortIcon field='semester' />
+                            </button>
+                          </th>
+                        )}
+                        {visibleFields.includes('domain') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            <button 
+                              onClick={() => handleSort('domain')}
+                              className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                            >
+                              🎯 Domain
+                              <SortIcon field='domain' />
+                            </button>
+                          </th>
+                        )}
+                        {visibleFields.includes('internal') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            👨‍🏫 Internal Guide
+                          </th>
+                        )}
+                        {visibleFields.includes('external') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            👩‍💼 External Guide
+                          </th>
+                        )}
+                        {visibleFields.includes('status') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            <button 
+                              onClick={() => handleSort('status')}
+                              className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                            >
+                              🔍 HOD Status
+                              <SortIcon field='status' />
+                            </button>
+                          </th>
+                        )}
+                        {visibleFields.includes('progress') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            <button 
+                              onClick={() => handleSort('progress')}
+                              className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                            >
+                              📊 Progress
+                              <SortIcon field='progress' />
+                            </button>
+                          </th>
+                        )}
+                        {visibleFields.includes('members') && (
+                          <th className='px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                            <button 
+                              onClick={() => handleSort('members')}
+                              className='flex items-center gap-2 hover:text-blue-600 transition-colors group'
+                            >
+                              👥 Team
+                              <SortIcon field='members' />
+                            </button>
+                          </th>
+                        )}
+                        <th className='px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b-2 border-gray-200 dark:border-gray-700'>
+                          ⚡ Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
+                      {currentItems.map((p, index) => (
+                        <tr 
+                          key={p._id} 
+                          className={`hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 ${index % 2 === 0 ? 'bg-gray-50/30 dark:bg-gray-800/30' : ''} group`}
+                        >
+                          <td className='px-6 py-4'>
+                            <div className='flex flex-col space-y-2'>
+                              {/* Title and Group ID */}
+                              <div className='font-semibold text-gray-900 dark:text-white flex items-center gap-2'>
+                                <span className='text-lg'>{p.title}</span>
+                                <span className='text-[9px] px-2 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold'>
+                                  {p.groupId}
+                                </span>
+                              </div>
+                              
+                              {/* Leader info */}
+                              <div className='text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2'>
+                                <span className='inline-flex items-center gap-1'>
+                                  👤 <strong>Leader:</strong> {p.leader?.academicInfo?.name || p.leader?.email?.split('@')[0]}
+                                </span>
+                              </div>
+                              
+                              {/* Description (if visible) */}
+                              {visibleFields.includes('description') && p.description && (
+                                <div className='text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 p-2 rounded-md line-clamp-2 max-w-md'>
+                                  {p.description}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          
+                          {visibleFields.includes('department') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'>
+                                {p.department || '—'}
+                              </span>
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('semester') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'>
+                                Sem {p.semester || '—'}
+                              </span>
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('domain') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'>
+                                {p.domain || '—'}
+                              </span>
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('internal') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <div className='text-sm text-gray-900 dark:text-gray-100'>
+                                {p.internalGuide ? (
+                                  <div className='flex items-center gap-2'>
+                                    <div className='w-2 h-2 bg-green-500 rounded-full'></div>
+                                    {p.internalGuide.academicInfo?.name || p.internalGuide.email}
+                                  </div>
+                                ) : (
+                                  <div className='flex items-center gap-2'>
+                                    <div className='w-2 h-2 bg-gray-300 rounded-full'></div>
+                                    <span className='text-gray-400'>Not Assigned</span>
+                                    {isHod && (
+                                      <button 
+                                        onClick={() => setSelected(p)} 
+                                        className='ml-2 inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors duration-200'
+                                        title='Assign Internal Guide'
+                                      >
+                                        Assign
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('external') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <div className='text-sm text-gray-900 dark:text-gray-100'>
+                                {p.externalGuide ? (
+                                  <div className='flex items-center gap-2'>
+                                    <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                                    {p.externalGuide.name}
+                                  </div>
+                                ) : (
+                                  <div className='flex items-center gap-2 text-gray-400'>
+                                    <div className='w-2 h-2 bg-gray-300 rounded-full'></div>
+                                    Not Assigned
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('status') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <StatusBadge status={p.hodApproval || 'pending'} />
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('progress') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <div className='flex items-center gap-3'>
+                                <span className='text-sm font-semibold px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 min-w-[45px] text-center'>
+                                  {p.progressScore ?? 0}/10
+                                </span>
+                                <div className='flex-1 min-w-[80px]'>
+                                  <div className='w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                                    <div 
+                                      className={`h-full transition-all duration-500 rounded-full ${
+                                        (p.progressScore || 0) >= 8 ? 'bg-green-500' :
+                                        (p.progressScore || 0) >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                                      }`}
+                                      style={{ width: `${(p.progressScore || 0) * 10}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          )}
+                          
+                          {visibleFields.includes('members') && (
+                            <td className='px-4 py-4 whitespace-nowrap'>
+                              <div className='flex items-center gap-2'>
+                                <span className='inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-800 text-sm font-medium'>
+                                  {p.members?.length || 0}
+                                </span>
+                                <div className='text-xs text-gray-500'>
+                                  <div>members</div>
+                                  {p.members?.length > 0 && (
+                                    <div className='text-[10px] text-gray-400 mt-1'>
+                                      {p.members.filter(m => m.role === 'leader').length} leader,{' '}
+                                      {p.members.filter(m => m.role === 'member').length} members
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          )}
+                          
+                          <td className='px-6 py-4 whitespace-nowrap'>
+                            <div className='flex items-center justify-center gap-2 flex-wrap'>
+                              {/* HOD Actions */}
+                              {isHod && (
+                                <>
+                                  {p.hodApproval !== 'approved' && (
+                                    <button 
+                                      onClick={() => approveProject(p._id, true)} 
+                                      className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 shadow-sm hover:shadow-md'
+                                      title='Approve Project'
+                                    >
+                                      <svg className='w-3 h-3 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                        <path fillRule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clipRule='evenodd'></path>
+                                      </svg>
+                                      Approve
+                                    </button>
+                                  )}
+                                  {p.hodApproval !== 'rejected' && (
+                                    <button 
+                                      onClick={() => approveProject(p._id, false)} 
+                                      className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors duration-200 shadow-sm hover:shadow-md'
+                                      title='Reject Project'
+                                    >
+                                      <svg className='w-3 h-3 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                        <path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clipRule='evenodd'></path>
+                                      </svg>
+                                      Reject
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                              
+                              {/* Admin Actions */}
+                              {isAdmin && (
+                                <>
+                                  {p.hodApproval === 'approved' ? (
+                                    !p.internalGuide ? (
+                                      <button 
+                                        onClick={() => setSelected(p)} 
+                                        className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 shadow-sm hover:shadow-md'
+                                        title='Assign Guide'
+                                      >
+                                        <svg className='w-3 h-3 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                          <path d='M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z'></path>
+                                        </svg>
+                                        Assign
+                                      </button>
+                                    ) : (
+                                      <span className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' title='Guide Assigned'>
+                                        <svg className='w-3 h-3 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                          <path fillRule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clipRule='evenodd'></path>
+                                        </svg>
+                                        Guide Assigned
+                                      </span>
+                                    )
+                                  ) : (
+                                    <span className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' title='Awaiting HOD Approval'>
+                                      <svg className='w-3 h-3 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                        <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z' clipRule='evenodd'></path>
+                                      </svg>
+                                      Awaiting HOD
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                              
+                              {/* View Details Button */}
+                              <button 
+                                onClick={() => setSelected(p)} 
+                                className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors duration-200 shadow-sm hover:shadow-md'
+                                title='View Details'
+                              >
+                                <svg className='w-3 h-3 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                  <path d='M10 12a2 2 0 100-4 2 2 0 000 4z'></path>
+                                  <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0v-.5A1.5 1.5 0 0114.5 6c.526 0 .988-.27 1.256-.679a6.012 6.012 0 011.912 2.706 8.012 8.012 0 01-.135 1.018A6.006 6.006 0 0115.5 8.5h-.165a4 4 0 01-7.67 0H7.5A6.006 6.006 0 015.467 9.044a8.012 8.012 0 01-.135-1.017z' clipRule='evenodd'></path>
+                                </svg>
+                                View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Pagination */}
+                {totalPages > 1 && <Pagination />}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -713,6 +1351,17 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const canProgress = canManage || isGuide
   const isMember = project.members.some(m=> String(m.student?._id||m.student)===String(session.user.id))
 
+  // Filter guides based on user role
+  const availableGuidesModal = isHod 
+    ? guides.filter(g => {
+        const hodDepartment = session?.user?.academicInfo?.department
+        const hodInstitute = session?.user?.academicInfo?.institute
+        const matchesDepartment = hodDepartment ? g.department === hodDepartment : true
+        const matchesInstitute = hodInstitute ? g.academicInfo?.institute === hodInstitute : true
+        return matchesDepartment && matchesInstitute
+      })
+    : guides
+
   const updateProgress = async () => {
     if(!canProgress) return
     const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId: project._id, progressScore: progressDraft }) })
@@ -738,11 +1387,11 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   useEffect(()=>{
     if(tab==='members' && !groupDetails){
       setLoadingDetails(true)
-      fetch(`/api/projects/group-details?projectId=${project._id}`).then(async r=>{
-        if(r.ok){ const d = await r.json(); setGroupDetails(d) }
+      fetch(`/api/projects/group-details?groupId=${project.groupId}`).then(async r=>{
+        if(r.ok){ const d = await r.json(); setGroupDetails(d.group) }
       }).finally(()=> setLoadingDetails(false))
     }
-  },[tab, groupDetails, project._id])
+  },[tab, groupDetails, project.groupId])
 
   return (
     <div className='fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4'>
@@ -763,13 +1412,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
               {!loadingDetails && groupDetails && (
                 <div className='grid sm:grid-cols-2 gap-3 text-[11px]'>
                   {groupDetails.members.map(m => (
-                    <div key={m.id} className='p-2 rounded border flex flex-col gap-1 bg-gray-50 dark:bg-gray-800/40'>
+                    <div key={m.student._id} className='p-2 rounded border flex flex-col gap-1 bg-gray-50 dark:bg-gray-800/40'>
                       <div className='flex justify-between items-center'>
-                        <span className='font-medium'>{m.name || m.email}</span>
+                        <span className='font-medium'>{m.student.academicInfo?.name || m.student.email}</span>
                         <span className='text-[9px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-100 uppercase'>{m.role}</span>
                       </div>
-                      <div className='text-gray-600 dark:text-gray-400 truncate'>{m.email}</div>
-                      {m.derived && <div className='text-[10px] text-gray-500'>Roll: {m.derived.rollNumber}</div>}
+                      <div className='text-gray-600 dark:text-gray-400 truncate'>{m.student.email}</div>
+                      <div className='text-[10px] text-gray-500'>Dept: {m.student.department}</div>
                       <button onClick={()=>setMemberView(m)} className='text-[10px] text-blue-600 underline self-start'>View</button>
                     </div>
                   ))}
@@ -782,18 +1431,17 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'>
           <div className='w-full max-w-md bg-white dark:bg-gray-900 rounded-lg shadow-xl p-5 relative text-sm'>
             <button onClick={()=>setMemberView(null)} className='absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xs'>✕</button>
-            <h4 className='font-semibold mb-2 flex items-center gap-2'>{memberView.name || memberView.email}<span className='text-[9px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-100 uppercase'>{memberView.role}</span></h4>
+            <h4 className='font-semibold mb-2 flex items-center gap-2'>
+              {memberView.student.academicInfo?.name || memberView.student.email}
+              <span className='text-[9px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-100 uppercase'>{memberView.role}</span>
+            </h4>
             <div className='space-y-1'>
-              <div><span className='font-medium'>Email:</span> {memberView.email}</div>
-              {memberView.derived && (
-                <>
-                  <div><span className='font-medium'>Roll:</span> {memberView.derived.rollNumber}</div>
-                  <div><span className='font-medium'>Dept:</span> {memberView.derived.department}</div>
-                  <div><span className='font-medium'>Institute:</span> {memberView.derived.institute}</div>
-                  <div><span className='font-medium'>Admission Year:</span> {memberView.derived.admissionYear}</div>
-                </>
-              )}
-              {memberView.interests?.length>0 && <div><span className='font-medium'>Interests:</span> {memberView.interests.slice(0,5).join(', ')}{memberView.interests.length>5?'…':''}</div>}
+              <div><span className='font-medium'>Email:</span> {memberView.student.email}</div>
+              <div><span className='font-medium'>Department:</span> {memberView.student.department}</div>
+              <div><span className='font-medium'>Institute:</span> {memberView.student.institute}</div>
+              <div><span className='font-medium'>University:</span> {memberView.student.university}</div>
+              <div><span className='font-medium'>Admission Year:</span> {memberView.student.admissionYear}</div>
+              <div><span className='font-medium'>Role in Project:</span> {memberView.role}</div>
             </div>
           </div>
         </div>
@@ -832,19 +1480,38 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
           {tab==='manage' && (canManage || isGuide) && (
             <div className='space-y-6'>
               <div className='space-y-2'>
-                <h4 className='text-[11px] font-semibold uppercase tracking-wide text-gray-500'>Status & Actions</h4>
-                <div className='flex flex-wrap gap-2'>
-                  {project.status!=='approved' && <button onClick={()=>approveProject(project._id,true)} className='px-4 py-2 text-[11px] rounded bg-green-600 text-white'>Approve</button>}
-                  {project.status!=='rejected' && <button onClick={()=>approveProject(project._id,false)} className='px-4 py-2 text-[11px] rounded bg-red-600 text-white'>Reject</button>}
+                <h4 className='text-[11px] font-semibold uppercase tracking-wide text-gray-500'>
+                  {isHod ? 'HOD Approval' : 'Status & Actions'}
+                </h4>
+                
+                {/* Show current HOD approval status */}
+                <div className='mb-2'>
+                  <span className='text-[11px] text-gray-500'>HOD Approval: </span>
+                  <StatusBadge status={project.hodApproval || 'pending'} />
                 </div>
+                
+                {/* HOD approval buttons */}
+                {isHod && (
+                  <div className='flex flex-wrap gap-2'>
+                    {project.hodApproval !== 'approved' && <button onClick={()=>approveProject(project._id,true)} className='px-4 py-2 text-[11px] rounded bg-green-600 text-white'>Approve</button>}
+                    {project.hodApproval !== 'rejected' && <button onClick={()=>approveProject(project._id,false)} className='px-4 py-2 text-[11px] rounded bg-red-600 text-white'>Reject</button>}
+                  </div>
+                )}
+                
+                {/* Admin restriction notice */}
+                {isAdmin && project.hodApproval !== 'approved' && (
+                  <div className='p-2 bg-orange-50 border border-orange-200 rounded text-[11px] text-orange-700'>
+                    ⚠️ This project must be approved by HOD before you can assign guides.
+                  </div>
+                )}
               </div>
-              {isHod && (
+              {(isHod || (isAdmin && project.hodApproval === 'approved')) && (
                 <div className='space-y-3'>
                   <h4 className='text-[11px] font-semibold uppercase tracking-wide text-gray-500'>Assign Guides</h4>
                   <div className='flex flex-wrap gap-2 items-center'>
                     <select className='px-2 py-2 border rounded text-xs min-w-[200px]' value={project.internalGuide?._id||''} onChange={e=>assignInternal(project._id, e.target.value||undefined)}>
                       <option value=''>Select Internal Guide</option>
-                      {guides.filter(g=> g.department===project.department).map(g => (
+                      {availableGuidesModal.filter(g=> g.department===project.department).map(g => (
                         <option key={g._id} value={g._id}>{g.academicInfo?.name || g.email}{g.role==='hod'?' (HOD)':''}</option>
                       ))}
                     </select>

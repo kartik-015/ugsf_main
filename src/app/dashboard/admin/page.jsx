@@ -11,7 +11,6 @@ import {
   Shield, 
   Eye, 
   UserCheck,
-  Sparkles,
   Zap,
   Target,
   Award,
@@ -24,9 +23,8 @@ import toast from 'react-hot-toast'
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [registrations, setRegistrations] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedTab, setSelectedTab] = useState('registrations')
+  const [selectedTab, setSelectedTab] = useState('guide-summary')
   const [guideSummary, setGuideSummary] = useState([])
   const [loadingSummary, setLoadingSummary] = useState(false)
   const { scrollY } = useScroll()
@@ -44,23 +42,41 @@ export default function AdminDashboard() {
     }
   }, [session, status, router])
 
-  const fetchRegistrations = useCallback(async () => {
+
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalFaculty: 0,
+    pendingOnboarding: 0,
+    assignedStudents: 0
+  })
+
+  const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/registrations')
-      if (response.ok) {
-        const data = await response.json()
-        setRegistrations(data.registrations || [])
+      console.log('Fetching admin stats...')
+      const res = await fetch('/api/admin/stats', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
+      console.log('Stats response status:', res.status)
+      if (res.ok) {
+        const data = await res.json()
+        console.log('Stats data received:', data)
+        setStats(data)
       } else {
-        const err = await response.json()
-        toast.error(err.error || 'Failed to fetch registrations')
-        setRegistrations([])
+        const error = await res.json()
+        console.error('Stats fetch failed:', error)
+        toast.error('Failed to load statistics')
       }
     } catch (error) {
-      console.error('Error fetching registrations:', error)
-      toast.error('Failed to fetch registrations')
-      setRegistrations([])
+      console.error('Failed to fetch stats:', error)
+      toast.error('Error loading statistics')
     }
   }, [])
+
   const fetchGuideSummary = useCallback(async ()=>{
     setLoadingSummary(true)
     try{
@@ -81,60 +97,37 @@ export default function AdminDashboard() {
 
   useEffect(() => {
   let mounted = true
-  fetchRegistrations().finally(() => { if (mounted) setLoading(false) })
   fetchGuideSummary()
+  fetchStats()
+  if (mounted) setLoading(false)
   return () => { mounted = false }
-  }, [fetchRegistrations])
+  }, [fetchGuideSummary, fetchStats])
 
   // Assign feature removed (no counselor role)
 
-  const handleApproveUser = async (userId, approve, roleOverride) => {
-    try {
-      const response = await fetch('/api/admin/registrations', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, approve, role: roleOverride })
-      })
-      if (response.ok) {
-        toast.success(approve ? 'Approved' : 'Rejected')
-        fetchRegistrations()
-      } else {
-        const e = await response.json()
-        toast.error(e.error || 'Failed to update')
-      }
-    } catch {
-      toast.error('Network error')
-    }
-  }
-
   const getStats = () => {
-    const totalStudents = registrations.filter(r => r.role === 'student').length
-  const totalFaculty = registrations.filter(r => ['guide','hod'].includes(r.role)).length
-    const pendingOnboarding = registrations.filter(r => !r.isOnboarded).length
-  const assignedStudents = registrations.filter(r => r.role === 'student' && r.isApproved).length
-
     return [
       {
         name: 'Total Students',
-        value: totalStudents,
+        value: stats.totalStudents,
         icon: GraduationCap,
         color: 'from-blue-600 to-purple-600'
       },
       {
   name: 'Total Guides',
-        value: totalFaculty,
+        value: stats.totalFaculty,
         icon: Shield,
         color: 'from-green-600 to-blue-600'
       },
       {
         name: 'Pending Onboarding',
-        value: pendingOnboarding,
+        value: stats.pendingOnboarding,
         icon: UserPlus,
         color: 'from-yellow-600 to-orange-600'
       },
       {
         name: 'Assigned Students',
-        value: assignedStudents,
+        value: stats.assignedStudents,
         icon: UserCheck,
         color: 'from-purple-600 to-pink-600'
       }
@@ -143,23 +136,13 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <motion.div
-          animate={{ 
-            rotate: 360,
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ 
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="relative"
-        >
-          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-white" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
           </div>
-        </motion.div>
+          <p className="text-foreground font-semibold text-lg">Loading Dashboard...</p>
+        </div>
       </div>
     )
   }
@@ -201,20 +184,8 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              Manage registrations and assignments ✨
+              Manage guide allocations and projects
             </motion.p>
-            <motion.div
-              className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 180, 360]
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
           </div>
         </div>
 
@@ -266,7 +237,8 @@ export default function AdminDashboard() {
           ))}
         </motion.div>
 
-        {/* Tabs */}
+        {/* Guide Allocation Section - Commented out for future use */}
+        {/* 
         <motion.div 
           className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-6 border border-white/20 shadow-xl"
           initial={{ opacity: 0, y: 20 }}
@@ -274,19 +246,6 @@ export default function AdminDashboard() {
           transition={{ delay: 0.6 }}
         >
           <div className="flex space-x-4 mb-6 flex-wrap">
-            <motion.button
-              onClick={() => setSelectedTab('registrations')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                selectedTab === 'registrations'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                  : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-white/20'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              Registrations
-            </motion.button>
             <motion.button
               onClick={() => { setSelectedTab('guide-summary'); fetchGuideSummary() }}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
@@ -302,137 +261,6 @@ export default function AdminDashboard() {
             </motion.button>
           </div>
 
-          {/* Content */}
-          {selectedTab === 'registrations' && (
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Recent Registrations
-              </h3>
-              
-              {registrations.length === 0 ? (
-                <motion.div 
-                  className="text-center py-16 backdrop-blur-lg bg-white/60 dark:bg-gray-800/60 rounded-2xl border border-white/20"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.7 }}
-                >
-                  <Users className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No registrations yet
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    New registrations will appear here
-                  </p>
-                </motion.div>
-              ) : (
-                <div className="space-y-4">
-                  {registrations.map((user, index) => (
-                    <motion.div
-                      key={user._id}
-                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ 
-                        duration: 0.5,
-                        delay: 0.7 + index * 0.1
-                      }}
-                      whileHover={{ 
-                        scale: 1.02,
-                        y: -5
-                      }}
-                      className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${
-                              user.role === 'student' 
-                                ? 'from-blue-500 to-purple-600' 
-                                : 'from-green-500 to-blue-600'
-                            } flex items-center justify-center`}>
-                              {user.role === 'student' ? <GraduationCap className="w-4 h-4 text-white" /> : <Shield className="w-4 h-4 text-white" />}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 dark:text-white">
-                                {user.academicInfo?.name || user.email}
-                              </h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {user.email} • {user.role}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {user.role === 'student' && (
-                            <div className="mt-3">
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Department: {user.department || 'Not set'} • 
-                                Semester: {user.academicInfo?.semester || 'Not set'}
-                              </p>
-                              {user.interests && user.interests.length > 0 && (
-                                <div className="mt-2">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Interests:</p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {user.interests.slice(0, 3).map((interest, idx) => (
-                                      <span key={idx} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-xs rounded-full">
-                                        {interest}
-                                      </span>
-                                    ))}
-                                    {user.interests.length > 3 && (
-                                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded-full">
-                                        +{user.interests.length - 3} more
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            user.isOnboarded 
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                              : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200'
-                          }`}>
-                            {user.isOnboarded ? 'Onboarded' : 'Pending'}
-                          </span>
-                          
-                          {user.role === 'student' && (
-                            <span className="text-sm text-gray-500">Student</span>
-                          )}
-
-                          {['guide','hod'].includes(user.role) && (
-                            <div className="flex gap-2">
-                              {user.approvalStatus !== 'approved' && (
-                                <motion.button
-                                  onClick={() => handleApproveUser(user._id, true)}
-                                  className="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  Approve
-                                </motion.button>
-                              )}
-                              {user.approvalStatus !== 'rejected' && (
-                                <motion.button
-                                  onClick={() => handleApproveUser(user._id, false)}
-                                  className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  Reject
-                                </motion.button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
           {selectedTab === 'guide-summary' && (
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Guide Allocation Summary</h3>
@@ -466,9 +294,8 @@ export default function AdminDashboard() {
               )}
             </div>
           )}
-
-          {/* Assignments section removed: counselor role not used in this app */}
         </motion.div>
+        */}
       </motion.div>
     </div>
   )

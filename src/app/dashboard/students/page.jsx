@@ -53,7 +53,7 @@ export default function StudentsPage() {
   const cspitExtras = ['ME','EC','CIVIL']
   const departments = institute === 'CSPIT' ? [...baseDepartments, ...cspitExtras] : baseDepartments
   const universities = ['CHARUSAT','Others']
-  const institutes = ['CSPIT','DEPSTAR','Others']
+  const institutes = ['DEPSTAR','Others']
   const semesters = ['1','2','3','4','5','6','7','8']
   // admissionYears removed
 

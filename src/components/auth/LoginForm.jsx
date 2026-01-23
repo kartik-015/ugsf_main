@@ -48,10 +48,27 @@ export default function LoginForm() {
             if (u) {
               if (!u.isOnboarded) {
                 window.location.href = '/onboarding'
-              } else if (u.role === 'admin') {
-                window.location.href = '/dashboard/admin'
               } else {
-                window.location.href = '/dashboard'
+                // Role-based dashboard redirection
+                switch (u.role) {
+                  case 'admin':
+                  case 'mainadmin':
+                    window.location.href = '/dashboard/admin'
+                    break
+                  case 'hod':
+                    window.location.href = '/dashboard' // HODs use main dashboard with their permissions
+                    break
+                  case 'principal':
+                    window.location.href = '/dashboard' // Principals have read-only access to main dashboard
+                    break
+                  case 'guide':
+                    window.location.href = '/dashboard'
+                    break
+                  case 'student':
+                  default:
+                    window.location.href = '/dashboard'
+                    break
+                }
               }
             } else {
               window.location.href = '/dashboard'
@@ -74,11 +91,11 @@ export default function LoginForm() {
       <input type="text" name="fake_user" className="hidden" autoComplete="off" />
       <input type="password" name="fake_pass" className="hidden" autoComplete="new-password" />
       <div>
-        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label htmlFor="login-email" className="block text-sm font-semibold text-foreground mb-2">
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
           <input
             id="login-email"
             type="email"
@@ -87,7 +104,7 @@ export default function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             onFocus={handleEmailFocus}
             placeholder="your@charusat.edu.in"
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-11 pr-4 py-3 border-2 border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
             required
             autoComplete="one-time-code"
           />
@@ -95,11 +112,11 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label htmlFor="login-password" className="block text-sm font-semibold text-foreground mb-2">
           Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
           <input
             id="login-password"
             type={showPassword ? 'text' : 'password'}
@@ -107,16 +124,16 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-11 pr-12 py-3 border-2 border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
             required
             autoComplete="new-password"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -124,12 +141,12 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-lg font-semibold hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-primary-600"
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
       </button>
 
-      <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-center text-xs font-medium text-muted-foreground">
         <p>Use your college email to access the portal</p>
       </div>
     </form>

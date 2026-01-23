@@ -35,7 +35,6 @@ export default function OnboardingPage() {
     institute: '',
     admissionYear: new Date().getFullYear(),
     semester: 1,
-    section: 'A',
     rollNumber: '',
     interests: [],
     experience: '',
@@ -60,7 +59,6 @@ export default function OnboardingPage() {
   const institutes = ['CSPIT','DEPSTAR','Others']
 
   const batches = ['A', 'B', 'C', 'D']
-  const sections = ['1', '2', '3', '4']
   const interests = [
     'Web Development', 'Mobile Development', 'Data Science', 'AI/ML',
     'Cybersecurity', 'Cloud Computing', 'DevOps', 'UI/UX Design',
@@ -482,23 +480,6 @@ export default function OnboardingPage() {
                           {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
                             <option key={sem} value={sem} className="text-gray-900 bg-white">
                               Semester {sem}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Section *
-                        </label>
-                        <select
-                          value={formData.section}
-                          onChange={(e) => handleInputChange('section', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-gray-100"
-                        >
-                          <option value="" className="text-gray-900 bg-white">Select Section</option>
-                          {sections.map((section) => (
-                            <option key={section} value={section} className="text-gray-900 bg-white">
-                              Section {section}
                             </option>
                           ))}
                         </select>
