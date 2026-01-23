@@ -15,8 +15,8 @@ export default function StudentsPage() {
   const [semester, setSemester] = useState('')
   // Removed admissionYear per new requirements
   const [university, setUniversity] = useState('')
-  const [institute, setInstitute] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  // Institute is always DEPSTAR for this portal
 
   const FIELD_OPTIONS = [
     { key: 'roll', label: 'Roll Number' },
@@ -25,9 +25,8 @@ export default function StudentsPage() {
     { key: 'semester', label: 'Semester' },
     { key: 'department', label: 'Department' },
     { key: 'university', label: 'University' },
-    { key: 'institute', label: 'Institute' },
   ]
-  const [visibleFields, setVisibleFields] = useState(['roll','semester','department','university','institute'])
+  const [visibleFields, setVisibleFields] = useState(['roll','semester','department','university'])
 
   const toggleExclusive = (currentValue, setter, value) => {
     setter(currentValue === value ? '' : value)
@@ -41,24 +40,21 @@ export default function StudentsPage() {
       if (semester) params.append('semester', semester)
   if (searchTerm) params.append('search', searchTerm)
   if (university) params.append('university', university)
-  if (institute) params.append('institute', institute)
+  params.append('institute', 'DEPSTAR') // Always filter by DEPSTAR
       const response = await fetch(`/api/students?${params.toString()}`)
       if (response.ok) {
         const data = await response.json(); setStudents(data.students || [])
       } else toast.error('Failed to fetch students')
     } catch { toast.error('Error fetching students') } finally { setLoading(false) }
-  }, [searchTerm, department, semester, university, institute])
+  }, [searchTerm, department, semester, university])
 
-  const baseDepartments = ['CSE','CE','IT']
-  const cspitExtras = ['ME','EC','CIVIL']
-  const departments = institute === 'CSPIT' ? [...baseDepartments, ...cspitExtras] : baseDepartments
+  const departments = ['CSE','CE','IT'] // Only DEPSTAR departments
   const universities = ['CHARUSAT','Others']
-  const institutes = ['DEPSTAR','Others']
   const semesters = ['1','2','3','4','5','6','7','8']
   // admissionYears removed
 
   const submitHandler = async (e) => { e.preventDefault(); setLoading(true); await fetchStudents(); setSubmitted(true) }
-  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setUniversity(''); setInstitute(''); setStudents([]); setSubmitted(false) }
+  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setUniversity(''); setStudents([]); setSubmitted(false) }
 
   const exportExcel = async () => {
     try {
@@ -79,10 +75,9 @@ export default function StudentsPage() {
         </div>
         <form onSubmit={submitHandler} className='card p-6 mb-6 space-y-6'>
           <div className={`${session?.user?.role==='admin' ? 'space-y-6' : 'space-y-6'}`}>
-            {/* Row 1: University, Institute, Department */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            {/* Row 1: University and Department */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               <div className='w-full'><FilterGroup title='UNIVERSITY' options={universities} value={university} onSelect={v=>toggleExclusive(university,setUniversity,v)} /></div>
-              <div className='w-full'><FilterGroup title='INSTITUTE' options={institutes} value={institute} onSelect={v=>toggleExclusive(institute,setInstitute,v)} /></div>
               <div className='w-full'><FilterGroup title='DEPARTMENT' options={departments} value={department} onSelect={v=>toggleExclusive(department,setDepartment,v)} /></div>
             </div>
             

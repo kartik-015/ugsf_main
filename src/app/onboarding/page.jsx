@@ -32,7 +32,7 @@ export default function OnboardingPage() {
     address: '',
     department: '',
     university: '',
-    institute: '',
+    institute: 'DEPSTAR', // Default to DEPSTAR for this portal
     admissionYear: new Date().getFullYear(),
     semester: 1,
     rollNumber: '',
@@ -44,19 +44,12 @@ export default function OnboardingPage() {
   })
   const role = session?.user?.role
 
-  const baseDepartments = [
+  const departments = [ // Only DEPSTAR departments
     { code: 'CSE', name: 'Computer Science and Engineering' },
     { code: 'CE', name: 'Computer Engineering' },
     { code: 'IT', name: 'Information Technology' }
   ]
-  const cspitExtras = [
-    { code: 'ME', name: 'Mechanical Engineering' },
-    { code: 'EC', name: 'Electronics & Communication' },
-    { code: 'CIVIL', name: 'Civil Engineering' }
-  ]
-  const departments = formData.institute === 'CSPIT' ? [...baseDepartments, ...cspitExtras] : baseDepartments
   const universities = ['CHARUSAT','Others']
-  const institutes = ['CSPIT','DEPSTAR','Others']
 
   const batches = ['A', 'B', 'C', 'D']
   const interests = [
@@ -528,14 +521,10 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Institute *
                         </label>
-                        <select
-                          value={formData.institute}
-                          onChange={(e) => handleInputChange('institute', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                        >
-                          <option value="">Select Institute</option>
-                          {institutes.map(i=> <option key={i} value={i}>{i}</option>)}
-                        </select>
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 backdrop-blur-sm text-gray-700 dark:text-gray-300">
+                          DEPSTAR
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Institute is fixed to DEPSTAR for this portal</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

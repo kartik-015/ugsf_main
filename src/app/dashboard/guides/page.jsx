@@ -16,7 +16,7 @@ export default function GuidesPage(){
   const [role, setRole] = useState('')
   const [search, setSearch] = useState('')
   const [university, setUniversity] = useState('')
-  const [institute, setInstitute] = useState('')
+  // Institute is always DEPSTAR
 
   const FIELD_OPTIONS = [
     { key: 'department', label: 'Department' },
@@ -24,17 +24,13 @@ export default function GuidesPage(){
     { key: 'specialization', label: 'Specialization' },
     { key: 'education', label: 'Education' },
     { key: 'email', label: 'Email' },
-    { key: 'university', label: 'University' },
-    { key: 'institute', label: 'Institute' }
+    { key: 'university', label: 'University' }
   ]
-  const [visibleFields, setVisibleFields] = useState(['department','role','email','university','institute'])
+  const [visibleFields, setVisibleFields] = useState(['department','role','email','university'])
 
-  const baseDepartments = ['CSE','CE','IT']
-  //const cspitExtras = ['ME','EC','CIVIL']
-  const departments = institute === 'CSPIT' ? [...baseDepartments, ...cspitExtras] : baseDepartments
+  const departments = ['CSE','CE','IT'] // Only DEPSTAR departments
   const roleOptions = ['guide','hod','admin','mainadmin']
   const universities = ['CHARUSAT','Others']
-  const institutes = ['DEPSTAR','Others']
   const toggleExclusive = (current,setter,val)=> setter(current===val?'':val)
   const toggleField = key => setVisibleFields(prev => prev.includes(key)? prev.filter(k=>k!==key):[...prev,key])
 
@@ -44,7 +40,7 @@ export default function GuidesPage(){
   if (role) qs.push(`role=${role}`)
   if (search) qs.push(`search=${encodeURIComponent(search)}`)
   if (university) qs.push(`university=${university}`)
-  if (institute) qs.push(`institute=${institute}`)
+  qs.push(`institute=DEPSTAR`) // Always filter by DEPSTAR
     return qs.length?'?'+qs.join('&'):''
   }
   const fetchGuides = async () => {
@@ -65,7 +61,7 @@ export default function GuidesPage(){
     } catch { toast.error('Export failed') }
   }
   const submit = e => { e.preventDefault(); fetchGuides() }
-  const reset = () => { setDept(''); setRole(''); setSearch(''); setUniversity(''); setInstitute(''); setResults([]); setSubmitted(false) }
+  const reset = () => { setDept(''); setRole(''); setSearch(''); setUniversity(''); setResults([]); setSubmitted(false) }
   if(!session || !isAdmin) return null
 
   return (
@@ -77,13 +73,10 @@ export default function GuidesPage(){
         </div>
         <form onSubmit={submit} className='card p-6 mb-6 space-y-6'>
           <div className={`${isAdmin ? 'space-y-6' : 'space-y-6'}`}>
-            {/* Row 1: University, Institute, Department */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            {/* Row 1: University and Department */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               <div className='w-full'>
                 <FilterGroup title='UNIVERSITY' options={universities} value={university} onSelect={v=>toggleExclusive(university,setUniversity,v)} />
-              </div>
-              <div className='w-full'>
-                <FilterGroup title='INSTITUTE' options={institutes} value={institute} onSelect={v=>toggleExclusive(institute,setInstitute,v)} />
               </div>
               <div className='w-full'>
                 <FilterGroup title='DEPARTMENT' options={departments} value={dept} onSelect={v=>toggleExclusive(dept,setDept,v)} />
