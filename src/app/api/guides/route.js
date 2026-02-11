@@ -9,6 +9,9 @@ import { ROLES, ADMIN_ROLES } from '@/lib/roles'
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions)
+    
+    console.log('🔐 Guides API called by:', session?.user?.email, 'Role:', session?.user?.role)
+    
     if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
     // Access: admin management + hod
@@ -26,15 +29,19 @@ export async function GET(request) {
 
     const query = {}
     if (role) {
+      // If specific role requested, use it
       query.role = role
     } else {
-      // include guides + hod by default (like legacy faculty listing)
+      // By default, show both guides AND HODs
       query.role = { $in: [ROLES.GUIDE, ROLES.HOD] }
     }
     if (department) query.department = department
 
     if (university) query.university = university
     if (institute) query.institute = institute
+    
+    console.log('📊 Guides API Query:', JSON.stringify(query, null, 2))
+    console.log('🔍 Search params:', { department, role, search, university, institute })
 
     if (search) {
       query.$or = [
@@ -51,6 +58,9 @@ export async function GET(request) {
     const guides = await User.find(query)
       .select('email academicInfo department role specialization researchAreas interests isApproved university institute isActive')
       .sort({ department: 1, 'academicInfo.name': 1 })
+    
+    console.log(`✅ Found ${guides.length} guides/HODs`)
+    
     return NextResponse.json({ guides })
   } catch (error) {
     console.error('Guides GET error:', error)

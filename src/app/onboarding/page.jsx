@@ -5,6 +5,7 @@ import { parseStudentEmail } from '@/lib/validation'
 import { useSession } from 'next-auth/react'
 import { validatePhoneRuntime, validateNameRuntime } from '@/lib/clientValidation'
 import { useRouter } from 'next/navigation'
+import { calculateCurrentSemester, getAcademicYear } from '@/lib/semester'
 import { motion } from 'framer-motion'
 import { 
   User, 
@@ -31,7 +32,7 @@ export default function OnboardingPage() {
     phoneNumber: '',
     address: '',
     department: '',
-    university: '',
+    university: 'CHARUSAT',
     institute: 'DEPSTAR', // Default to DEPSTAR for this portal
     admissionYear: new Date().getFullYear(),
     semester: 1,
@@ -49,7 +50,6 @@ export default function OnboardingPage() {
     { code: 'CE', name: 'Computer Engineering' },
     { code: 'IT', name: 'Information Technology' }
   ]
-  const universities = ['CHARUSAT','Others']
 
   const batches = ['A', 'B', 'C', 'D']
   const interests = [
@@ -199,12 +199,14 @@ export default function OnboardingPage() {
     if(role==='student' && session?.user?.email){
       const parsed = parseStudentEmail(session.user.email)
       if(parsed){
+        const autoSemester = calculateCurrentSemester(parsed.admissionYear)
         setFormData(prev=>({
           ...prev,
           admissionYear: parsed.admissionYear,
           department: parsed.department,
           institute: parsed.institute,
-          rollNumber: parsed.rollNumber
+          rollNumber: parsed.rollNumber,
+          semester: autoSemester  // Auto-calculate semester
         }))
       }
     }
@@ -464,18 +466,11 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Semester *
                         </label>
-                        <select
-                          value={formData.semester}
-                          onChange={(e) => handleInputChange('semester', parseInt(e.target.value))}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                        >
-                          <option value="" className="text-gray-900 bg-white">Select Semester</option>
-                          {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                            <option key={sem} value={sem} className="text-gray-900 bg-white">
-                              Semester {sem}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                          <span>Semester {formData.semester} ({getAcademicYear(formData.admissionYear)})</span>
+                          <span className="text-[10px] uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2 py-0.5 rounded">Auto</span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Automatically calculated based on admission year</p>
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -508,14 +503,10 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           University *
                         </label>
-                        <select
-                          value={formData.university}
-                          onChange={(e) => handleInputChange('university', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                        >
-                          <option value="">Select University</option>
-                          {universities.map(u=> <option key={u} value={u}>{u}</option>)}
-                        </select>
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                          <span>CHARUSAT</span>
+                          <span className="text-[10px] uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2 py-0.5 rounded">Fixed</span>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

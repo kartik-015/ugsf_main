@@ -30,6 +30,19 @@ const authOptions = {
           throw new Error('Email not verified')
         }
 
+        // Block sign-in if not approved (pending or rejected)
+        if (user.approvalStatus === 'pending') {
+          throw new Error('Your registration is pending admin approval. Please wait for approval.')
+        }
+        
+        if (user.approvalStatus === 'rejected') {
+          throw new Error('Your registration has been rejected. Please contact admin.')
+        }
+
+        if (!user.isApproved || !user.isActive) {
+          throw new Error('Your account is not active. Please contact admin.')
+        }
+
         const isValidPassword = await user.comparePassword(credentials.password)
         
         if (!isValidPassword) {

@@ -208,7 +208,7 @@ function generateStudentsData() {
           password: 'Student@123', // Default password for all test students
           role: 'student',
           department: dept.name,
-          university: 'Charotar University of Science and Technology',
+          university: 'CHARUSAT',
           institute: dept.institute,
           admissionYear: batch.admissionYear,
           academicInfo: {

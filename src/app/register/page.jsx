@@ -113,13 +113,13 @@ export default function RegisterPage() {
       if (response.ok) {
         const data = await response.json()
         if (data.verificationRequired) {
-          toast.success('Registration successful! Please check your email for the OTP.')
+          toast.success('Registration submitted! Check your email for the OTP to verify your account.')
           setShowOtpStep(true)
           setPendingEmail(formData.email)
           setResendCooldown(60000) // 60s initial cooldown
         } else {
-          toast.success('Registration successful!')
-          router.push('/onboarding')
+          toast.success('Registration submitted! Your application will be reviewed by admin.')
+          router.push('/')
         }
         return
       } else {
@@ -149,7 +149,7 @@ export default function RegisterPage() {
       })
       const data = await response.json()
       if (response.ok) {
-        toast.success('Email verified! You can now log in.')
+        toast.success('Email verified! Your application is pending admin approval. You will be notified once approved.')
         setShowOtpStep(false)
         setPendingEmail('')
         setOtp('')

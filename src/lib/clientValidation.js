@@ -4,11 +4,9 @@ export function deriveFromStudentEmail(email){
   const m = email.match(studentEmailPattern)
   if(!m) return null
   const yy = m[1]; const dep = m[2].toUpperCase()
-  const depMapCSPIT = { CS:'CSE', CE:'CE', IT:'IT', ME:'ME', EC:'EC', CIE:'CIVIL' }
-  const depMapDEPSTAR = { DCS:'CSE', DCE:'CE', DIT:'IT' }
-  let institute = 'CSPIT'
-  let department = depMapCSPIT[dep]
-  if(!department){ department = depMapDEPSTAR[dep]; if(department) institute='DEPSTAR' }
+  const deptMap = { CS:'CSE', CE:'CE', IT:'IT', ME:'ME', EC:'EC', CIE:'CIVIL', DCS:'CSE', DCE:'CE', DIT:'IT' }
+  let institute = 'DEPSTAR'
+  let department = deptMap[dep]
   if(!department) return null
   return { admissionYear: 2000 + parseInt(yy,10), department, institute, rollNumber: (yy+dep+m[0].slice(dep.length+yy.length, dep.length+yy.length+3)).toUpperCase() }
 }

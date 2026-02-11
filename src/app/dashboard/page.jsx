@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   Users, 
@@ -27,10 +28,19 @@ import {
 import toast from 'react-hot-toast'
 
 export default function DashboardPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [stats, setStats] = useState({})
   const [recentActivities, setRecentActivities] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // Immediate redirect for admins - no rendering
+  useEffect(() => {
+    if (status === 'loading') return
+    if (session?.user?.role === 'admin') {
+      router.replace('/dashboard/admin')
+    }
+  }, [session, status, router])
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -196,7 +206,12 @@ export default function DashboardPage() {
     return actions
   }
 
-  if (loading) {
+  // Don't render anything for admins during redirect
+  if (session?.user?.role === 'admin') {
+    return null
+  }
+
+  if (loading || status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex items-center space-x-3">

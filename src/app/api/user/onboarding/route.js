@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 import { ROLES } from '@/lib/roles'
 import { validateName, validatePhone, validateRollNumber, parseStudentEmail, validateSemicolonList } from '@/lib/validation'
+import { calculateCurrentSemester } from '@/lib/semester'
 
 export async function POST(request) {
   try {
@@ -56,8 +57,8 @@ export async function POST(request) {
       if(!parsed) {
         return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Student email not in required format'}}, { status:400 })
       }
-      if(!semester || !batch) {
-        return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Semester and batch required' } }, { status:400 })
+      if(!batch) {
+        return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Batch required' } }, { status:400 })
       }
     } else if (isStaff) {
       if (!specialization || !education) {
@@ -79,8 +80,13 @@ export async function POST(request) {
     if (typeof experience === 'string' && /[,|]/.test(experience)) {
       return NextResponse.json({ ok:false, error:{ code:'BAD_REQUEST', message:'Use semicolons (;) as separator in experience field if listing multiple entries' } }, { status:400 })
     }
-    // Ensure semester is a number for students
-    const semesterNumber = isStudent ? parseInt(semester, 10) : undefined
+    // Auto-calculate semester for students based on admission year
+    let semesterNumber
+    if (isStudent && parsed) {
+      semesterNumber = calculateCurrentSemester(parsed.admissionYear)
+    } else {
+      semesterNumber = undefined
+    }
     
     const updateDoc = {
       academicInfo: {
@@ -92,7 +98,7 @@ export async function POST(request) {
         rollNumber: isStudent ? parsed.rollNumber : undefined
       },
       department: isStudent ? parsed.department : department,
-      university: isStudent ? (university || 'CHARUSAT') : university,
+      university: 'CHARUSAT', // Fixed to CHARUSAT for all users
       institute: isStudent ? parsed.institute : institute,
       admissionYear: isStudent ? parsed.admissionYear : admissionYear,
       domain: domain || undefined,

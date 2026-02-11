@@ -9,8 +9,7 @@ export const ROLL_REGEX = /^\d{2}[A-Z]{2,3}\d{3}$/
 export const STUDENT_EMAIL_REGEX = /^(\d{2})([a-zA-Z]{2,3})(\d{3})@charusat\.edu\.in$/i
 
 // Department / Institute resolution maps
-const CSPIT_MAP = { CS:'CSE', CE:'CE', IT:'IT', ME:'ME', EC:'EC', CIE:'CIVIL' }
-const DEPSTAR_MAP = { DCS:'CSE', DCE:'CE', DIT:'IT' }
+const DEPT_MAP = { CS:'CSE', CE:'CE', IT:'IT', ME:'ME', EC:'EC', CIE:'CIVIL', DCS:'CSE', DCE:'CE', DIT:'IT' }
 
 export function parseStudentEmail(email){
   if(!email) return null
@@ -20,15 +19,9 @@ export function parseStudentEmail(email){
   const depUpper = depRaw.toUpperCase()
   
   // Determine institute & canonical department
-  // Check DEPSTAR first for specific codes like DIT
-  let institute, department
-  if (DEPSTAR_MAP[depUpper]) {
-    institute = 'DEPSTAR'
-    department = DEPSTAR_MAP[depUpper]
-  } else if (CSPIT_MAP[depUpper]) {
-    institute = 'CSPIT'
-    department = CSPIT_MAP[depUpper]
-  } else {
+  let institute = 'DEPSTAR'
+  let department = DEPT_MAP[depUpper]
+  if (!department) {
     return null // Unknown department code
   }
   

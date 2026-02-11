@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Users, 
   BookOpen, 
-  BarChart3, 
   Calendar, 
   Settings, 
   LogOut, 
@@ -15,9 +14,10 @@ import {
   X, 
   Home,
   User,
-  Shield,
   Bell,
-  Search
+  Search,
+  Check,
+  ExternalLink
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import toast from 'react-hot-toast'
@@ -40,7 +40,10 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const notifRef = useRef(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -65,26 +68,27 @@ export default function DashboardLayout({ children }) {
       router.push('/onboarding')
       return
     }
+  }, [session, status, router, pathname])
 
-    // If on /dashboard, redirect to role-specific dashboard
-    if (pathname === '/dashboard') {
-      if (session.user.role === 'admin') {
-        router.push('/dashboard/admin')
-      }
-      // other roles stay on /dashboard main page (shared view)
+  // Separate effect for admin redirect to avoid issues
+  useEffect(() => {
+    if (status === 'loading' || !session) return
+    if (pathname === '/dashboard' && session.user.role === 'admin') {
+      router.replace('/dashboard/admin')
     }
   }, [session, status, router, pathname])
 
-  // Poll notifications for admin/hod
+  // Poll notifications for all roles
   useEffect(() => {
     let timer
     const fetchNotifications = async () => {
-      if (!session || !['admin','hod'].includes(session.user.role)) return
+      if (!session) return
       try {
         const res = await fetch('/api/notifications')
         if (res.ok) {
           const data = await res.json()
-            setNotifications(data.notifications || [])
+          setNotifications(data.notifications || [])
+          setUnreadCount(data.unreadCount || 0)
         }
       } catch {}
       timer = setTimeout(fetchNotifications, 15000)
@@ -92,6 +96,41 @@ export default function DashboardLayout({ children }) {
     fetchNotifications()
     return () => { if (timer) clearTimeout(timer) }
   }, [session])
+
+  // Click-outside handler for notification panel
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const markAllRead = async () => {
+    try {
+      await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markAllRead: true }) })
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+      setUnreadCount(0)
+    } catch {}
+  }
+
+  const markAsRead = async (notificationId) => {
+    try {
+      await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notificationId }) })
+      setNotifications(prev => prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch {}
+  }
+
+  const handleNotificationClick = (notif) => {
+    if (!notif.isRead) markAsRead(notif._id)
+    if (notif.link) {
+      router.push(notif.link)
+      setShowNotifications(false)
+    }
+  }
 
   const handleSignOut = async () => {
     try {
@@ -120,6 +159,11 @@ export default function DashboardLayout({ children }) {
   }
 
   if (!session) {
+    return null
+  }
+
+  // Don't render layout during admin redirect
+  if (pathname === '/dashboard' && session.user.role === 'admin') {
     return null
   }
 
@@ -248,14 +292,71 @@ export default function DashboardLayout({ children }) {
             {/* User menu */}
             <div className="flex items-center space-x-4">
               {/* Notifications */}
-              <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
-                <Bell className="w-5 h-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center border-2 border-card">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
+              <div className="relative" ref={notifRef}>
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center border-2 border-card animate-pulse">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification Dropdown Panel */}
+                <AnimatePresence>
+                  {showNotifications && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-96 max-h-[70vh] bg-card border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5">
+                        <h3 className="font-bold text-foreground">Notifications</h3>
+                        <div className="flex items-center gap-2">
+                          {unreadCount > 0 && (
+                            <button onClick={markAllRead} className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Mark all read
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="overflow-y-auto max-h-[60vh] divide-y divide-border">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                            No notifications yet
+                          </div>
+                        ) : (
+                          notifications.slice(0, 30).map(notif => (
+                            <div
+                              key={notif._id}
+                              onClick={() => handleNotificationClick(notif)}
+                              className={`px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${!notif.isRead ? 'bg-primary/5 border-l-4 border-l-primary' : ''}`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm ${!notif.isRead ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                                    {notif.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
+                                  <p className="text-xs text-muted-foreground/60 mt-1">
+                                    {new Date(notif.createdAt).toLocaleDateString()} {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                                {notif.link && <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0 mt-1" />}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* User dropdown */}
               <div className="relative">

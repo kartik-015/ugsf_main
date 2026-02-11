@@ -15,6 +15,8 @@ export async function GET(request) {
   try {
     const session = await getServerSession(authOptions)
     
+    console.log('🔐 Students API called by:', session?.user?.email, 'Role:', session?.user?.role)
+    
     if (!session) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -37,26 +39,25 @@ export async function GET(request) {
 
     let query = { role: 'student', isActive: true }
 
-    // For HOD: allow filtering by any department if selected, otherwise default to their own
-  if (session.user.role === ROLES.ADMIN && session.user.department) {
-      if (searchParams.has('department')) {
-        // If the filter is present (even if empty), do not restrict department
-        if (department) {
-          query.department = department
-        }
-        // else: no department filter, show all
-      } else {
-        // If filter is not present at all, default to HOD's department
+    // Department filtering logic
+    if (session.user.role === ROLES.HOD && session.user.department) {
+      // HOD: if department filter provided, use it; otherwise default to HOD's department
+      if (searchParams.has('department') && department) {
+        query.department = department
+      } else if (!searchParams.has('department')) {
+        // No filter provided, default to HOD's department
         query.department = session.user.department
       }
-  } else if (session.user.role === ROLES.GUIDE) {
-  // Guide: if department filter provided, use it; otherwise default to guide's department
-      if (searchParams.has('department')) {
-        if (department) query.department = department
-      } else {
+      // If department filter is present but empty, show all departments
+    } else if (session.user.role === ROLES.GUIDE && session.user.department) {
+      // Guide: if department filter provided, use it; otherwise default to guide's department
+      if (searchParams.has('department') && department) {
+        query.department = department
+      } else if (!searchParams.has('department')) {
         query.department = session.user.department
       }
     } else if (department) {
+      // For admins, principals, and others: only filter if department is explicitly provided
       query.department = department
     }
 
@@ -89,9 +90,15 @@ export async function GET(request) {
     if (university) query.university = university
     if (institute) query.institute = institute
 
+    // Debug logging
+    console.log('📊 Students API Query:', JSON.stringify(query, null, 2))
+    console.log('🔍 Search params:', { search, department, semester, university, institute })
+
     const students = await User.find(query)
       .select('-password')
       .sort({ 'academicInfo.rollNumber': 1, 'academicInfo.name': 1 })
+
+    console.log(`✅ Found ${students.length} students`)
 
     // For admin, mainadmin, principal, hod include project membership summary
   if ([ROLES.ADMIN, ROLES.MAIN_ADMIN, ROLES.PRINCIPAL, ROLES.HOD].includes(session.user.role)) {

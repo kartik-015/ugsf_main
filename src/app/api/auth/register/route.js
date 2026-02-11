@@ -5,6 +5,7 @@ import { parseStudentEmail, validateStudentEmail } from '@/lib/validation'
 import { createOTPRecord } from '@/lib/otp'
 import { sendEmail } from '@/lib/mailer'
 import { ROLES } from '@/lib/roles'
+import { calculateCurrentSemester } from '@/lib/semester'
 
 export async function POST(request) {
   try {
@@ -49,7 +50,7 @@ export async function POST(request) {
       )
     }
 
-    let department, admissionYear, institute, derivedRoll
+    let department, admissionYear, institute, derivedRoll, autoSemester
     if(role === ROLES.STUDENT) {
       const parsed = parseStudentEmail(email)
       if(!parsed) {
@@ -59,10 +60,11 @@ export async function POST(request) {
       department = parsed.department
       institute = parsed.institute
       derivedRoll = parsed.rollNumber
+      // Auto-calculate semester based on admission year
+      autoSemester = calculateCurrentSemester(admissionYear)
     }
 
-    // Create new user
-  const requiresApproval = [ROLES.GUIDE, ROLES.ADMIN].includes(role)
+    // Create new user - ALL registrations require admin approval
   const { otp, hash, expires } = createOTPRecord()
     const user = new User({
       email: email.toLowerCase(),
@@ -71,12 +73,13 @@ export async function POST(request) {
   department: department || undefined,
   admissionYear: admissionYear || undefined,
   institute: institute || undefined,
-  academicInfo: derivedRoll ? { rollNumber: derivedRoll } : undefined,
+  university: 'CHARUSAT',
+  academicInfo: derivedRoll ? { rollNumber: derivedRoll, semester: autoSemester } : undefined,
       isOnboarded: false,
       isRegistered: true,
-      isApproved: !requiresApproval,
-      approvalStatus: requiresApproval ? 'pending' : 'approved',
-      isActive: !requiresApproval,
+      isApproved: false,  // All require approval
+      approvalStatus: 'pending',  // All start as pending
+      isActive: false,  // Inactive until approved
       emailVerificationOTP: hash,
       emailVerificationExpires: new Date(expires),
       isEmailVerified: false
@@ -99,11 +102,13 @@ export async function POST(request) {
       success: true,
       onboardingRequired: true,
       verificationRequired: true,
-      message: 'Registration successful. OTP sent to email.',
+      approvalRequired: true,
+      message: 'Registration successful! Your application has been submitted to the admin for approval. You will be notified once approved.',
       user: {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        approvalStatus: 'pending'
       }
     })
 

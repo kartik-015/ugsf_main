@@ -9,7 +9,7 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/student-portal'
+const MONGODB_URI = 'mongodb://localhost:27017/ugsf'  // Force ugsf database
 
 // Faculty names database
 const hodNames = [
@@ -137,7 +137,7 @@ async function setupFaculty() {
       password: hashedPassword,
       role: 'principal',
       institute: 'DEPSTAR',
-      university: 'Charotar University of Science and Technology',
+      university: 'CHARUSAT',
       academicInfo: {
         name: principalName,
         phoneNumber: getRandomPhone(),
@@ -168,7 +168,7 @@ async function setupFaculty() {
         role: 'hod',
         department: hod.dept,
         institute: 'DEPSTAR',
-        university: 'Charotar University of Science and Technology',
+        university: 'CHARUSAT',
         academicInfo: {
           name: hod.name,
           phoneNumber: getRandomPhone(),
@@ -204,7 +204,7 @@ async function setupFaculty() {
           role: 'guide',
           department: dept,
           institute: 'DEPSTAR',
-          university: 'Charotar University of Science and Technology',
+          university: 'CHARUSAT',
           academicInfo: {
             name: name,
             phoneNumber: getRandomPhone(),

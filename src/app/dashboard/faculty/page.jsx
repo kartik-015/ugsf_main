@@ -17,12 +17,11 @@ export default function GuidesDirectoryPage(){
   const isAdmin = ['admin','mainadmin'].includes(session?.user?.role)
 
   const instituteDepartments = {
-    'DEPSTAR': ['CSE','CE','IT'],
-    'CSPIT': ['CSE','CE','IT','EC','ME'],
+    'DEPSTAR': ['CSE','CE','IT','EC','ME','CIVIL'],
     'GCET': ['CSE','CE','IT','EC','ME','CH'],
     'SCHOOL OF BUSINESS': ['MBA','BBA'],
   }
-  const institutes = ['DEPSTAR','CSPIT','GCET','SCHOOL OF BUSINESS']
+  const institutes = ['DEPSTAR','GCET','SCHOOL OF BUSINESS']
 
 
   const handleSubmit = async (e) => {

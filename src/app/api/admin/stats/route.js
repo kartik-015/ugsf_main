@@ -34,14 +34,17 @@ export async function GET() {
     console.log('Database connected for admin stats')
 
     // Get actual counts from database - count only guides (not HODs)
-    const [totalStudents, totalGuides, pendingOnboarding, projectGroups] = await Promise.all([
+    const [totalStudents, totalGuides, pendingOnboarding, pendingRegistrations, projectGroups, approvedProjects, inProgressProjects] = await Promise.all([
       User.countDocuments({ role: 'student' }),
       User.countDocuments({ role: 'guide' }),
       User.countDocuments({ isOnboarded: false }),
-      ProjectGroup.find({}).populate('members', '_id').catch(() => [])
+      User.countDocuments({ approvalStatus: 'pending' }),
+      ProjectGroup.find({}).populate('members', '_id').catch(() => []),
+      ProjectGroup.countDocuments({ hodApproval: 'approved' }).catch(() => 0),
+      ProjectGroup.countDocuments({ status: 'in-progress' }).catch(() => 0),
     ])
 
-    console.log('Counts:', { totalStudents, totalGuides, pendingOnboarding, projectGroupsCount: projectGroups.length })
+    console.log('Counts:', { totalStudents, totalGuides, pendingOnboarding, pendingRegistrations, projectGroupsCount: projectGroups.length })
 
     // Count unique students who are assigned to project groups
     const assignedStudentIds = new Set()
@@ -58,9 +61,13 @@ export async function GET() {
 
     const stats = {
       totalStudents,
-      totalFaculty: totalGuides,  // Return as totalFaculty for backward compatibility
+      totalFaculty: totalGuides,
       pendingOnboarding,
-      assignedStudents
+      pendingRegistrations,
+      assignedStudents,
+      totalProjects: projectGroups.length,
+      approvedProjects,
+      inProgressProjects
     }
     
     console.log('Returning stats:', stats)
