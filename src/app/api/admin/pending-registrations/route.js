@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import { ROLES } from '@/lib/roles'
+
+export const dynamic = 'force-dynamic'
 
 // Get pending registrations (for admin only)
 export async function GET(request) {

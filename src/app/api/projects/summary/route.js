@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import ProjectGroup from '@/models/ProjectGroup'
 import User from '@/models/User'
 import { ROLES } from '@/lib/roles'
+
+export const dynamic = 'force-dynamic'
 
 // Guide allocation summary per department (HOD/Admin/Main Admin)
 export async function GET(request){

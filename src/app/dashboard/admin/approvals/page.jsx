@@ -12,7 +12,7 @@ export default function ApprovalsPage() {
   const router = useRouter()
   const [refreshKey, setRefreshKey] = useState(0)
 
-  if (!session || session.user.role !== 'admin') {
+  if (!session || !['admin', 'mainadmin'].includes(session.user.role)) {
     return null
   }
 

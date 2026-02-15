@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import { ROLES } from '@/lib/roles'
 import { validateName, validatePhone, validateRollNumber, parseStudentEmail, validateSemicolonList } from '@/lib/validation'
 import { calculateCurrentSemester } from '@/lib/semester'
@@ -38,7 +38,7 @@ export async function POST(request) {
     // Role-based validation
     const role = session.user.role
   const isStudent = role === ROLES.STUDENT
-  const isStaff = [ROLES.GUIDE, ROLES.ADMIN, ROLES.MAIN_ADMIN].includes(role)
+  const isStaff = [ROLES.GUIDE, ROLES.ADMIN, ROLES.MAIN_ADMIN, ROLES.HOD, ROLES.PROJECT_COORDINATOR].includes(role)
     const missingCommon = !name || !phoneNumber || !address || !department || !university || !institute
     if (missingCommon) {
       return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Name, phone number, address and department are required' } }, { status: 400 })

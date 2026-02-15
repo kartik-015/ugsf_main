@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { Users, Search, Upload, FileSpreadsheet, AlertCircle, Download } from 'lucide-react'
@@ -8,38 +8,69 @@ import toast from 'react-hot-toast'
 
 export default function StudentsPage() {
   const { data: session } = useSession()
-  const isAdmin = ['admin','mainadmin','principal','hod'].includes(session?.user?.role)
-
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
   const [department, setDepartment] = useState('')
   const [semester, setSemester] = useState('')
-  const [university, setUniversity] = useState('CHARUSAT')
   const [submitted, setSubmitted] = useState(false)
+  const searchRef = useRef(null)
+  const searchTimeout = useRef(null)
 
-  const FIELD_OPTIONS = [
-    { key: 'roll', label: 'Roll Number' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'address', label: 'Address' },
-    { key: 'semester', label: 'Semester' },
-    { key: 'department', label: 'Department' },
-    { key: 'university', label: 'University' },
-    { key: 'institute', label: 'Institute' },
-  ]
-  const [visibleFields, setVisibleFields] = useState(['roll','semester','department','university'])
+  // Import state
   const [showImport, setShowImport] = useState(false)
   const [importMode, setImportMode] = useState('append')
   const [importFile, setImportFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+
+  const FIELD_OPTIONS = [
+    { key: 'roll', label: 'ID Number' },
+    { key: 'semester', label: 'Semester' },
+    { key: 'interests', label: 'Domain Interest' },
+    { key: 'onboarding', label: 'Onboarding' },
+    { key: 'phone', label: 'Mobile Number' },
+    { key: 'grouped', label: 'Grouped' },
+  ]
+  const [visibleFields, setVisibleFields] = useState(['roll','semester','interests','onboarding','phone','grouped'])
 
   const toggleExclusive = (currentValue, setter, value) => {
     setter(currentValue === value ? '' : value)
   }
   const toggleField = (key) => setVisibleFields(prev => prev.includes(key) ? prev.filter(k=>k!==key) : [...prev,key])
 
-  const departments = ['CSE','CE','IT']
-  const semesters = ['1','2','3','4','5','6','7','8']
+  // Dynamic search as user types
+  const handleSearchInput = (value) => {
+    setSearchTerm(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (value.length >= 2) {
+      searchTimeout.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/students/search?q=${encodeURIComponent(value)}`)
+          if (res.ok) {
+            const data = await res.json()
+            setSearchResults(data.students || [])
+            setShowSearchDropdown(true)
+          }
+        } catch { /* ignore */ }
+      }, 300)
+    } else {
+      setSearchResults([])
+      setShowSearchDropdown(false)
+    }
+  }
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const fetchStudents = useCallback(async () => {
     try {
@@ -47,31 +78,75 @@ export default function StudentsPage() {
       if (department) params.append('department', department)
       if (semester) params.append('semester', semester)
       if (searchTerm) params.append('search', searchTerm)
-      if (university) params.append('university', university)
-      params.append('institute', 'DEPSTAR')
       const response = await fetch(`/api/students?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
         setStudents(data.students || [])
-      } else {
-        toast.error('Failed to fetch students')
-      }
-    } catch {
-      toast.error('Error fetching students')
-    } finally { setLoading(false) }
-  }, [searchTerm, department, semester, university])
+        // Store project membership data
+        if (data.projectMemberships) {
+          window.__studentProjectMemberships = data.projectMemberships
+        }
+        // Fetch project details for students
+        await fetchProjectDetails(data.students || [])
+      } else toast.error('Failed to fetch students')
+    } catch { toast.error('Error fetching students') } finally { setLoading(false) }
+  }, [searchTerm, department, semester])
 
-  const submitHandler = async (e) => { e.preventDefault(); setLoading(true); await fetchStudents(); setSubmitted(true) }
-  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setUniversity('CHARUSAT'); setStudents([]); setSubmitted(false) }
+  // Fetch project details for the student list
+  const [projectMap, setProjectMap] = useState({})
+  const fetchProjectDetails = async (studentList) => {
+    try {
+      const ids = studentList.map(s => s._id)
+      if (!ids.length) return
+      const res = await fetch('/api/projects')
+      if (res.ok) {
+        const data = await res.json()
+        const map = {}
+        ;(data.projects || []).forEach(p => {
+          p.members?.forEach(m => {
+            const sid = String(m.student?._id || m.student)
+            if (!map[sid]) map[sid] = []
+            map[sid].push({
+              title: p.title,
+              domain: p.domain,
+              status: p.status,
+              hodApproval: p.hodApproval,
+              guideName: p.internalGuide?.academicInfo?.name || p.internalGuide?.email || null,
+            })
+          })
+        })
+        setProjectMap(map)
+      }
+    } catch { /* ignore */ }
+  }
+
+  const baseDepartments = ['CSE','CE','IT']
+  const departments = baseDepartments
+  const semesters = ['1','2','3','4','5','6','7','8']
+
+  const submitHandler = async (e) => { e.preventDefault(); setLoading(true); setShowSearchDropdown(false); await fetchStudents(); setSubmitted(true) }
+  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setStudents([]); setSubmitted(false); setProjectMap({}) }
 
   const exportExcel = async () => {
     try {
       if (!students.length) { toast('No students to export'); return }
       const ids = students.map(s=>s._id)
-      const res = await fetch('/api/students/export', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids, fields: visibleFields }) })
+      const res = await fetch('/api/students/export', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids, fields: visibleFields, projectMap }) })
       if (!res.ok) { const j = await res.json().catch(()=>({})); toast.error(j.message || 'Export failed'); return }
       const blob = await res.blob(); const urlObj = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=urlObj; a.download='students_export.xlsx'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(urlObj)
     } catch { toast.error('Export failed') }
+  }
+
+  // Import handlers
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]
+    if (selectedFile) {
+      if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
+        toast.error('Please upload an Excel file (.xlsx or .xls)')
+        return
+      }
+      setImportFile(selectedFile)
+    }
   }
 
   const handleDownloadTemplate = async () => {
@@ -88,23 +163,8 @@ export default function StudentsPage() {
         window.URL.revokeObjectURL(url)
         a.remove()
         toast.success('Template downloaded')
-      } else {
-        toast.error('Failed to download template')
-      }
-    } catch {
-      toast.error('Error downloading template')
-    }
-  }
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0]
-    if (selectedFile) {
-      if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
-        toast.error('Please upload an Excel file (.xlsx or .xls)')
-        return
-      }
-      setImportFile(selectedFile)
-    }
+      } else toast.error('Failed to download template')
+    } catch { toast.error('Error downloading template') }
   }
 
   const handleImport = async () => {
@@ -119,80 +179,93 @@ export default function StudentsPage() {
       const data = await res.json()
       if (res.ok) {
         toast.success(data.message)
-        if (data.results?.errors?.length > 0) console.log('Import errors:', data.results.errors)
         setImportFile(null)
         setShowImport(false)
-        if (submitted) await fetchStudents()
-      } else {
-        toast.error(data.message || 'Import failed')
-      }
-    } catch {
-      toast.error('Error importing file')
-    } finally {
-      setUploading(false)
-    }
+        if (submitted) { setLoading(true); await fetchStudents() }
+      } else toast.error(data.message || 'Import failed')
+    } catch { toast.error('Error importing file') }
+    finally { setUploading(false) }
   }
 
-  if (!session || !isAdmin) return null
+  const isAdmin = ['admin','mainadmin'].includes(session?.user?.role)
 
   return (
     <div className='space-y-6'>
       <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.4}}>
         <div className='mb-6'>
-          <h1 className='text-3xl font-bold'>Student Directory</h1>
+          <h1 className='text-3xl font-bold'>Students</h1>
           <p className='text-gray-600 dark:text-gray-300 mt-1'>{session?.user?.role==='admin' ? 'Manage all students' : 'View students'}</p>
         </div>
         <form onSubmit={submitHandler} className='card p-6 mb-6 space-y-6'>
           <div className='space-y-6'>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-              <div className='w-full'>
-                <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>University</p>
-                <div className='flex flex-wrap gap-3'>
-                  <button type='button' disabled className='px-4 py-2.5 rounded-lg border text-sm font-semibold bg-blue-600 text-white border-blue-600 shadow-md cursor-default'>CHARUSAT</button>
-                </div>
-              </div>
-              <div className='w-full'>
-                <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Institute</p>
-                <div className='flex flex-wrap gap-3'>
-                  <button type='button' disabled className='px-4 py-2.5 rounded-lg border text-sm font-semibold bg-blue-600 text-white border-blue-600 shadow-md cursor-default'>DEPSTAR</button>
-                </div>
-              </div>
-              <div className='w-full'>
-                <FilterGroup title='DEPARTMENT' options={departments} value={department} onSelect={v=>toggleExclusive(department,setDepartment,v)} />
-              </div>
-            </div>
+            {/* Row 1: Department */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              <div className='w-full'>
-                <FilterGroup title='SEMESTER' options={semesters} value={semester} onSelect={v=>toggleExclusive(semester,setSemester,v)} />
-              </div>
-              <div className='w-full'>
-                <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Search Student</p>
-                <div className='relative'>
-                  <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5'/>
-                  <input value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder='Name, email, roll number...' className='w-full px-4 py-2.5 pl-10 border rounded-lg text-sm bg-white dark:bg-gray-800 h-11 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all duration-200'/>
-                </div>
+              <div className='w-full'><FilterGroup title='DEPARTMENT' options={departments} value={department} onSelect={v=>toggleExclusive(department,setDepartment,v)} /></div>
+              <div className='w-full'><FilterGroup title='SEMESTER' options={semesters} value={semester} onSelect={v=>toggleExclusive(semester,setSemester,v)} /></div>
+            </div>
+            
+            {/* Row 2: Dynamic Search */}
+            <div className='w-full' ref={searchRef}>
+              <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Search Students</p>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5'/>
+                <input 
+                  value={searchTerm} 
+                  onChange={e => handleSearchInput(e.target.value)} 
+                  placeholder='Start typing name, email, or roll number...' 
+                  className='input pl-10 w-full h-11'
+                  onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
+                />
+                {/* Dynamic dropdown */}
+                {showSearchDropdown && searchResults.length > 0 && (
+                  <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto'>
+                    {searchResults.map((s, i) => (
+                      <div key={s._id || i} className='px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0'
+                        onClick={() => {
+                          setSearchTerm(s.email || s.academicInfo?.name || '')
+                          setShowSearchDropdown(false)
+                        }}
+                      >
+                        <div className='w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-bold text-blue-700'>
+                          {(s.academicInfo?.name || s.email || '?')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div className='font-medium text-gray-900 dark:text-gray-100'>{s.academicInfo?.name || s.name || s.email?.split('@')[0]}</div>
+                          <div className='text-xs text-gray-500'>{s.studentId || s.academicInfo?.rollNumber || ''} · {s.email}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
           <FieldSelector fields={FIELD_OPTIONS} visible={visibleFields} toggle={toggleField} />
           <div className='flex items-center gap-2 flex-wrap'>
-            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white font-medium'>Submit</button>
-            <button type='button' onClick={reset} className='px-3 py-2 rounded border font-medium'>Reset</button>
-            <button type='button' onClick={exportExcel} className='ml-3 px-4 py-2 rounded bg-green-600 text-white font-medium flex items-center gap-2'>
-              <Download className='h-4 w-4' /> Export Data
+            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white font-semibold'>Submit</button>
+            <button type='button' onClick={reset} className='px-3 py-2 rounded border'>Reset</button>
+            <button type='button' onClick={exportExcel} className='ml-3 px-4 py-2 rounded bg-green-600 text-white font-semibold flex items-center gap-2'>
+              <Download className='h-4 w-4' /> Download
             </button>
-            {session?.user?.role === 'admin' && (
-              <button type='button' onClick={() => setShowImport(!showImport)} className='px-4 py-2 rounded bg-purple-600 text-white font-medium flex items-center gap-2'>
+            {isAdmin && (
+              <button type='button' onClick={() => setShowImport(!showImport)} className='px-4 py-2 rounded bg-purple-600 text-white font-semibold flex items-center gap-2'>
                 <Upload className='h-4 w-4' /> Import Students
               </button>
             )}
             <div className='ml-auto text-sm text-gray-600'>{submitted ? `${students.length} result(s)` : 'No results yet'}</div>
           </div>
+          {/* Ungrouped students info */}
+          {submitted && Object.keys(projectMap).length > 0 && (
+            <div className='flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800'>
+              <Users className='w-3 h-3 flex-shrink-0' />
+              <span><strong>{students.filter(s => !projectMap[String(s._id)]).length}</strong> student{students.filter(s => !projectMap[String(s._id)]).length !== 1 ? 's' : ''} not yet part of any group</span>
+            </div>
+          )}
         </form>
 
         {/* Import Section */}
-        {showImport && session?.user?.role === 'admin' && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className='card p-6 mb-6 space-y-4'>
+        {showImport && isAdmin && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className='card p-6 mb-6 space-y-4'>
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold flex items-center gap-2'><Upload className='h-5 w-5' /> Import Students from Excel</h3>
               <button onClick={() => setShowImport(false)} className='text-gray-400 hover:text-gray-600'>✕</button>
@@ -206,13 +279,13 @@ export default function StudentsPage() {
                     <li><strong>Create New:</strong> Skip existing entries (no duplicates)</li>
                     <li><strong>Append:</strong> Add new entries without affecting existing data</li>
                     <li>Download the template first to see the required format</li>
-                    <li>All imported students will be automatically approved and activated</li>
+                    <li>All imported students will be auto-approved and activated</li>
                   </ul>
                 </div>
               </div>
             </div>
             <div>
-              <button onClick={handleDownloadTemplate} className='flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors'>
+              <button onClick={handleDownloadTemplate} className='flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors'>
                 <FileSpreadsheet className='h-4 w-4' /> Download Template
               </button>
             </div>
@@ -236,18 +309,13 @@ export default function StudentsPage() {
               <input type='file' accept='.xlsx,.xls' onChange={handleFileChange} className='block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none p-2' />
               {importFile && <p className='mt-2 text-sm text-green-600 dark:text-green-400'>Selected: {importFile.name}</p>}
             </div>
-            <button onClick={handleImport} disabled={!importFile || uploading} className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+            <button onClick={handleImport} disabled={!importFile || uploading} className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
               {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import Data</>)}
             </button>
           </motion.div>
         )}
 
-        {/* Results */}
-        {!submitted ? (
-          <div className='text-center py-16'><p className='text-gray-500'>Use the filters above and click Submit.</p></div>
-        ) : loading ? (
-          <div className='text-center py-8 text-gray-500'>Loading...</div>
-        ) : (
+        {!submitted ? (<div className='text-center py-16'><p className='text-gray-500'>Use the filters above and click Submit.</p></div>) : (
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden'>
             {students.length === 0 ? (
               <div className='text-center py-12'>
@@ -255,35 +323,71 @@ export default function StudentsPage() {
                 <h3 className='mt-2 text-sm font-medium'>No students found</h3>
               </div>
             ) : (
-              <div className='overflow-x-auto'>
-                <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+              <div className='overflow-hidden'>
+                <table className='w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700'>
                   <thead className='bg-gray-50 dark:bg-gray-700'>
                     <tr>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Name</th>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Email</th>
-                      {visibleFields.includes('roll') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Roll Number</th>}
-                      {visibleFields.includes('phone') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Phone</th>}
-                      {visibleFields.includes('semester') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Semester</th>}
-                      {visibleFields.includes('department') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Department</th>}
-                      {visibleFields.includes('university') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>University</th>}
-                      {visibleFields.includes('institute') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Institute</th>}
-                      {visibleFields.includes('address') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Address</th>}
+                      <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[14%]'>Name</th>
+                      <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[18%]'>Email</th>
+                      {visibleFields.includes('roll') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]'>ID Number</th>}
+                      {visibleFields.includes('semester') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[7%]'>Sem</th>}
+                      {visibleFields.includes('interests') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[14%]'>Domain</th>}
+                      {visibleFields.includes('onboarding') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]'>Onboarding</th>}
+                      {visibleFields.includes('phone') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[12%]'>Mobile</th>}
+                      {visibleFields.includes('grouped') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[9%]'>Grouped</th>}
                     </tr>
                   </thead>
                   <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-                    {students.map((s, index) => (
-                      <motion.tr key={s._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150'>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>{s.academicInfo?.name || s.email.split('@')[0]}</td>
-                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.email}</td>
-                        {visibleFields.includes('roll') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.academicInfo?.rollNumber || '—'}</td>}
-                        {visibleFields.includes('phone') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.academicInfo?.phoneNumber || '—'}</td>}
-                        {visibleFields.includes('semester') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.academicInfo?.semester || '—'}</td>}
-                        {visibleFields.includes('department') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.department || '—'}</td>}
-                        {visibleFields.includes('university') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.university || '—'}</td>}
-                        {visibleFields.includes('institute') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{s.institute || '—'}</td>}
-                        {visibleFields.includes('address') && <td className='px-6 py-4 text-sm text-gray-900 dark:text-gray-300 max-w-xs truncate'>{s.academicInfo?.address || '—'}</td>}
+                    {students.map((s, index) => {
+                      const proj = projectMap[String(s._id)]
+                      const firstProject = proj?.[0]
+                      return (
+                      <motion.tr
+                        key={s._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.5) }}
+                        className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150'
+                      >
+                        <td className='px-3 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 truncate'>
+                          {s.academicInfo?.name || s.email.split('@')[0]}
+                        </td>
+                        <td className='px-3 py-3 text-sm text-gray-900 dark:text-gray-300 truncate'>{s.email}</td>
+                        {visibleFields.includes('roll') && <td className='px-3 py-3 text-sm text-gray-900 dark:text-gray-300 truncate'>{s.academicInfo?.rollNumber || '—'}</td>}
+                        {visibleFields.includes('semester') && <td className='px-3 py-3 text-sm text-gray-900 dark:text-gray-300'>{s.academicInfo?.semester || '—'}</td>}
+                        {visibleFields.includes('interests') && (
+                          <td className='px-3 py-3 text-sm text-gray-900 dark:text-gray-300'>
+                            {s.interests?.length > 0 ? (
+                              <div className='flex flex-wrap gap-1'>
+                                {s.interests.slice(0, 2).map((int, i) => (
+                                  <span key={i} className='inline-flex px-1.5 py-0.5 rounded-full text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 truncate max-w-[80px]'>{int}</span>
+                                ))}
+                                {s.interests.length > 2 && <span className='text-[10px] text-gray-400'>+{s.interests.length - 2}</span>}
+                              </div>
+                            ) : <span className='text-gray-400 text-xs'>NA</span>}
+                          </td>
+                        )}
+                        {visibleFields.includes('onboarding') && (
+                          <td className='px-3 py-3 text-sm'>
+                            {s.isOnboarded ? (
+                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'>Onboarded</span>
+                            ) : (
+                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200'>Pending</span>
+                            )}
+                          </td>
+                        )}
+                        {visibleFields.includes('phone') && <td className='px-3 py-3 text-sm text-gray-900 dark:text-gray-300 truncate'>{s.academicInfo?.phoneNumber || '—'}</td>}
+                        {visibleFields.includes('grouped') && (
+                          <td className='px-3 py-3 text-sm'>
+                            {projectMap[String(s._id)] ? (
+                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'>Grouped</span>
+                            ) : (
+                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'>Ungrouped</span>
+                            )}
+                          </td>
+                        )}
                       </motion.tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -304,7 +408,7 @@ function FilterGroup({ title, options, value, onSelect }) {
         {options.map(opt => {
           const checked = value === opt
           return (
-            <button key={opt} type='button' onClick={()=>onSelect(opt)} className={`px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all duration-200 ${checked ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{opt}</button>
+            <button key={opt} type='button' onClick={()=>onSelect(opt)} className={`px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all duration-200 ${checked ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'}`}>{opt}</button>
           )
         })}
       </div>
@@ -320,7 +424,7 @@ function FieldSelector({ fields, visible, toggle }) {
         {fields.map(f => {
           const checked = visible.includes(f.key)
           return (
-            <label key={f.key} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm cursor-pointer select-none transition-all duration-200 font-semibold ${checked ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+            <label key={f.key} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm cursor-pointer select-none transition-all duration-200 font-semibold ${checked ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'}`}>
               <input type='checkbox' className='hidden' checked={checked} onChange={()=>toggle(f.key)} />
               {f.label}
             </label>

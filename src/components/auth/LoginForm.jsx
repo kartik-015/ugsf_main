@@ -23,13 +23,18 @@ export default function LoginForm() {
     // Keep if user already typed something
   }
 
-  // Accept both student and staff domains
-  const validateEmail = (email) => /^[^@\s]+@charusat\.(edu|ac)\.in$/i.test(email)
+  // Accept @charusat.edu.in (students), @charusat.ac.in (guides/HOD), and whitelisted test emails
+  const TEST_EMAILS = ['kartik.guleria@gmail.com']
+  const validateEmail = (email) => {
+    const lower = email.toLowerCase().trim()
+    if (TEST_EMAILS.includes(lower)) return true
+    return /^[^@\s]+@charusat\.(edu|ac)\.in$/i.test(lower)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateEmail(email)) {
-  toast.error('Use your Charusat email (@charusat.edu.in for students, @charusat.ac.in for guide/HOD)')
+      toast.error('Use your Charusat email (@charusat.edu.in for students, @charusat.ac.in for guide/HOD)')
       return
     }
     setIsLoading(true)
@@ -53,13 +58,10 @@ export default function LoginForm() {
                 switch (u.role) {
                   case 'admin':
                   case 'mainadmin':
-                    window.location.href = '/dashboard/admin'
-                    break
                   case 'hod':
-                    window.location.href = '/dashboard' // HODs use main dashboard with their permissions
-                    break
+                  case 'project_coordinator':
                   case 'principal':
-                    window.location.href = '/dashboard' // Principals have read-only access to main dashboard
+                    window.location.href = '/dashboard/admin'
                     break
                   case 'guide':
                     window.location.href = '/dashboard'

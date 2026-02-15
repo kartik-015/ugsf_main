@@ -17,9 +17,7 @@ import {
   Building,
   Calendar,
   Users,
-  Award,
-  Sparkles,
-  Zap
+  Award
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -72,9 +70,9 @@ export default function OnboardingPage() {
     }
   }, [session, status, router])
 
-  // Prefill department for HOD if provided in token (cannot change)
+  // Prefill department for HOD/Project Coordinator if provided in token (cannot change)
   useEffect(() => {
-    if (role === 'hod' && session?.user?.department && !formData.department) {
+    if ((role === 'hod' || role === 'project_coordinator') && session?.user?.department && !formData.department) {
       setFormData(prev => ({ ...prev, department: session.user.department }))
     }
   }, [role, session, formData.department])
@@ -159,7 +157,8 @@ export default function OnboardingPage() {
           // Force session refresh so isOnboarded flag updates immediately
           await fetch('/api/auth/session?update', { cache: 'no-store' })
         } catch {}
-        if (session?.user?.role === 'admin') {
+        const adminRoles = ['admin', 'mainadmin', 'principal', 'hod', 'project_coordinator']
+        if (adminRoles.includes(session?.user?.role)) {
           router.push('/dashboard/admin')
         } else {
           router.push('/dashboard')
@@ -214,7 +213,7 @@ export default function OnboardingPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <motion.div
           animate={{ 
             rotate: 360,
@@ -227,8 +226,8 @@ export default function OnboardingPage() {
           }}
           className="relative"
         >
-          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
           </div>
         </motion.div>
       </div>
@@ -238,20 +237,7 @@ export default function OnboardingPage() {
   if (!session) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
-      {/* Animated Background */}
-      <motion.div
-        className="absolute inset-0 -z-10"
-        animate={{
-          background: [
-            'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%)',
-            'radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%)',
-            'radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%)',
-            'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%)',
-          ]
-        }}
-        transition={{ duration: 10, repeat: Infinity }}
-      />
+    <div className="min-h-screen bg-gray-50 dark:from-gray-900 dark:to-gray-800">
 
       <div className="container mx-auto px-4 py-8">
         <motion.div
@@ -267,20 +253,18 @@ export default function OnboardingPage() {
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             >
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                Welcome to Charusat
+                EvalProX - SGP Evaluation Portal
               </span>
-              <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full animate-pulse animation-delay-2000"></div>
             </motion.div>
             
             <motion.h1 
-              className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"
+              className="text-4xl font-bold text-gray-900 dark:text-white mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              Complete Your Profile ✨
+              Complete Your Profile
             </motion.h1>
             
             <motion.p 
@@ -310,7 +294,7 @@ export default function OnboardingPage() {
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <motion.div
-                className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
+                className="bg-blue-600 h-2 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${(step / 3) * 100}%` }}
                 transition={{ duration: 0.5 }}
@@ -330,7 +314,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <motion.div
-                    className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center"
                     animate={{ 
                       scale: [1, 1.1, 1],
                       rotate: [0, 5, -5, 0]
@@ -401,7 +385,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <motion.div
-                    className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center"
                     animate={{ 
                       scale: [1, 1.1, 1],
                       rotate: [0, -5, 5, 0]
@@ -568,7 +552,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <motion.div
-                    className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-500 to-orange-600 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center"
                     animate={{ 
                       scale: [1, 1.1, 1],
                       rotate: [0, 10, -10, 0]
@@ -598,8 +582,8 @@ export default function OnboardingPage() {
                         onClick={() => handleInterestToggle(interest)}
                         className={`p-3 rounded-xl text-sm font-medium transition-all duration-300 ${
                           formData.interests.includes(interest)
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                            : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-white/20'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-gray-200 dark:border-gray-600'
                         }`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -644,7 +628,7 @@ export default function OnboardingPage() {
               {step < 3 ? (
                 <motion.button
                   onClick={nextStep}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-all duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -653,7 +637,7 @@ export default function OnboardingPage() {
               ) : (
                 <motion.button
                   onClick={handleSubmit}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="px-6 py-3 rounded-xl bg-green-600 text-white font-semibold shadow-sm hover:bg-green-700 transition-all duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

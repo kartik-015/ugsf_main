@@ -32,7 +32,7 @@ const monthlyReportSchema = new mongoose.Schema({
   submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   submittedAt: { type: Date, default: Date.now },
   grade: { type: String, enum: ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F', ''], default: '' },
-  score: { type: Number, min: 0, max: 100 },
+  score: { type: Number, min: 0, max: 10 },
   feedback: String,
   feedbackAt: Date,
   feedbackBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -46,6 +46,22 @@ const deadlineSchema = new mongoose.Schema({
   setBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isCompleted: { type: Boolean, default: false },
   completedAt: Date,
+}, { _id: true })
+
+const rubricCriteriaSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  maxScore: { type: Number, default: 10 },
+  description: String,
+}, { _id: true })
+
+const rubricSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  criteria: [rubricCriteriaSchema],
+  totalMaxScore: { type: Number, default: 10 },
+  setBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  setAt: { type: Date, default: Date.now },
+  department: String,
+  semester: Number,
 }, { _id: true })
 
 const projectGroupSchema = new mongoose.Schema({
@@ -110,6 +126,11 @@ const projectGroupSchema = new mongoose.Schema({
   // Progress tracking
   progressScore: { type: Number, min: 0, max: 100, default: 0 },
   
+  // Project modification tracking - students can modify only once
+  hasBeenModified: { type: Boolean, default: false },
+  modifiedAt: Date,
+  modifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  
   // Legacy reports field (backward compatibility)
   reports: [{
     week: { type: Number, min: 1 },
@@ -146,6 +167,9 @@ projectGroupSchema.index({ department: 1, semester: 1, status: 1 })
 projectGroupSchema.index({ 'members.student': 1 })
 projectGroupSchema.index({ internalGuide: 1 })
 projectGroupSchema.index({ leader: 1 })
+projectGroupSchema.index({ domain: 1 })
+projectGroupSchema.index({ hodApproval: 1 })
+projectGroupSchema.index({ department: 1, hodApproval: 1 })
 
 const ProjectGroup = mongoose.models.ProjectGroup || mongoose.model('ProjectGroup', projectGroupSchema)
 

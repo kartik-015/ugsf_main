@@ -2,31 +2,23 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 require('dotenv').config({ path: '.env.local' })
 
-// Import models - using dynamic import for ES6 modules
-let User, Subject
+let User
 
 async function importModels() {
   const UserModule = await import('../src/models/User.js')
-  const SubjectModule = await import('../src/models/Subject.js')
   User = UserModule.default
-  Subject = SubjectModule.default
 }
 
 async function seed() {
   try {
-    // Import models first
     await importModels()
     
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/student-portal')
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/evalprox')
     console.log('Connected to MongoDB')
 
-    // Clear existing data
-  await User.deleteMany({})
-  await Subject.deleteMany({})
-  console.log('Cleared existing data')
+    await User.deleteMany({})
+    console.log('Cleared existing data')
 
-    // Create admin and 4 additional admins (principal, HODs)
     const users = [
       {
         email: 'admin@charusat.edu.in',
@@ -44,88 +36,76 @@ async function seed() {
         email: 'hodcse@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
-        academicInfo: { name: 'HOD CSE', phoneNumber: '1234567892', address: 'Charusat University', department: 'CSE' },
+        department: 'CSE',
+        academicInfo: { name: 'HOD CSE', phoneNumber: '1234567892', address: 'Charusat University' },
       },
       {
         email: 'hodce@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
-        academicInfo: { name: 'HOD CE', phoneNumber: '1234567893', address: 'Charusat University', department: 'CE' },
+        department: 'CE',
+        academicInfo: { name: 'HOD CE', phoneNumber: '1234567893', address: 'Charusat University' },
       },
       {
         email: 'hodit@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
-        academicInfo: { name: 'HOD IT', phoneNumber: '1234567894', address: 'Charusat University', department: 'IT' },
+        department: 'IT',
+        academicInfo: { name: 'HOD IT', phoneNumber: '1234567894', address: 'Charusat University' },
+      },
+      {
+        email: 'pccse@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'project_coordinator',
+        department: 'CSE',
+        academicInfo: { name: 'Project Coordinator CSE', phoneNumber: '1234567895', address: 'Charusat University' },
+      },
+      {
+        email: 'pcce@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'project_coordinator',
+        department: 'CE',
+        academicInfo: { name: 'Project Coordinator CE', phoneNumber: '1234567896', address: 'Charusat University' },
+      },
+      {
+        email: 'pcit@charusat.ac.in',
+        password: 'charusat@123',
+        role: 'project_coordinator',
+        department: 'IT',
+        academicInfo: { name: 'Project Coordinator IT', phoneNumber: '1234567897', address: 'Charusat University' },
       }
     ]
     for (const userData of users) {
       const user = new User({
         ...userData,
+        institute: 'DEPSTAR',
         isOnboarded: true,
-        isEmailVerified: true
+        isEmailVerified: true,
+        isApproved: true,
+        approvalStatus: 'approved',
+        isActive: true,
       })
       await user.save()
-      console.log(`✅ Created user: ${user.email}`)
+      console.log(`Created user: ${user.email} (${user.role})`)
     }
 
-    // Create sample subjects (for faculty to assign later)
-    const subjects = [
-      {
-        code: 'CS301',
-        name: 'Data Structures',
-        department: 'CSE',
-        semester: 3,
-        credits: 4,
-        description: 'Advanced data structures and algorithms'
-      },
-      {
-        code: 'CS302',
-        name: 'Database Systems',
-        department: 'CSE',
-        semester: 3,
-        credits: 3,
-        description: 'Database design and management'
-      },
-      {
-        code: 'IT301',
-        name: 'Web Development',
-        department: 'IT',
-        semester: 3,
-        credits: 4,
-        description: 'Modern web development technologies'
-      },
-      {
-        code: 'DIT301',
-        name: 'Programming Fundamentals',
-        department: 'DIT',
-        semester: 3,
-        credits: 3,
-        description: 'Core programming concepts'
-      }
-    ]
-
-    for (const subjectData of subjects) {
-      const subject = new Subject(subjectData)
-      await subject.save()
-    }
-    console.log('✅ Created sample subjects')
-
-    console.log('\n🎉 Database seeded successfully!')
-    console.log('\n📋 Login Credentials:')
-    console.log('Admin: admin@charusat.edu.in / admin123')
-    console.log('\n📝 Registration Flow:')
-    console.log('1. Students and counselors must register first')
-    console.log('2. They will go through onboarding process')
-    console.log('3. Admin can view all registrations')
-    console.log('4. Admin can assign counselors to students')
+    console.log('\nDatabase seeded successfully!')
+    console.log('\nLogin Credentials:')
+    console.log('Admin: admin@charusat.edu.in / charusat@123')
+    console.log('Principal: principal@charusat.ac.in / charusat@123')
+    console.log('HOD CSE: hodcse@charusat.ac.in / charusat@123')
+    console.log('HOD CE: hodce@charusat.ac.in / charusat@123')
+    console.log('HOD IT: hodit@charusat.ac.in / charusat@123')
+    console.log('PC CSE: pccse@charusat.ac.in / charusat@123')
+    console.log('PC CE: pcce@charusat.ac.in / charusat@123')
+    console.log('PC IT: pcit@charusat.ac.in / charusat@123')
 
   } catch (error) {
-    console.error('❌ Error seeding database:', error)
+    console.error('Error seeding database:', error)
   } finally {
     await mongoose.disconnect()
     console.log('Disconnected from MongoDB')
   }
 }
 
-seed() 
+seed()

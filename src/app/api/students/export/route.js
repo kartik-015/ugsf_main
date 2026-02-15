@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import { ROLES } from '@/lib/roles'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import ProjectGroup from '@/models/ProjectGroup'
 import ExcelJS from 'exceljs'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request) {
   try {
@@ -60,7 +62,7 @@ export async function GET(request) {
     const students = await User.find(query).select('-password').sort({ 'academicInfo.name': 1 })
 
     // Build workbook
-    const requested = Array.isArray(body.fields) ? body.fields : []
+    const requested = searchParams.get('fields') ? searchParams.get('fields').split(',') : []
     const baseColumns = [
       { header: 'Name', key: 'name', width: 26 },
       { header: 'Email', key: 'email', width: 30 },
@@ -113,12 +115,13 @@ export async function POST(request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  if (!['admin','mainadmin','guide'].includes(session.user.role)) return NextResponse.json({ message: 'Access denied' }, { status: 403 })
+    if (!['admin','mainadmin','guide','hod','principal','project_coordinator'].includes(session.user.role)) return NextResponse.json({ message: 'Access denied' }, { status: 403 })
 
     await dbConnect()
 
     const body = await request.json()
     const ids = Array.isArray(body.ids) ? body.ids : []
+    const visibleFields = Array.isArray(body.fields) ? body.fields : []
 
     let students = []
     if (ids.length > 0) {
@@ -127,31 +130,67 @@ export async function POST(request) {
       return NextResponse.json({ message: 'No ids provided' }, { status: 400 })
     }
 
+    // Fetch project data for students
+    const projects = await ProjectGroup.find({ 'members.student': { $in: ids } })
+      .populate('internalGuide', 'academicInfo.name email')
+      .select('title domain status members internalGuide')
+    const projectMap = {}
+    projects.forEach(p => {
+      p.members?.forEach(m => {
+        const sid = String(m.student)
+        if (!projectMap[sid]) projectMap[sid] = []
+        projectMap[sid].push({
+          title: p.title,
+          domain: p.domain,
+          status: p.status,
+          guideName: p.internalGuide?.academicInfo?.name || p.internalGuide?.email || ''
+        })
+      })
+    })
+
     const wb = new ExcelJS.Workbook()
     const ws = wb.addWorksheet('Students')
-    ws.columns = [
+
+    // Build columns based on visible fields
+    const columns = [
       { header: 'Name', key: 'name', width: 30 },
       { header: 'Email', key: 'email', width: 30 },
-      { header: 'Department', key: 'department', width: 15 },
-      { header: 'Semester', key: 'semester', width: 10 },
-      { header: 'Admission Year', key: 'admissionYear', width: 12 },
-      { header: 'Roll Number', key: 'roll', width: 15 },
-      { header: 'Phone', key: 'phone', width: 15 },
-      { header: 'Institute', key: 'institute', width: 20 },
-      { header: 'University', key: 'university', width: 20 }
     ]
+    if (visibleFields.includes('roll')) columns.push({ header: 'Roll Number', key: 'roll', width: 15 })
+    if (visibleFields.includes('phone')) columns.push({ header: 'Phone', key: 'phone', width: 15 })
+    if (visibleFields.includes('semester')) columns.push({ header: 'Semester', key: 'semester', width: 10 })
+    if (visibleFields.includes('department')) columns.push({ header: 'Department', key: 'department', width: 15 })
+    if (visibleFields.includes('interests')) columns.push({ header: 'Domain Interests', key: 'interests', width: 30 })
+    if (visibleFields.includes('projectTitle')) columns.push({ header: 'Project Title', key: 'projectTitle', width: 30 })
+    if (visibleFields.includes('projectDomain')) columns.push({ header: 'Project Domain', key: 'projectDomain', width: 20 })
+    if (visibleFields.includes('projectStatus')) columns.push({ header: 'Project Status', key: 'projectStatus', width: 15 })
+    if (visibleFields.includes('guideName')) columns.push({ header: 'Guide', key: 'guideName', width: 25 })
+    if (visibleFields.includes('address')) columns.push({ header: 'Address', key: 'address', width: 30 })
+    // Fallback if no visible fields
+    if (columns.length <= 2) {
+      columns.push(
+        { header: 'Department', key: 'department', width: 15 },
+        { header: 'Semester', key: 'semester', width: 10 },
+        { header: 'Roll Number', key: 'roll', width: 15 }
+      )
+    }
+    ws.columns = columns
 
     students.forEach(s => {
+      const proj = projectMap[String(s._id)]?.[0]
       ws.addRow({
         name: s.academicInfo?.name || '',
         email: s.email,
         department: s.department || '',
         semester: s.academicInfo?.semester || '',
-        admissionYear: s.admissionYear || '',
         roll: s.academicInfo?.rollNumber || '',
         phone: s.academicInfo?.phoneNumber || '',
-        institute: s.institute || '',
-        university: s.university || ''
+        interests: (s.interests || []).join(', ') || 'NA',
+        projectTitle: proj?.title || 'NA',
+        projectDomain: proj?.domain || 'NA',
+        projectStatus: proj?.status || 'NA',
+        guideName: proj?.guideName || 'NA',
+        address: s.academicInfo?.address || ''
       })
     })
 

@@ -8,8 +8,8 @@ import { SocketProvider } from '@/components/providers/SocketProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Student Portal - Charusat University',
-  description: 'Comprehensive student management portal for Charusat University',
+  title: 'EvalProX - SGP Evaluation Portal',
+  description: 'Student Guided Project evaluation and management portal',
 }
 
 export default function RootLayout({ children }) {

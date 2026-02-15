@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import { enforceWordLimit, validateSemicolonList } from '@/lib/validation'
 import ProjectGroup from '@/models/ProjectGroup'
@@ -85,10 +85,10 @@ export async function POST(request) {
     const project = new ProjectGroup({ title: title.trim(), description: description?.trim(), domain, technology: technology?.trim(), department, semester: Number(semester), members: finalMembers, leader: leaderId, createdBy: leaderId, status: 'submitted', hodApproval: 'pending', guideStatus: 'not-assigned' })
     await project.save()
 
-    // Notify HOD
-    const hods = await User.find({ role: 'hod', department }).select('_id')
-    if (hods.length) {
-      await Notification.createBulk(hods.map(h => h._id), { type: 'project-submitted', title: 'New Project Submitted', message: `Project "${title}" submitted in ${department} (Sem ${semester})`, link: '/dashboard/projects', relatedProject: project._id, relatedUser: leaderId })
+    // Notify HOD and Project Coordinators
+    const deptStaff = await User.find({ role: { $in: ['hod', 'project_coordinator'] }, department }).select('_id')
+    if (deptStaff.length) {
+      await Notification.createBulk(deptStaff.map(h => h._id), { type: 'project-submitted', title: 'New Project Submitted', message: `Project "${title}" submitted in ${department} (Sem ${semester})`, link: '/dashboard/projects', relatedProject: project._id, relatedUser: leaderId })
     }
 
     return NextResponse.json({ ok: true, data: project }, { status: 201 })
@@ -114,11 +114,11 @@ export async function GET(request) {
     let filter = {}
 
     if (role === 'student') {
-      // Students can see all projects (browsing) — filtering to own projects is done client-side
-      filter = {}
+      // Students can only see projects where they are a member
+      filter = { 'members.student': session.user.id }
     } else if (role === 'guide') {
       filter = { internalGuide: session.user.id }
-    } else if (role === 'hod') {
+    } else if (role === 'hod' || role === 'project_coordinator') {
       filter = { department: (session.user.department || '').toUpperCase() }
       if (qDept) filter.department = qDept.toUpperCase()
     } else if (role === 'admin') {
@@ -130,7 +130,7 @@ export async function GET(request) {
 
     if (qSemester) filter.semester = Number(qSemester)
     if (qStatus) filter.status = qStatus
-    if (qYear && ['admin', 'hod', 'principal', 'mainadmin'].includes(role)) {
+    if (qYear && ['admin', 'hod', 'principal', 'mainadmin', 'project_coordinator'].includes(role)) {
       const yearUsers = await User.find({ admissionYear: Number(qYear) }).select('_id')
       filter['members.student'] = { $in: yearUsers.map(u => u._id) }
     }
@@ -167,8 +167,8 @@ export async function PATCH(request) {
 
     // ADD MEMBER
     if (body.addMember) {
+      if (!['admin', 'hod', 'project_coordinator', 'student'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
       if (role === 'student' && String(project.leader._id || project.leader) !== String(session.user.id)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only leader can add' } }, { status: 403 })
-      if (!['admin', 'hod', 'student'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
       if (project.members.length >= 4) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Max 4 members' } }, { status: 400 })
       const isOid = /^[0-9a-fA-F]{24}$/.test(body.addMember)
       const user = await User.findOne(isOid ? { _id: body.addMember } : { email: body.addMember.toLowerCase() })
@@ -195,7 +195,7 @@ export async function PATCH(request) {
 
     // HOD APPROVAL
     if (body.hodApproval !== undefined) {
-      if (role !== 'hod') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only HOD' } }, { status: 403 })
+      if (role !== 'hod' && role !== 'project_coordinator') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only HOD or Project Coordinator' } }, { status: 403 })
       if (project.department !== (session.user.department || '').toUpperCase()) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Wrong department' } }, { status: 403 })
       project.hodApproval = body.hodApproval
       project.hodRemarks = body.hodRemarks || ''
@@ -210,7 +210,7 @@ export async function PATCH(request) {
 
     // ASSIGN GUIDE
     if (body.internalGuideId) {
-      if (!['admin', 'hod', 'mainadmin'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
+      if (!['admin', 'hod', 'project_coordinator', 'mainadmin'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
       if (project.hodApproval !== 'approved') return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Must be approved first' } }, { status: 400 })
       const guide = await User.findById(body.internalGuideId)
       if (!guide || guide.role !== 'guide') return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Invalid guide' } }, { status: 400 })
@@ -274,11 +274,16 @@ export async function PATCH(request) {
       const report = project.monthlyReports.id(reportId)
       if (!report) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'Report not found' } }, { status: 404 })
       if (grade) report.grade = grade
-      if (score !== undefined) report.score = Math.max(0, Math.min(100, score))
+      if (score !== undefined) report.score = Math.max(0, Math.min(10, score))
       if (feedback) report.feedback = feedback
       report.feedbackAt = new Date()
       report.feedbackBy = session.user.id
       report.status = reportStatus || 'graded'
+      // Auto-compute progressScore from graded reports
+      const graded = project.monthlyReports.filter(r => r.status === 'graded' && r.score !== undefined && r.score !== null)
+      if (graded.length > 0) {
+        project.progressScore = Math.round((graded.reduce((sum, r) => sum + r.score, 0) / graded.length) * 10) / 10
+      }
       await project.save()
       const memberIds = project.members.map(m => m.student._id || m.student)
       await Notification.createBulk(memberIds, { type: 'report-graded', title: 'Report Graded', message: `Report graded for "${project.title}".${grade ? ' Grade: ' + grade : ''}`, link: '/dashboard/projects', relatedProject: project._id })
@@ -287,7 +292,7 @@ export async function PATCH(request) {
 
     // PROGRESS SCORE
     if (body.progressScore !== undefined) {
-      if (!['admin', 'hod', 'guide'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
+      if (!['admin', 'hod', 'project_coordinator', 'guide'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
       if (role === 'guide' && String(project.internalGuide) !== String(session.user.id)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only assigned guide' } }, { status: 403 })
       project.progressScore = Math.max(0, Math.min(100, body.progressScore))
       await project.save()
@@ -296,8 +301,27 @@ export async function PATCH(request) {
 
     // EXTERNAL GUIDE
     if (body.externalGuide) {
-      if (!['admin', 'hod', 'mainadmin'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
+      if (!['admin', 'hod', 'project_coordinator', 'mainadmin'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
       project.externalGuide = body.externalGuide
+      await project.save()
+      return NextResponse.json({ ok: true, data: project })
+    }
+
+    // MODIFY PROJECT (student one-time edit)
+    if (body.modifyProject) {
+      if (role !== 'student') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only students can modify' } }, { status: 403 })
+      const isLeader = String(project.leader._id || project.leader) === String(session.user.id)
+      if (!isLeader) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only leader can modify' } }, { status: 403 })
+      if (project.hasBeenModified) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Project can only be modified once' } }, { status: 400 })
+      
+      const { title, description, domain, technology } = body.modifyProject
+      if (title) project.title = title.trim()
+      if (description) project.description = description.trim()
+      if (domain) project.domain = domain.trim()
+      if (technology) project.technology = technology.trim()
+      project.hasBeenModified = true
+      project.modifiedAt = new Date()
+      project.modifiedBy = session.user.id
       await project.save()
       return NextResponse.json({ ok: true, data: project })
     }

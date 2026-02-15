@@ -24,10 +24,11 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-background to-secondary-50 dark:from-background dark:via-card dark:to-background relative overflow-hidden">
       <div className="container mx-auto px-4 py-10 max-w-md">
         <motion.h1
-          className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-6 text-center"
+          className="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-        >Sign In</motion.h1>
+        >EvalProX</motion.h1>
+        <p className="text-center text-sm text-muted-foreground mb-6">SGP Evaluation Portal</p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

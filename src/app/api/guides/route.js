@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import { ROLES, ADMIN_ROLES } from '@/lib/roles'
+
+export const dynamic = 'force-dynamic'
 
 // Unified Guides directory API (replaces former faculty endpoint)
 export async function GET(request) {
@@ -14,34 +16,27 @@ export async function GET(request) {
     
     if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
-    // Access: admin management + hod
-    if (![...ADMIN_ROLES, ROLES.HOD].includes(session.user.role)) {
+    // Access: admin management + hod + project_coordinator
+    if (![...ADMIN_ROLES, ROLES.HOD, ROLES.PROJECT_COORDINATOR].includes(session.user.role)) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 })
     }
 
     await dbConnect()
     const { searchParams } = new URL(request.url)
-  const department = searchParams.get('department') || (session.user.role === ROLES.HOD ? session.user.department : null)
+    const department = searchParams.get('department') || ((session.user.role === ROLES.HOD || session.user.role === ROLES.PROJECT_COORDINATOR) ? session.user.department : null)
     const role = searchParams.get('role')
     const search = searchParams.get('search')
-  const university = searchParams.get('university')
-  const institute = searchParams.get('institute')
 
     const query = {}
     if (role) {
-      // If specific role requested, use it
       query.role = role
     } else {
-      // By default, show both guides AND HODs
-      query.role = { $in: [ROLES.GUIDE, ROLES.HOD] }
+      // Show only guides (not HODs) for guide assignment
+      query.role = ROLES.GUIDE
     }
     if (department) query.department = department
-
-    if (university) query.university = university
-    if (institute) query.institute = institute
     
     console.log('📊 Guides API Query:', JSON.stringify(query, null, 2))
-    console.log('🔍 Search params:', { department, role, search, university, institute })
 
     if (search) {
       query.$or = [
@@ -59,7 +54,7 @@ export async function GET(request) {
       .select('email academicInfo department role specialization researchAreas interests isApproved university institute isActive')
       .sort({ department: 1, 'academicInfo.name': 1 })
     
-    console.log(`✅ Found ${guides.length} guides/HODs`)
+    console.log(`Found ${guides.length} guides/HODs`)
     
     return NextResponse.json({ guides })
   } catch (error) {

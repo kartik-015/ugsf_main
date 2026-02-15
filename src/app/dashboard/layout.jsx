@@ -27,11 +27,10 @@ const ChatWithAdmin = dynamic(() => import('@/components/chat/ChatWithAdmin'), {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal','hod'] },
-  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal','hod'] },
-  { name: 'Subjects', href: '/dashboard/subjects', icon: BookOpen, roles: ['admin','guide','hod','mainadmin','principal'] },
-  { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal'] },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin','mainadmin','principal','guide','student','hod'] },
+  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
+  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
+  { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal','project_coordinator'] },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin','mainadmin','principal','guide','student','hod','project_coordinator'] },
 ]
 
 export default function DashboardLayout({ children }) {
@@ -73,7 +72,8 @@ export default function DashboardLayout({ children }) {
   // Separate effect for admin redirect to avoid issues
   useEffect(() => {
     if (status === 'loading' || !session) return
-    if (pathname === '/dashboard' && session.user.role === 'admin') {
+    const role = session.user.role
+    if (pathname === '/dashboard' && (role === 'admin' || role === 'principal' || role === 'hod' || role === 'project_coordinator')) {
       router.replace('/dashboard/admin')
     }
   }, [session, status, router, pathname])
@@ -163,7 +163,7 @@ export default function DashboardLayout({ children }) {
   }
 
   // Don't render layout during admin redirect
-  if (pathname === '/dashboard' && session.user.role === 'admin') {
+  if (pathname === '/dashboard' && ['admin','principal','hod','project_coordinator'].includes(session.user.role)) {
     return null
   }
 
@@ -196,7 +196,7 @@ export default function DashboardLayout({ children }) {
           >
             <div className="flex items-center justify-between p-4 border-b-2 border-border bg-primary/5">
               <h1 className="text-xl font-bold text-foreground">
-                Student Portal
+                EvalProX
               </h1>
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -235,7 +235,7 @@ export default function DashboardLayout({ children }) {
         <div className="flex flex-col flex-grow bg-card border-r-2 border-border shadow-xl">
           <div className="flex items-center h-16 px-6 border-b-2 border-border bg-primary/5">
             <h1 className="text-xl font-bold text-foreground">
-              Student Portal
+              EvalProX
             </h1>
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2">

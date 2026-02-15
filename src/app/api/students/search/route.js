@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
+import { escapeRegExp, sanitizeString } from '@/lib/security'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request) {
   try {
@@ -18,15 +21,15 @@ export async function GET(request) {
     const excludeList = excludeEmails ? excludeEmails.split(',').map(email => email.trim()) : []
     
     // Enhanced search: name, email, student ID, and roll number
+    const safeQuery = escapeRegExp(sanitizeString(query))
     const searchConditions = {
       role: 'student',
       isEmailVerified: true,
       $or: [
-        { 'academicInfo.name': { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } },
-        { 'academicInfo.rollNumber': { $regex: query, $options: 'i' } },
-        // Add search for student ID patterns like 23dit015
-        { email: { $regex: `^${query}.*@charusat\\.edu\\.in$`, $options: 'i' } }
+        { 'academicInfo.name': { $regex: safeQuery, $options: 'i' } },
+        { email: { $regex: safeQuery, $options: 'i' } },
+        { 'academicInfo.rollNumber': { $regex: safeQuery, $options: 'i' } },
+        { email: { $regex: `^${safeQuery}.*@charusat\\.edu\\.in$`, $options: 'i' } }
       ]
     }
     
@@ -36,19 +39,19 @@ export async function GET(request) {
     }
     
     const students = await User.find(searchConditions)
-    .select('email academicInfo.name academicInfo.rollNumber academicInfo.department academicInfo.semester academicInfo.institute')
-    .limit(15) // Increased limit for better results
+    .select('email academicInfo.name academicInfo.rollNumber academicInfo.department academicInfo.semester academicInfo.institute interests department')
+    .limit(15)
     .sort({ 'academicInfo.name': 1 })
     
     const formattedStudents = students.map(student => ({
-      id: student._id,
+      _id: student._id,
       email: student.email,
       name: student.academicInfo?.name || 'Unknown',
+      academicInfo: student.academicInfo,
       rollNumber: student.academicInfo?.rollNumber || '',
-      department: student.academicInfo?.department || '',
-      institute: student.academicInfo?.institute || '',
+      department: student.department || student.academicInfo?.department || '',
       semester: student.academicInfo?.semester || '',
-      // Extract student ID from email for display
+      interests: student.interests || [],
       studentId: student.email.split('@')[0] || ''
     }))
     

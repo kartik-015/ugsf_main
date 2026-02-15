@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -11,8 +11,6 @@ import {
   EyeOff, 
   GraduationCap,
   Users,
-  Sparkles,
-  Zap,
   CheckCircle
 } from 'lucide-react'
 import { signIn } from 'next-auth/react'
@@ -20,6 +18,14 @@ import toast from 'react-hot-toast'
 import { studentEmailPattern, deriveFromStudentEmail, passwordStrength } from '@/lib/clientValidation'
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"><p className="text-gray-500">Loading...</p></div>}>
+      <RegisterContent />
+    </Suspense>
+  )
+}
+
+function RegisterContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const roleFromUrl = searchParams.get('role') // Get role from URL parameter
@@ -206,20 +212,7 @@ export default function RegisterPage() {
   }, [resendCooldown, showOtpStep])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
-      {/* Animated Background */}
-      <motion.div
-        className="absolute inset-0 -z-10"
-        animate={{
-          background: [
-            'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%)',
-            'radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%)',
-            'radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%)',
-            'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%)',
-          ]
-        }}
-        transition={{ duration: 10, repeat: Infinity }}
-      />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
 
       <div className="container mx-auto px-4 py-8">
         <motion.div
@@ -235,19 +228,17 @@ export default function RegisterPage() {
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             >
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                Join Charusat Portal
+                EvalProX Registration
               </span>
-              <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full animate-pulse animation-delay-2000"></div>
             </motion.div>
             <motion.h1 
-              className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"
+              className="text-4xl font-bold text-gray-900 dark:text-white mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              Create Account ✨
+              Create Account
             </motion.h1>
             <motion.p 
               className="text-xl text-gray-600 dark:text-gray-300"
@@ -255,7 +246,7 @@ export default function RegisterPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              Start your journey with Charusat University
+              Register to access the SGP Evaluation Portal
             </motion.p>
           </div>
 
@@ -274,7 +265,7 @@ export default function RegisterPage() {
                     <motion.button
                       type="button"
                       onClick={() => handleRoleClick('student')}
-                      className="p-6 rounded-xl text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:scale-105 transition-all duration-300"
+                      className="p-6 rounded-xl text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -283,7 +274,7 @@ export default function RegisterPage() {
                     <motion.button
                       type="button"
                       onClick={() => handleRoleClick('guide')}
-                      className="p-6 rounded-xl text-lg font-semibold bg-gradient-to-r from-green-600 to-blue-600 text-white shadow-lg hover:scale-105 transition-all duration-300"
+                      className="p-6 rounded-xl text-lg font-semibold bg-green-600 hover:bg-green-700 text-white shadow-sm transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -381,7 +372,7 @@ export default function RegisterPage() {
                   <motion.button
                     type="submit"
                     disabled={isLoading || !emailValid || pwdStrength.score < 2}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -391,7 +382,7 @@ export default function RegisterPage() {
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         >
-                          <Sparkles className="w-5 h-5" />
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         </motion.div>
                         <span className="ml-2">Creating Account...</span>
                       </div>
@@ -433,11 +424,11 @@ export default function RegisterPage() {
                   <input type="text" value={otp} onChange={e=>setOtp(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-900 text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" placeholder="Enter OTP" />
                   {attemptError && <p className='text-red-500 text-xs mt-1'>{attemptError}</p>}
                 </div>
-                <motion.button type="submit" disabled={verifying} className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <motion.button type="submit" disabled={verifying} className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   {verifying ? (
                     <div className="flex items-center justify-center">
                       <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-                        <Sparkles className="w-5 h-5" />
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       </motion.div>
                       <span className="ml-2">Verifying...</span>
                     </div>

@@ -3,10 +3,10 @@
 export const NAME_REGEX = /^[A-Za-z][A-Za-z\s'.-]{0,98}[A-Za-z]$/
 // Phone: must start with +91 followed by 10 digits
 export const PHONE_REGEX = /^\+91[1-9]\d{9}$/
-// Roll number: 2 digits (year) + 2-3 letters (dept) + 3 digits sequence (e.g. 23CSE001, 23DIT002)
-export const ROLL_REGEX = /^\d{2}[A-Z]{2,3}\d{3}$/
-// Student email pattern: y y dep (2/3) rol(3) @charusat.edu.in ; dep may be specific mapping codes
-export const STUDENT_EMAIL_REGEX = /^(\d{2})([a-zA-Z]{2,3})(\d{3})@charusat\.edu\.in$/i
+// Roll number: optional D prefix + 2 digits (year) + 2-3 letters (dept) + 3 digits sequence (e.g. 23CSE001, 23DIT002, D25DIT079)
+export const ROLL_REGEX = /^D?\d{2}[A-Z]{2,3}\d{3}$/i
+// Student email pattern: optional 'd' prefix + yy + dep(2/3) + rol(3) @charusat.edu.in
+export const STUDENT_EMAIL_REGEX = /^(d?\d{2})([a-zA-Z]{2,3})(\d{3})@charusat\.edu\.in$/i
 
 // Department / Institute resolution maps
 const DEPT_MAP = { CS:'CSE', CE:'CE', IT:'IT', ME:'ME', EC:'EC', CIE:'CIVIL', DCS:'CSE', DCE:'CE', DIT:'IT' }
@@ -15,7 +15,7 @@ export function parseStudentEmail(email){
   if(!email) return null
   const m = email.trim().match(STUDENT_EMAIL_REGEX)
   if(!m) return null
-  const [, yy, depRaw, roll] = m
+  const [, yyRaw, depRaw, roll] = m
   const depUpper = depRaw.toUpperCase()
   
   // Determine institute & canonical department
@@ -25,8 +25,11 @@ export function parseStudentEmail(email){
     return null // Unknown department code
   }
   
-  const admissionYear = 2000 + parseInt(yy, 10)
-  const rollNumber = `${yy}${depUpper}${roll}`.toUpperCase()
+  // Handle D-prefix (e.g. d25dit079) - extract year digits only
+  const hasPrefix = yyRaw.toLowerCase().startsWith('d')
+  const yearDigits = hasPrefix ? yyRaw.slice(1) : yyRaw
+  const admissionYear = 2000 + parseInt(yearDigits, 10)
+  const rollNumber = `${yyRaw}${depUpper}${roll}`.toUpperCase()
   return { admissionYear, department, institute, rollNumber }
 }
 
@@ -42,7 +45,7 @@ export function validatePhone(phone){
 
 export function validateRollNumber(roll){
   if(!roll) return false
-  return ROLL_REGEX.test(roll.trim().toUpperCase())
+  return ROLL_REGEX.test(roll.trim())
 }
 
 export function validateStudentEmail(email){

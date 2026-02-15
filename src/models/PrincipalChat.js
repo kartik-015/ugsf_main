@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 const principalChatSchema = new mongoose.Schema({
   from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // admin target (or mainadmin)
-  roleFrom: { type: String, enum: ['principal','admin','mainadmin'], required: true },
+  roleFrom: { type: String, enum: ['principal','admin','mainadmin','hod','project_coordinator'], required: true },
   page: { type: String, required: true }, // pathname where message originated
   pageTitle: { type: String },
   message: { type: String, required: true, trim: true },

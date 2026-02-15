@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-  enum: ['student','mainadmin','admin','guide','principal','hod'],
+    enum: ['student','mainadmin','admin','guide','principal','hod','project_coordinator'],
     default: 'student',
     index: true,
   },
@@ -206,6 +206,16 @@ userSchema.virtual('studentInfo').get(function() {
 
 // Ensure virtuals are serialized
 userSchema.set('toJSON', { virtuals: true })
+
+// Performance indexes for queries with 1000+ concurrent users
+userSchema.index({ role: 1, department: 1 })
+userSchema.index({ role: 1, isActive: 1 })
+userSchema.index({ role: 1, isActive: 1, department: 1 })
+userSchema.index({ 'academicInfo.name': 1 })
+userSchema.index({ 'academicInfo.rollNumber': 1 })
+userSchema.index({ 'academicInfo.semester': 1 })
+userSchema.index({ role: 1, isEmailVerified: 1 })
+userSchema.index({ email: 'text', 'academicInfo.name': 'text', 'academicInfo.rollNumber': 'text' })
 
 const User = mongoose.models.User || mongoose.model('User', userSchema)
 

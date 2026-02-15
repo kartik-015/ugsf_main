@@ -1,10 +1,18 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-gray-500">Loading...</p></div>}>
+      <AuthErrorContent />
+    </Suspense>
+  )
+}
+
+function AuthErrorContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const error = searchParams.get('error')

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import { ROLES } from '@/lib/roles'
 import { validatePhone, validateName, validateRollNumber } from '@/lib/validation'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 import ProjectGroup from '@/models/ProjectGroup'
+import { sanitizeString, escapeRegExp } from '@/lib/security'
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
@@ -21,7 +22,7 @@ export async function GET(request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-  if (![ROLES.MAIN_ADMIN, ROLES.ADMIN, ROLES.PRINCIPAL, ROLES.HOD, ROLES.GUIDE].includes(session.user.role)) {
+  if (![ROLES.MAIN_ADMIN, ROLES.ADMIN, ROLES.PRINCIPAL, ROLES.HOD, ROLES.GUIDE, ROLES.PROJECT_COORDINATOR].includes(session.user.role)) {
       return NextResponse.json({ message: 'Access denied' }, { status: 403 })
     }
 
@@ -40,12 +41,12 @@ export async function GET(request) {
     let query = { role: 'student', isActive: true }
 
     // Department filtering logic
-    if (session.user.role === ROLES.HOD && session.user.department) {
-      // HOD: if department filter provided, use it; otherwise default to HOD's department
+    if ((session.user.role === ROLES.HOD || session.user.role === ROLES.PROJECT_COORDINATOR) && session.user.department) {
+      // HOD/Coordinator: if department filter provided, use it; otherwise default to their department
       if (searchParams.has('department') && department) {
         query.department = department
       } else if (!searchParams.has('department')) {
-        // No filter provided, default to HOD's department
+        // No filter provided, default to their department
         query.department = session.user.department
       }
       // If department filter is present but empty, show all departments
@@ -63,10 +64,11 @@ export async function GET(request) {
 
     // Additional filters
     if (search) {
+      const safeSearch = escapeRegExp(sanitizeString(search))
       query.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { 'academicInfo.name': { $regex: search, $options: 'i' } },
-        { 'academicInfo.rollNumber': { $regex: search, $options: 'i' } }
+        { email: { $regex: safeSearch, $options: 'i' } },
+        { 'academicInfo.name': { $regex: safeSearch, $options: 'i' } },
+        { 'academicInfo.rollNumber': { $regex: safeSearch, $options: 'i' } }
       ]
     }
 
@@ -97,11 +99,12 @@ export async function GET(request) {
     const students = await User.find(query)
       .select('-password')
       .sort({ 'academicInfo.rollNumber': 1, 'academicInfo.name': 1 })
+      .lean()
 
-    console.log(`✅ Found ${students.length} students`)
+    console.log(`Found ${students.length} students`)
 
     // For admin, mainadmin, principal, hod include project membership summary
-  if ([ROLES.ADMIN, ROLES.MAIN_ADMIN, ROLES.PRINCIPAL, ROLES.HOD].includes(session.user.role)) {
+  if ([ROLES.ADMIN, ROLES.MAIN_ADMIN, ROLES.PRINCIPAL, ROLES.HOD, ROLES.PROJECT_COORDINATOR].includes(session.user.role)) {
       const studentIds = students.map(s => s._id)
       const groups = await ProjectGroup.find({ 'members.student': { $in: studentIds } }).select('groupId members')
       const membership = {}

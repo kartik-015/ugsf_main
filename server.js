@@ -6,18 +6,38 @@ const dev = process.env.NODE_ENV !== 'production'
 const app = next({ dev })
 const handle = app.getRequestHandler()
 
+// Increase Node.js limits for 1000 concurrent users
+if (!dev) {
+  // Allow more event listeners
+  require('events').EventEmitter.defaultMaxListeners = 100
+}
+
 app.prepare().then(() => {
   const server = createServer((req, res) => {
+    // Set keep-alive for HTTP connection reuse
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('Keep-Alive', 'timeout=30')
     handle(req, res)
   })
 
+  // Tune HTTP server for high concurrency
+  server.keepAliveTimeout = 30000      // 30s keep-alive
+  server.headersTimeout = 35000        // Must be > keepAliveTimeout
+  server.maxHeadersCount = 200
+  server.timeout = 120000              // 2 min global timeout
+  server.maxConnections = 2000         // Allow up to 2000 connections
+
   const io = new Server(server, {
     cors: {
-    // In dev reflect the request origin to avoid mismatches; in production set NEXTAUTH_URL env var
-    origin: process.env.NEXTAUTH_URL || true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
-    }
+      origin: process.env.NEXTAUTH_URL || true,
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      credentials: true
+    },
+    // Performance tuning for 1000+ concurrent sockets
+    perMessageDeflate: false,          // Disable compression (saves CPU)
+    maxHttpBufferSize: 1e6,            // 1MB max message size
+    connectTimeout: 10000,             // 10s connection timeout
+    transports: ['websocket', 'polling'], // Prefer websocket
   })
 
   // Increase heartbeat settings to tolerate proxies and slow networks

@@ -3,9 +3,61 @@ import { getToken } from 'next-auth/jwt'
 
 const PUBLIC_PATHS = ['/', '/register', '/api/auth', '/favicon.ico']
 
+// In-memory rate limiting for middleware (per IP)
+const rateLimitMap = new Map<string, { count: number; start: number }>()
+const RATE_LIMIT_WINDOW = 60_000 // 1 minute
+const RATE_LIMIT_MAX = 200 // max requests per window per IP
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now - entry.start > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(ip, { count: 1, start: now })
+    return false
+  }
+  entry.count++
+  if (entry.count > RATE_LIMIT_MAX) return true
+  return false
+}
+
+// Cleanup stale entries every 2 minutes
+if (typeof globalThis !== 'undefined') {
+  const cleanup = () => {
+    const now = Date.now()
+    rateLimitMap.forEach((v, k) => {
+      if (now - v.start > RATE_LIMIT_WINDOW) rateLimitMap.delete(k)
+    })
+  }
+  if (typeof setInterval !== 'undefined') {
+    setInterval(cleanup, 120_000)
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const url = new URL(req.url)
   const { pathname } = url
+
+  // Rate limiting check
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('x-real-ip')
+    || req.ip
+    || 'unknown'
+
+  if (isRateLimited(ip)) {
+    return new NextResponse(
+      JSON.stringify({ error: 'Too many requests' }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } }
+    )
+  }
+
+  // Block suspicious query patterns (NoSQL injection attempts)
+  const searchStr = url.search
+  if (searchStr && /\$[a-zA-Z]+/.test(searchStr)) {
+    return new NextResponse(
+      JSON.stringify({ error: 'Invalid request' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
 
   // Allow public (exact or prefix for auth routes)
   if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
@@ -40,7 +92,15 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+
+  // Add security headers to all responses
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  return response
 }
 
 export const config = {

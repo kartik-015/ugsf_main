@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb'
 import mongoose from 'mongoose'
 import { smtpConfigured } from '@/lib/mailer'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const result = {
     timestamp: new Date().toISOString(),

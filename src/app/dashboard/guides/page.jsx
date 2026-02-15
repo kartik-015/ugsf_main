@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { Upload, FileSpreadsheet, AlertCircle, Download } from 'lucide-react'
+import { Upload, FileSpreadsheet, AlertCircle, Download, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function GuidesPage(){
   const { data: session } = useSession()
-  const isAdmin = ['admin','mainadmin','principal','hod'].includes(session?.user?.role)
+  const isAdmin = ['admin','mainadmin','principal','hod','project_coordinator'].includes(session?.user?.role)
 
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
@@ -16,46 +16,93 @@ export default function GuidesPage(){
   const [dept, setDept] = useState('')
   const [role, setRole] = useState('')
   const [search, setSearch] = useState('')
-  const [university, setUniversity] = useState('CHARUSAT')
+  const [searchResults, setSearchResults] = useState([])
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  const searchRef = useRef(null)
+  const searchTimeout = useRef(null)
 
   const FIELD_OPTIONS = [
-    { key: 'department', label: 'Department' },
-    { key: 'role', label: 'Role' },
-    { key: 'specialization', label: 'Specialization' },
-    { key: 'education', label: 'Education' },
     { key: 'email', label: 'Email' },
-    { key: 'university', label: 'University' },
-    { key: 'institute', label: 'Institute' },
+    { key: 'specialization', label: 'Specialization' },
+    { key: 'status', label: 'Status' },
   ]
-  const [visibleFields, setVisibleFields] = useState(['department','role','email','university'])
+  const [visibleFields, setVisibleFields] = useState(['email','specialization','status'])
+  const [guideProjectMap, setGuideProjectMap] = useState({})
   const [showImport, setShowImport] = useState(false)
   const [importMode, setImportMode] = useState('append')
   const [importFile, setImportFile] = useState(null)
   const [uploading, setUploading] = useState(false)
 
   const departments = ['CSE','CE','IT']
-  const roleOptions = ['guide','hod','admin','mainadmin']
+  const roleOptions = ['guide','project_coordinator']
   const toggleExclusive = (current,setter,val)=> setter(current===val?'':val)
   const toggleField = key => setVisibleFields(prev => prev.includes(key)? prev.filter(k=>k!==key):[...prev,key])
+
+  // Dynamic search
+  const handleSearchInput = (value) => {
+    setSearch(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (value.length >= 2) {
+      searchTimeout.current = setTimeout(async () => {
+        try {
+          const qs = [`search=${encodeURIComponent(value)}`]
+          if (dept) qs.push(`department=${dept}`)
+          const res = await fetch('/api/guides?' + qs.join('&'))
+          if (res.ok) {
+            const data = await res.json()
+            setSearchResults(data.guides || [])
+            setShowSearchDropdown(true)
+          }
+        } catch { /* ignore */ }
+      }, 300)
+    } else {
+      setSearchResults([])
+      setShowSearchDropdown(false)
+    }
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSearchDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const buildQuery = () => {
     const qs=[]
     if (dept) qs.push(`department=${dept}`)
     if (role) qs.push(`role=${role}`)
     if (search) qs.push(`search=${encodeURIComponent(search)}`)
-    if (university) qs.push(`university=${university}`)
-    qs.push(`institute=DEPSTAR`)
     return qs.length?'?'+qs.join('&'):''
   }
 
   const fetchGuides = async () => {
     setLoading(true)
+    setShowSearchDropdown(false)
     try {
       const res = await fetch('/api/guides'+buildQuery())
       if (res.ok){
         const data=await res.json()
-        setResults(data.guides||[])
+        const guides = data.guides||[]
+        setResults(guides)
         setSubmitted(true)
+        // Fetch project assignment status for guides
+        try {
+          const projRes = await fetch('/api/projects')
+          if (projRes.ok) {
+            const projData = await projRes.json()
+            const map = {}
+            ;(projData.projects || []).forEach(p => {
+              if (p.internalGuide?._id) {
+                const gid = String(p.internalGuide._id)
+                if (!map[gid]) map[gid] = []
+                map[gid].push(p.title || p.groupId)
+              }
+            })
+            setGuideProjectMap(map)
+          }
+        } catch { /* ignore */ }
       } else {
         const err=await res.json().catch(()=>({}))
         toast.error(err.message||'Failed to load')
@@ -136,7 +183,7 @@ export default function GuidesPage(){
   }
 
   const submit = e => { e.preventDefault(); fetchGuides() }
-  const reset = () => { setDept(''); setRole(''); setSearch(''); setUniversity('CHARUSAT'); setResults([]); setSubmitted(false) }
+  const reset = () => { setDept(''); setRole(''); setSearch(''); setResults([]); setSubmitted(false) }
 
   if(!session || !isAdmin) return null
 
@@ -149,30 +196,38 @@ export default function GuidesPage(){
         </div>
         <form onSubmit={submit} className='card p-6 mb-6 space-y-6'>
           <div className='space-y-6'>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-              <div className='w-full'>
-                <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>University</p>
-                <div className='flex flex-wrap gap-3'>
-                  <button type='button' disabled className='px-4 py-2.5 rounded-lg border text-sm font-semibold bg-blue-600 text-white border-blue-600 shadow-md cursor-default'>CHARUSAT</button>
-                </div>
-              </div>
-              <div className='w-full'>
-                <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Institute</p>
-                <div className='flex flex-wrap gap-3'>
-                  <button type='button' disabled className='px-4 py-2.5 rounded-lg border text-sm font-semibold bg-blue-600 text-white border-blue-600 shadow-md cursor-default'>DEPSTAR</button>
-                </div>
-              </div>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               <div className='w-full'>
                 <FilterGroup title='DEPARTMENT' options={departments} value={dept} onSelect={v=>toggleExclusive(dept,setDept,v)} />
               </div>
-            </div>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               <div className='w-full'>
                 <FilterGroup title='ROLE' options={roleOptions} value={role} onSelect={v=>toggleExclusive(role,setRole,v)} />
               </div>
-              <div className='w-full'>
-                <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Search Guides</p>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder='Name/email' className='w-full px-4 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 h-11 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all duration-200'/>
+            </div>
+            <div className='w-full' ref={searchRef}>
+              <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Search Guides</p>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5'/>
+                <input value={search} onChange={e=>handleSearchInput(e.target.value)} placeholder='Start typing name or email...' className='w-full pl-10 px-4 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 h-11 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all duration-200'
+                  onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
+                />
+                {showSearchDropdown && searchResults.length > 0 && (
+                  <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto'>
+                    {searchResults.slice(0,10).map((g, i) => (
+                      <div key={g._id || i} className='px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0'
+                        onClick={() => { setSearch(g.email || g.academicInfo?.name || ''); setShowSearchDropdown(false) }}
+                      >
+                        <div className='w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-700'>
+                          {(g.academicInfo?.name || g.email || '?')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div className='font-medium text-gray-900 dark:text-gray-100'>{g.academicInfo?.name || g.email?.split('@')[0]}</div>
+                          <div className='text-xs text-gray-500'>{g.department || ''} · {g.role || ''}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -262,12 +317,8 @@ export default function GuidesPage(){
                     <tr>
                       <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Name</th>
                       {visibleFields.includes('email') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Email</th>}
-                      {visibleFields.includes('department') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Department</th>}
-                      {visibleFields.includes('role') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Role</th>}
-                      {visibleFields.includes('university') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>University</th>}
-                      {visibleFields.includes('institute') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Institute</th>}
                       {visibleFields.includes('specialization') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Specialization</th>}
-                      {visibleFields.includes('education') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Education</th>}
+                      {visibleFields.includes('status') && <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Status</th>}
                     </tr>
                   </thead>
                   <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
@@ -275,18 +326,20 @@ export default function GuidesPage(){
                       <motion.tr key={f._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150'>
                         <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>{f.academicInfo?.name || f.email.split('@')[0]}</td>
                         {visibleFields.includes('email') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.email}</td>}
-                        {visibleFields.includes('department') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.department || '—'}</td>}
-                        {visibleFields.includes('role') && (
+                        {visibleFields.includes('specialization') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.specialization || '—'}</td>}
+                        {visibleFields.includes('status') && (
                           <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${f.role === 'hod' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'}`}>
-                              {f.role === 'hod' ? 'HOD' : f.role === 'guide' ? 'Guide' : f.role?.toUpperCase() || '—'}
-                            </span>
+                            {guideProjectMap[String(f._id)] ? (
+                              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' title={guideProjectMap[String(f._id)].join(', ')}>
+                                Assigned ({guideProjectMap[String(f._id)].length} group{guideProjectMap[String(f._id)].length !== 1 ? 's' : ''})
+                              </span>
+                            ) : (
+                              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'>
+                                Not Assigned
+                              </span>
+                            )}
                           </td>
                         )}
-                        {visibleFields.includes('university') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.university || '—'}</td>}
-                        {visibleFields.includes('institute') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.institute || '—'}</td>}
-                        {visibleFields.includes('specialization') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.specialization || '—'}</td>}
-                        {visibleFields.includes('education') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.education || '—'}</td>}
                       </motion.tr>
                     ))}
                   </tbody>

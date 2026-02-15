@@ -32,8 +32,8 @@ export default function SettingsPage() {
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
-    assignments: true,
-    grades: true,
+    projects: true,
+    approvals: true,
     announcements: true
   })
 
