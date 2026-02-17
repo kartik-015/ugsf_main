@@ -11,9 +11,11 @@ export const PROJECT_DOMAINS = [
   'Game Development',
   'Embedded Systems',
   'AR/VR',
-  'Robotics'
+  'Robotics',
+  'Other'
 ]
 
 export function isValidDomain(domain){
-  return PROJECT_DOMAINS.includes(domain)
+  // Accept predefined domains or any non-empty custom domain
+  return PROJECT_DOMAINS.includes(domain) || (typeof domain === 'string' && domain.trim().length > 0)
 }

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-
-import cloudinary from '@/lib/cloudinary'
+import { writeFile, mkdir } from 'fs/promises'
+import path from 'path'
 
 export async function POST(request) {
   try {
@@ -27,20 +27,17 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload to Cloudinary
+    // Save to local public/uploads/reports directory
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'reports')
+    await mkdir(uploadsDir, { recursive: true })
+
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const uploadRes = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({
-        resource_type: 'raw',
-        folder: 'ugsf-reports',
-        public_id: `${Date.now()}_${safeName}`.replace(/\.[^.]+$/, ''),
-        format: 'pdf',
-      }, (err, result) => {
-        if (err) reject(err)
-        else resolve(result)
-      }).end(buffer)
-    })
-    const url = uploadRes.secure_url
+    const uniqueName = `${Date.now()}_${safeName}`
+    const filePath = path.join(uploadsDir, uniqueName)
+    await writeFile(filePath, buffer)
+
+    // Return URL path that can be served by Next.js static file serving
+    const url = `/uploads/reports/${uniqueName}`
     return NextResponse.json({ success: true, url, filename: safeName })
   } catch (error) {
     console.error('Upload error:', error)

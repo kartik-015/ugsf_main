@@ -94,9 +94,11 @@ export async function middleware(req: NextRequest) {
 
   const response = NextResponse.next()
 
-  // Add security headers to all responses
+  // Add security headers to all responses (except API PDF route)
   response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('X-Frame-Options', 'DENY')
+  if (!pathname.startsWith('/api/reports/pdf')) {
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  }
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
@@ -105,6 +107,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|images|assets|favicon.ico).*)'
+    '/((?!_next/static|_next/image|images|assets|uploads|favicon.ico).*)'
   ]
 }

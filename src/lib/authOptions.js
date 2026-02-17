@@ -23,22 +23,22 @@ export const authOptions = {
           throw new Error('User not found')
         }
 
-        // Block sign-in until email verified
-        if (!user.isEmailVerified) {
-          throw new Error('Email not verified')
+        // Check if user is registered
+        if (!user.isRegistered) {
+          throw new Error('Please register first before logging in.')
         }
 
-        // Block sign-in if not approved (pending or rejected)
-        if (user.approvalStatus === 'pending') {
-          throw new Error('Your registration is pending admin approval. Please wait for approval.')
-        }
-
-        if (user.approvalStatus === 'rejected') {
-          throw new Error('Your registration has been rejected. Please contact admin.')
-        }
-
-        if (!user.isApproved || !user.isActive) {
-          throw new Error('Your account is not active. Please contact admin.')
+        // Block sign-in if not approved (for non-student roles that need approval)
+        if (user.role !== 'student') {
+          if (user.approvalStatus === 'pending') {
+            throw new Error('Your registration is pending admin approval. Please wait for approval.')
+          }
+          if (user.approvalStatus === 'rejected') {
+            throw new Error('Your registration has been rejected. Please contact admin.')
+          }
+          if (!user.isApproved || !user.isActive) {
+            throw new Error('Your account is not active. Please contact admin.')
+          }
         }
 
         const isValidPassword = await user.comparePassword(credentials.password)
@@ -61,12 +61,13 @@ export const authOptions = {
           isOnboarded: user.isOnboarded,
           isApproved: user.isApproved,
           approvalStatus: user.approvalStatus,
+          mustChangePassword: user.mustChangePassword || false,
         }
       }
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.role = user.role
         token.department = user.department
@@ -75,6 +76,18 @@ export const authOptions = {
         token.isOnboarded = user.isOnboarded
         token.isApproved = user.isApproved
         token.approvalStatus = user.approvalStatus
+        token.mustChangePassword = user.mustChangePassword || false
+      }
+      // On session update (e.g. after password change), refresh from DB
+      if (trigger === 'update') {
+        try {
+          await dbConnect()
+          const freshUser = await User.findById(token.sub).select('mustChangePassword isOnboarded')
+          if (freshUser) {
+            token.mustChangePassword = freshUser.mustChangePassword || false
+            token.isOnboarded = freshUser.isOnboarded
+          }
+        } catch {}
       }
       return token
     },
@@ -88,6 +101,7 @@ export const authOptions = {
         session.user.isOnboarded = token.isOnboarded
         session.user.isApproved = token.isApproved
         session.user.approvalStatus = token.approvalStatus
+        session.user.mustChangePassword = token.mustChangePassword || false
       }
       return session
     },

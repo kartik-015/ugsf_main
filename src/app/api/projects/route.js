@@ -17,13 +17,19 @@ export async function POST(request) {
 
     await dbConnect()
     const body = await request.json()
-    let { title, description, domain, technology, department, semester, members = [], memberEmails = [], memberEmailsString, memberIdsString } = body
-    if (department) department = department.toUpperCase()
+    let { title, description, domain, technology, members = [], memberEmails = [], memberEmailsString, memberIdsString } = body
 
     if (!title?.trim()) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Project title is required' } }, { status: 400 })
-    if (!department) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Department is required' } }, { status: 400 })
-    if (!semester) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Semester is required' } }, { status: 400 })
     if (!domain?.trim()) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Domain is required' } }, { status: 400 })
+
+    // Auto-fetch department and semester from the logged-in user
+    const currentUser = await User.findById(session.user.id).select('department academicInfo admissionYear institute')
+    if (!currentUser) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'User not found' } }, { status: 404 })
+    
+    let department = (currentUser.department || '').toUpperCase()
+    const semester = currentUser.academicInfo?.semester
+    if (!department) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Your department is not set. Please contact admin.' } }, { status: 400 })
+    if (!semester) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Your semester is not set. Please contact admin.' } }, { status: 400 })
 
     if (memberEmailsString) {
       const v = validateSemicolonList(memberEmailsString)
@@ -63,9 +69,8 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Maximum 4 members per team (including leader)' } }, { status: 400 })
     }
 
-    // Same institute check
-    const leaderUser = await User.findById(leaderId).select('institute')
-    const diffInst = memberUsers.filter(m => m.institute && leaderUser.institute && m.institute !== leaderUser.institute)
+    // Same institute check — reuse currentUser as leader info
+    const diffInst = memberUsers.filter(m => m.institute && currentUser.institute && m.institute !== currentUser.institute)
     if (diffInst.length > 0) {
       return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'All team members must be from the same institute' } }, { status: 400 })
     }
@@ -253,17 +258,45 @@ export async function PATCH(request) {
       return NextResponse.json({ ok: true, data: project })
     }
 
-    // SUBMIT MONTHLY REPORT
+    // SUBMIT MONTHLY REPORT (create draft or replace existing draft)
     if (body.submitReport) {
       const isMember = project.members.some(m => String(m.student._id || m.student) === String(session.user.id))
       if (!isMember) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only members can submit' } }, { status: 403 })
       const { month, year, title, pdfUrl } = body.submitReport
       if (!month || !year || !title || !pdfUrl) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'All fields required' } }, { status: 400 })
+      
+      // Check deadline (25th of month)
+      const now = new Date()
+      const reportDate = new Date(year, month - 1, 25, 23, 59, 59)
+      if (now > reportDate) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Submission deadline has passed (25th of the month)' } }, { status: 400 })
+      
       const existing = project.monthlyReports.find(r => r.month === month && r.year === year)
-      if (existing) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: `Report for ${month}/${year} already submitted` } }, { status: 400 })
-      project.monthlyReports.push({ month, year, title, pdfUrl, submittedBy: session.user.id, status: 'submitted' })
+      if (existing) {
+        // Can only replace if not turned in yet
+        if (existing.turnedIn) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Report already turned in. Cannot replace.' } }, { status: 400 })
+        existing.title = title
+        existing.pdfUrl = pdfUrl
+        existing.submittedBy = session.user.id
+        existing.replacedAt = new Date()
+      } else {
+        project.monthlyReports.push({ month, year, title, pdfUrl, submittedBy: session.user.id, status: 'draft', turnedIn: false })
+      }
       await project.save()
-      if (project.internalGuide) await Notification.createAndEmit({ recipient: project.internalGuide, type: 'report-submitted', title: 'Report Submitted', message: `Team "${project.title}" submitted report for ${month}/${year}.`, link: '/dashboard/projects', relatedProject: project._id })
+      return NextResponse.json({ ok: true, data: project })
+    }
+
+    // TURN IN REPORT (locks it, makes it visible to guide)
+    if (body.turnInReport) {
+      const isMember = project.members.some(m => String(m.student._id || m.student) === String(session.user.id))
+      if (!isMember) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only members can turn in' } }, { status: 403 })
+      const report = project.monthlyReports.id(body.turnInReport)
+      if (!report) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'Report not found' } }, { status: 404 })
+      if (report.turnedIn) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Already turned in' } }, { status: 400 })
+      report.turnedIn = true
+      report.turnedInAt = new Date()
+      report.status = 'submitted'
+      await project.save()
+      if (project.internalGuide) await Notification.createAndEmit({ recipient: project.internalGuide, type: 'report-submitted', title: 'Report Submitted', message: `Team "${project.title}" submitted report for ${report.month}/${report.year}.`, link: '/dashboard/projects', relatedProject: project._id })
       return NextResponse.json({ ok: true, data: project })
     }
 
@@ -273,6 +306,7 @@ export async function PATCH(request) {
       const { reportId, grade, score, feedback, reportStatus } = body.gradeReport
       const report = project.monthlyReports.id(reportId)
       if (!report) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'Report not found' } }, { status: 404 })
+      if (!report.turnedIn) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Report has not been turned in yet' } }, { status: 400 })
       if (grade) report.grade = grade
       if (score !== undefined) report.score = Math.max(0, Math.min(10, score))
       if (feedback) report.feedback = feedback

@@ -26,7 +26,7 @@ import dynamic from 'next/dynamic'
 const ChatWithAdmin = dynamic(() => import('@/components/chat/ChatWithAdmin'), { ssr:false })
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin','mainadmin','principal','hod','project_coordinator','guide'] },
   { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
   { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
   { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal','project_coordinator'] },
@@ -52,6 +52,12 @@ export default function DashboardLayout({ children }) {
       return
     }
 
+    // Check if user must change password first
+    if (session.user.mustChangePassword && pathname !== '/change-password') {
+      router.push('/change-password')
+      return
+    }
+
     // Check if user needs onboarding (any role) but honor temporary cookie set immediately after completion
     let cookieOnboarded = false
     try {
@@ -65,6 +71,12 @@ export default function DashboardLayout({ children }) {
     const needsOnboarding = !(session.user.isOnboarded || cookieOnboarded)
     if (needsOnboarding && pathname !== '/onboarding') {
       router.push('/onboarding')
+      return
+    }
+
+    // Students go directly to projects page, not dashboard
+    if (session.user.role === 'student' && pathname === '/dashboard') {
+      router.replace('/dashboard/projects')
       return
     }
   }, [session, status, router, pathname])
@@ -162,8 +174,8 @@ export default function DashboardLayout({ children }) {
     return null
   }
 
-  // Don't render layout during admin redirect
-  if (pathname === '/dashboard' && ['admin','principal','hod','project_coordinator'].includes(session.user.role)) {
+  // Don't render layout during admin or student redirect
+  if (pathname === '/dashboard' && ['admin','principal','hod','project_coordinator','student'].includes(session.user.role)) {
     return null
   }
 

@@ -24,6 +24,7 @@ export async function GET(request) {
     const safeQuery = escapeRegExp(sanitizeString(query))
     const searchConditions = {
       role: 'student',
+      isRegistered: true,
       isEmailVerified: true,
       $or: [
         { 'academicInfo.name': { $regex: safeQuery, $options: 'i' } },

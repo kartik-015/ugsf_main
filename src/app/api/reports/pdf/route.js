@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-import connectDB from '@/lib/mongodb'
-import ReportFile from '@/models/ReportFile'
+import { readFile } from 'fs/promises'
+import { existsSync } from 'fs'
+import path from 'path'
 
 export async function GET(request) {
   try {
@@ -10,19 +11,25 @@ export async function GET(request) {
     if (!session) return new NextResponse('Unauthorized', { status: 401 })
 
     const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-    if (!id) return new NextResponse('Missing file ID', { status: 400 })
+    const file = searchParams.get('file')
+    if (!file) return new NextResponse('Missing file parameter', { status: 400 })
 
-    await connectDB()
-    const file = await ReportFile.findById(id)
-    if (!file) return new NextResponse('File not found', { status: 404 })
+    // Sanitize to prevent directory traversal
+    const safeFile = path.basename(file)
+    const filePath = path.join(process.cwd(), 'public', 'uploads', 'reports', safeFile)
 
-    return new NextResponse(file.data, {
+    if (!existsSync(filePath)) {
+      return new NextResponse('File not found', { status: 404 })
+    }
+
+    const buffer = await readFile(filePath)
+
+    return new Response(buffer, {
+      status: 200,
       headers: {
-        'Content-Type': file.contentType || 'application/pdf',
-        'Content-Disposition': `inline; filename="${file.filename}"`,
-        'Content-Length': String(file.data.length),
-        'X-Frame-Options': 'SAMEORIGIN',
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="${safeFile}"`,
+        'Content-Length': buffer.length.toString(),
         'Cache-Control': 'private, max-age=3600',
       },
     })

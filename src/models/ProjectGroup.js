@@ -31,12 +31,15 @@ const monthlyReportSchema = new mongoose.Schema({
   pdfUrl: { type: String, required: true },
   submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   submittedAt: { type: Date, default: Date.now },
+  turnedIn: { type: Boolean, default: false },
+  turnedInAt: Date,
+  replacedAt: Date,
   grade: { type: String, enum: ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F', ''], default: '' },
   score: { type: Number, min: 0, max: 10 },
   feedback: String,
   feedbackAt: Date,
   feedbackBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  status: { type: String, enum: ['submitted', 'graded', 'revision-needed'], default: 'submitted' },
+  status: { type: String, enum: ['draft', 'submitted', 'graded', 'revision-needed'], default: 'draft' },
 }, { _id: true })
 
 const deadlineSchema = new mongoose.Schema({

@@ -51,7 +51,10 @@ export default function LoginForm() {
             const s = await res.json()
             const u = s?.user
             if (u) {
-              if (!u.isOnboarded) {
+              // Check if must change password first
+              if (u.mustChangePassword) {
+                window.location.href = '/change-password'
+              } else if (!u.isOnboarded) {
                 window.location.href = '/onboarding'
               } else {
                 // Role-based dashboard redirection
@@ -63,10 +66,10 @@ export default function LoginForm() {
                   case 'principal':
                     window.location.href = '/dashboard/admin'
                     break
-                  case 'guide':
-                    window.location.href = '/dashboard'
-                    break
                   case 'student':
+                    window.location.href = '/dashboard/projects'
+                    break
+                  case 'guide':
                   default:
                     window.location.href = '/dashboard'
                     break

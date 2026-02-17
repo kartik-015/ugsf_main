@@ -1,14 +1,22 @@
 // Lightweight client-side validation mirroring server rules
-export const studentEmailPattern = /^(\d{2})(cs|ce|it|me|ec|cie|dcs|dce|dit)\d{3}@charusat\.edu\.in$/i
+// Supports both normal (23dit015) and D-prefix (d25dit079) email formats
+export const studentEmailPattern = /^(d?\d{2})(cs|ce|it|me|ec|cie|dcs|dce|dit)\d{3}@charusat\.edu\.in$/i
 export function deriveFromStudentEmail(email){
   const m = email.match(studentEmailPattern)
   if(!m) return null
-  const yy = m[1]; const dep = m[2].toUpperCase()
+  const yyRaw = m[1]; const dep = m[2].toUpperCase()
   const deptMap = { CS:'CSE', CE:'CE', IT:'IT', ME:'ME', EC:'EC', CIE:'CIVIL', DCS:'CSE', DCE:'CE', DIT:'IT' }
   let institute = 'DEPSTAR'
   let department = deptMap[dep]
   if(!department) return null
-  return { admissionYear: 2000 + parseInt(yy,10), department, institute, rollNumber: (yy+dep+m[0].slice(dep.length+yy.length, dep.length+yy.length+3)).toUpperCase() }
+  // Handle D-prefix: extract numeric year digits only
+  const hasPrefix = yyRaw.toLowerCase().startsWith('d')
+  const yearDigits = hasPrefix ? yyRaw.slice(1) : yyRaw
+  const admissionYear = 2000 + parseInt(yearDigits, 10)
+  // Build roll number preserving original prefix
+  const localPart = email.split('@')[0]
+  const rollNumber = localPart.toUpperCase()
+  return { admissionYear, department, institute, rollNumber }
 }
 export const phonePattern = /^\+91[1-9]\d{9}$/
 export function validatePhoneRuntime(v){ return phonePattern.test((v||'').trim()) }

@@ -70,7 +70,7 @@ export default function ProjectsPage(){
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ title:'', description:'', domain:'', department:'', semester:1 })
+  const [form, setForm] = useState({ title:'', description:'', domain:'', customDomain:'' })
 
   // Selection modal
   const [selected, setSelected] = useState(null)
@@ -228,7 +228,7 @@ export default function ProjectsPage(){
 
   // Function to clear all form fields when opening modal
   const clearAllFormFields = () => {
-    setForm({ title: '', description: '', domain: '', department: '', semester: 1 })
+    setForm({ title: '', description: '', domain: '', customDomain: '' })
     setSelectedMembers([])
     setMemberSearch('')
     setMemberSuggestions([])
@@ -248,13 +248,15 @@ export default function ProjectsPage(){
   }
 
   const descWords = wordCount(form.description)
-  const formValid = form.title.trim() && form.domain && descWords<=200
+  const effectiveDomain = form.domain === 'Other' ? form.customDomain?.trim() : form.domain
+  const formValid = form.title.trim() && effectiveDomain && descWords<=200
 
   const submitProject = async () => {
     try {
-      const payload = { ...form }
-      if(!payload.department) payload.department = session?.user?.academicInfo?.department
-      if(payload.department) payload.department = payload.department.toUpperCase()
+      // Use effective domain (custom text if "Other" selected)
+      const finalDomain = form.domain === 'Other' ? form.customDomain?.trim() : form.domain
+      const payload = { title: form.title, description: form.description, domain: finalDomain }
+      // Department and semester are auto-fetched on the backend from session
       
       // Check for cross-department/institute team
       const leaderDept = session?.user?.academicInfo?.department
@@ -289,8 +291,8 @@ export default function ProjectsPage(){
       const memberEmails = selectedMembers.map(m => m.email)
       payload.memberEmails = memberEmails
       
-      if(payload.domain && !PROJECT_DOMAINS.includes(payload.domain)) {
-        toast.error('Select a valid domain from list')
+      if(!finalDomain) {
+        toast.error('Please select or enter a domain')
         return
       }
       if(descWords>200){ toast.error('Description exceeds 200 words'); return }
@@ -1152,6 +1154,26 @@ export default function ProjectsPage(){
             </div>
             
             <div className='p-6 max-h-[70vh] overflow-y-auto'>
+              {/* Team Leader (auto-fetched) */}
+              <div className='mb-5 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl'>
+                <div className='text-[11px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-2 flex items-center gap-1.5'>
+                  <ShieldCheck className='w-3.5 h-3.5' /> Team Leader (You)
+                </div>
+                <div className='flex items-center gap-3'>
+                  <div className='w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm'>
+                    {(session?.user?.academicInfo?.name || session?.user?.email || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className='font-semibold text-sm text-gray-900 dark:text-gray-100'>
+                      {session?.user?.academicInfo?.name || session?.user?.email?.split('@')[0]}
+                    </div>
+                    <div className='text-xs text-gray-500 dark:text-gray-400'>
+                      {session?.user?.academicInfo?.rollNumber || session?.user?.email} · {session?.user?.department} · Sem {session?.user?.academicInfo?.semester}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className='grid md:grid-cols-2 gap-4 text-sm'>
                 <div className='flex flex-col gap-1.5'>
                   <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Project Title</label>
@@ -1159,29 +1181,34 @@ export default function ProjectsPage(){
                 </div>
                 <div className='flex flex-col gap-1.5'>
                   <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Domain</label>
-                  <select className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition' value={form.domain} onChange={e=>setForm({...form,domain:e.target.value})}>
+                  <select className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition' value={form.domain} onChange={e=>setForm({...form,domain:e.target.value, customDomain: e.target.value === 'Other' ? form.customDomain : ''})}>
                     <option value=''>Select Domain</option>
                     {PROJECT_DOMAINS.map(d=> <option key={d} value={d}>{d}</option>)}
                   </select>
-                </div>
-                <div className='flex flex-col gap-1.5'>
-                  <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Department</label>
-                  <select className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition' value={form.department} onChange={e=>setForm({...form,department:e.target.value})}>
-                    <option value=''>Select</option>
-                    {departmentsList.map(d=> <option key={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div className='flex flex-col gap-1.5'>
-                  <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Semester</label>
-                  <select className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition' value={form.semester} onChange={e=>setForm({...form,semester:parseInt(e.target.value)})}>
-                    {[1,2,3,4,5,6,7,8].map(s=> <option key={s}>{s}</option>)}
-                  </select>
+                  {form.domain === 'Other' && (
+                    <input 
+                      className='mt-1.5 px-3 py-2.5 border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-amber-500 outline-none transition' 
+                      value={form.customDomain} 
+                      onChange={e=>setForm({...form,customDomain:e.target.value})} 
+                      placeholder='Enter your domain...' 
+                    />
+                  )}
                 </div>
                 <div className='md:col-span-2 flex flex-col gap-1.5'>
-                  <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Description</label>
+                  <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Problem Statement / Description</label>
                   <textarea className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 min-h-[80px] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none' value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder='Problem statement, objective, impact... (≤200 words)' />
                   <div className={`text-[10px] font-medium ${descWords>200?'text-red-500':'text-gray-400'}`}>{descWords} / 200 words</div>
                 </div>
+
+                {/* Internal Guide info */}
+                <div className='md:col-span-2 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl'>
+                  <div className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                    <UserCheck className='w-3.5 h-3.5' />
+                    <span className='font-medium'>Internal Guide</span>
+                    <span className='text-[10px] italic'>— Will be assigned by your HOD after submission</span>
+                  </div>
+                </div>
+
                 <div className='md:col-span-2 flex flex-col gap-1.5'>
                   <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Add Teammates</label>
                   <div className='relative'>
@@ -1235,12 +1262,15 @@ export default function ProjectsPage(){
                   
                   {selectedMembers.length > 0 && (
                     <div className='mt-2'>
-                      <div className='text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2'>Selected ({selectedMembers.length})</div>
+                      <div className='text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2'>Team Members ({selectedMembers.length})</div>
                       <div className='flex flex-wrap gap-2'>
                         {selectedMembers.map((member) => (
                           <div key={member.email} className='flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm'>
-                            <span className='font-medium text-gray-900 dark:text-gray-100'>{member.name}</span>
-                            <span className='text-[10px] text-gray-500'>({member.department})</span>
+                            <div className='w-6 h-6 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300 text-[10px] font-bold'>
+                              {member.name?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <span className='font-semibold text-gray-900 dark:text-gray-100 text-xs'>{member.studentId}</span>
+                            <span className='text-xs text-gray-600 dark:text-gray-400'>— {member.name}</span>
                             <button 
                               onClick={() => removeMemberFromSelection(member.email)}
                               className='text-red-400 hover:text-red-600 transition ml-1'
@@ -1365,10 +1395,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const [groupDetails, setGroupDetails] = useState(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [memberView, setMemberView] = useState(null)
-  const [externalGuideEmail, setExternalGuideEmail] = useState('')
-  const [externalGuideName, setExternalGuideName] = useState('')
+  const [externalGuideEmail, setExternalGuideEmail] = useState(project.externalGuide?.email || '')
+  const [externalGuideName, setExternalGuideName] = useState(project.externalGuide?.name || '')
   const [progressDraft, setProgressDraft] = useState(project.progressScore||0)
-  const [confirmGuideChange, setConfirmGuideChange] = useState(false)
+  // Pending guide changes — only saved when HOD clicks Save
+  const [pendingInternalGuide, setPendingInternalGuide] = useState(project.internalGuide?._id || '')
+  const [changingGuide, setChangingGuide] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [addingReport, setAddingReport] = useState(false)
   const [reportUrl, setReportUrl] = useState('')
   const [feedbackDraft, setFeedbackDraft] = useState('')
@@ -1378,6 +1411,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const [reportFile, setReportFile] = useState(null)
   const [reportTitle, setReportTitle] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [turningIn, setTurningIn] = useState(false)
   // Auto month/year from current date
   const now = new Date()
   const currentMonth = now.getMonth() + 1
@@ -1386,14 +1420,18 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const isDeadlineOpen = currentDay <= 25
   const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December']
   const monthNamesShort = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  const alreadySubmittedThisMonth = (project.monthlyReports || []).some(r => r.month === currentMonth && r.year === currentYear)
+  const currentMonthReport = (project.monthlyReports || []).find(r => r.month === currentMonth && r.year === currentYear)
+  const alreadySubmittedThisMonth = !!currentMonthReport
+  const isTurnedIn = currentMonthReport?.turnedIn === true
   // Grading states
   const [gradingReport, setGradingReport] = useState(null)
   const [rubrics, setRubrics] = useState([])
   const [selectedRubric, setSelectedRubric] = useState(null)
+  const [criteriaScores, setCriteriaScores] = useState({})
   const [gradeScore, setGradeScore] = useState(0)
   const [gradeFeedback, setGradeFeedback] = useState('')
   const [grading, setGrading] = useState(false)
+  const [pdfLoadError, setPdfLoadError] = useState(false)
   const fileInputRef = useRef(null)
   const canManage = isAdmin || isHod
   const isGuide = session?.user?.role==='guide' && String(project.internalGuide?._id)===String(session.user.id)
@@ -1401,7 +1439,9 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const canProgress = isGuide
   const canViewProgress = canManage || isGuide || isProjectCoordinator
   const isMember = project.members.some(m=> String(m.student?._id||m.student)===String(session.user.id))
-  const canSubmitReport = isMember && isDeadlineOpen && !alreadySubmittedThisMonth
+  const isLeader = String(project.leader?._id || project.leader) === String(session.user.id)
+  // Can submit: member, deadline open, and either no report yet OR existing draft (not turned in)
+  const canSubmitReport = isMember && isDeadlineOpen && (!alreadySubmittedThisMonth || !isTurnedIn)
 
   // Compute average progress from graded monthly reports
   const gradedReports = (project.monthlyReports || []).filter(r => r.status === 'graded' && r.score !== undefined && r.score !== null)
@@ -1430,15 +1470,27 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
       if (!uploadRes.ok) { const e = await uploadRes.json(); toast.error(e.error || 'Upload failed'); return }
       const { url } = await uploadRes.json()
-      // Submit report
+      // Submit report (creates draft or replaces existing draft)
       const res = await fetch('/api/projects', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project._id, submitReport: { month: currentMonth, year: currentYear, title: reportTitle.trim(), pdfUrl: url } })
       })
-      if (res.ok) { toast.success('Report submitted!'); setReportFile(null); setReportTitle(''); setAddingReport(false); if (fileInputRef.current) fileInputRef.current.value = ''; await loadProjects() }
+      if (res.ok) { toast.success(currentMonthReport ? 'Report replaced!' : 'Report uploaded as draft!'); setReportFile(null); setReportTitle(''); setAddingReport(false); if (fileInputRef.current) fileInputRef.current.value = ''; await loadProjects() }
       else { const e = await res.json(); toast.error(e.error?.message || 'Failed to submit') }
     } catch (err) { toast.error('Something went wrong') }
     finally { setUploading(false) }
+  }
+  const turnInReport = async (reportId) => {
+    setTurningIn(true)
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project._id, turnInReport: reportId })
+      })
+      if (res.ok) { toast.success('Report turned in! Your guide can now review it.'); await loadProjects() }
+      else { const e = await res.json(); toast.error(e.error?.message || 'Failed to turn in') }
+    } catch { toast.error('Something went wrong') }
+    finally { setTurningIn(false) }
   }
   const submitGrade = async () => {
     if (!gradingReport) return
@@ -1458,11 +1510,36 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
     const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId: project._id, feedback: feedbackDraft, feedbackReportId: feedbackReport }) })
     if(res.ok){ toast.success('Feedback added'); setFeedbackDraft(''); setFeedbackReport('') }
   }
-  const assignExternal = async () => {
-    if(!externalGuideEmail.trim()) return
-    const ext = { name: externalGuideName||externalGuideEmail.split('@')[0], email: externalGuideEmail }
-    const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId: project._id, externalGuide: ext }) })
-    if(res.ok){ toast.success('External guide set') }
+  // Check if there are unsaved manage-tab changes
+  const hasGuideChanges = (() => {
+    const origInternal = project.internalGuide?._id || ''
+    const origExtName = project.externalGuide?.name || ''
+    const origExtEmail = project.externalGuide?.email || ''
+    return pendingInternalGuide !== origInternal || externalGuideName !== origExtName || externalGuideEmail !== origExtEmail
+  })()
+
+  const saveManageChanges = async () => {
+    setSaving(true)
+    try {
+      // Save internal guide if changed
+      const origInternal = project.internalGuide?._id || ''
+      if (pendingInternalGuide !== origInternal) {
+        await assignInternal(project._id, pendingInternalGuide || undefined)
+      }
+      // Save external guide if changed
+      const origExtName = project.externalGuide?.name || ''
+      const origExtEmail = project.externalGuide?.email || ''
+      if (externalGuideName !== origExtName || externalGuideEmail !== origExtEmail) {
+        if (externalGuideEmail.trim()) {
+          const ext = { name: externalGuideName || externalGuideEmail.split('@')[0], email: externalGuideEmail }
+          const res = await fetch('/api/projects', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId: project._id, externalGuide: ext }) })
+          if (!res.ok) { const e = await res.json(); toast.error(e.error?.message || 'Failed to save external guide') }
+        }
+      }
+      toast.success('Changes saved successfully!')
+      await loadProjects()
+    } catch { toast.error('Failed to save changes') }
+    finally { setSaving(false) }
   }
 
   useEffect(()=>{
@@ -1474,14 +1551,31 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
     }
   },[tab, groupDetails, project.groupId])
 
-  // Load rubrics when guide opens reports tab
+  // Load rubrics when anyone opens reports tab
   useEffect(()=>{
-    if(tab==='reports' && isGuide && rubrics.length === 0){
+    if(tab==='reports' && rubrics.length === 0){
       fetch(`/api/rubrics?department=${project.department}`).then(async r=>{
         if(r.ok){ const d = await r.json(); setRubrics(d.rubrics||[]) }
       })
     }
-  },[tab, isGuide, project.department])
+  },[tab, project.department])
+
+  // Auto-select first rubric when rubrics load
+  useEffect(()=>{
+    if(rubrics.length > 0 && !selectedRubric){
+      setSelectedRubric(rubrics[0])
+    }
+  },[rubrics, selectedRubric])
+
+  // Compute total score from criteria scores
+  useEffect(()=>{
+    if(selectedRubric && selectedRubric.criteria?.length > 0){
+      const total = selectedRubric.criteria.reduce((sum, c) => sum + (criteriaScores[c._id] || 0), 0)
+      const maxTotal = selectedRubric.criteria.reduce((sum, c) => sum + (c.maxScore || 10), 0)
+      const normalized = maxTotal > 0 ? Math.round((total / maxTotal) * 10 * 10) / 10 : 0
+      setGradeScore(normalized)
+    }
+  },[criteriaScores, selectedRubric])
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: Eye },
@@ -1602,7 +1696,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <span className='text-lg font-bold text-gray-700 dark:text-gray-200'>{avgProgress}<span className='text-sm text-gray-400'>/10</span></span>
                 </div>
               </div>
-              {isMember && (
+              {isLeader && (
                 <div className='space-y-2'>
                   <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Add Member</h4>
                   <div className='flex gap-2'>
@@ -1613,7 +1707,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     {project.members.map(m => (
                       <div key={m.student._id||m.student} className='px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800/50'>
                         <span className='font-medium'>{m.student?.academicInfo?.name || m.student?.email || m.student}</span>
-                        {(isAdmin || isHod || (isMember && m.role!=='leader' && String(project.leader?._id||project.leader)===String(session.user.id))) && (
+                        {(isAdmin || isHod || (isLeader && m.role!=='leader')) && (
                           <button onClick={()=>removeMember(project._id, m.student._id||m.student)} className='text-red-500 hover:text-red-700 text-[10px] font-medium'>Remove</button>
                         )}
                       </div>
@@ -1678,7 +1772,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <span className='text-[11px] text-gray-500'>Current Status:</span>
                   <StatusBadge status={project.hodApproval || 'pending'} />
                 </div>
-                {isHod && (
+                {isHod && (project.hodApproval !== 'approved') && (
                   <div className='flex flex-wrap gap-2'>
                     {project.hodApproval !== 'approved' && (
                       <button onClick={()=>approveProject(project._id,true)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium'>
@@ -1708,54 +1802,45 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   </h4>
                   <div>
                     <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Internal Guide</label>
-                    {project.internalGuide && !confirmGuideChange ? (
+                    {pendingInternalGuide && !changingGuide ? (
                       <div className='space-y-2'>
                         <div className='flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'>
                           <div className='w-2 h-2 bg-green-500 rounded-full'></div>
                           <span className='text-sm font-medium text-green-800 dark:text-green-200'>
-                            {project.internalGuide.academicInfo?.name || project.internalGuide.email}
+                            {(() => { const g = availableGuidesModal.find(g => g._id === pendingInternalGuide); return g ? (g.academicInfo?.name || g.email) + (g.role === 'hod' ? ' (HOD)' : '') : project.internalGuide?.academicInfo?.name || project.internalGuide?.email || 'Selected Guide' })()}
                           </span>
                         </div>
                         <button 
-                          onClick={() => setConfirmGuideChange('confirm')} 
+                          onClick={() => setChangingGuide(true)} 
                           className='text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium'
                         >
                           Change Internal Guide
                         </button>
                       </div>
-                    ) : project.internalGuide && confirmGuideChange === 'select' ? (
+                    ) : (
                       <div className='space-y-2'>
                         <select 
                           className='w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none transition' 
-                          value={project.internalGuide?._id||''} 
-                          onChange={e => {
-                            assignInternal(project._id, e.target.value || undefined)
-                            setConfirmGuideChange(false)
-                          }}
+                          value={pendingInternalGuide} 
+                          onChange={e => { setPendingInternalGuide(e.target.value); if(e.target.value) setChangingGuide(false) }}
                         >
-                          <option value=''>Remove Internal Guide</option>
+                          <option value=''>Select Internal Guide</option>
                           {availableGuidesModal.filter(g=> g.department===project.department).map(g => (
                             <option key={g._id} value={g._id}>{g.academicInfo?.name || g.email}{g.role==='hod'?' (HOD)':''}</option>
                           ))}
                         </select>
-                        <button 
-                          onClick={() => setConfirmGuideChange(false)} 
-                          className='text-xs text-gray-500 hover:underline font-medium'
-                        >
-                          Cancel
-                        </button>
+                        {changingGuide && (
+                          <button 
+                            onClick={() => setChangingGuide(false)} 
+                            className='text-xs text-gray-500 hover:underline font-medium'
+                          >
+                            Cancel
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      <select 
-                        className='w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none transition' 
-                        value='' 
-                        onChange={e => assignInternal(project._id, e.target.value || undefined)}
-                      >
-                        <option value=''>Select Internal Guide</option>
-                        {availableGuidesModal.filter(g=> g.department===project.department).map(g => (
-                          <option key={g._id} value={g._id}>{g.academicInfo?.name || g.email}{g.role==='hod'?' (HOD)':''}</option>
-                        ))}
-                      </select>
+                    )}
+                    {pendingInternalGuide !== (project.internalGuide?._id || '') && (
+                      <p className='text-[10px] text-amber-600 dark:text-amber-400 mt-1'>⚠ Unsaved — click Save to apply</p>
                     )}
                   </div>
                   <div className='grid sm:grid-cols-2 gap-2'>
@@ -1768,9 +1853,9 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       <input value={externalGuideEmail} onChange={e=>setExternalGuideEmail(e.target.value)} placeholder='Email' className='w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
                     </div>
                   </div>
-                  <button onClick={assignExternal} className='inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition'>
-                    <Send className='w-3 h-3' /> Save External Guide
-                  </button>
+                  {(externalGuideName !== (project.externalGuide?.name || '') || externalGuideEmail !== (project.externalGuide?.email || '')) && (
+                    <p className='text-[10px] text-amber-600 dark:text-amber-400'>⚠ Unsaved — click Save to apply</p>
+                  )}
                 </div>
               )}
               
@@ -1811,48 +1896,74 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2'>
                   <FileText className='w-3.5 h-3.5' /> Monthly Reports
                 </h4>
-                {(project.monthlyReports || []).length > 0 ? (
+                {(() => {
+                  // For guides: only show turned-in reports; for others: show all
+                  const visibleReports = isGuide
+                    ? (project.monthlyReports || []).filter(r => r.turnedIn)
+                    : (project.monthlyReports || [])
+                  return visibleReports.length > 0 ? (
                   <div className='space-y-2'>
-                    {[...(project.monthlyReports || [])].sort((a,b) => (b.year - a.year) || (b.month - a.month)).map(r => {
-                      const statusColors = { submitted: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', graded: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 'revision-needed': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
+                    {[...visibleReports].sort((a,b) => (b.year - a.year) || (b.month - a.month)).map(r => {
+                      const statusColors = { draft: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', submitted: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', graded: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 'revision-needed': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
                       return (
                         <div key={r._id} className='p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:shadow-sm transition-shadow'>
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-3'>
-                              <div className='w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center'>
-                                <FileText className='w-5 h-5 text-indigo-600 dark:text-indigo-400' />
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${r.status === 'draft' ? 'bg-gray-100 dark:bg-gray-700' : 'bg-indigo-100 dark:bg-indigo-900/30'}`}>
+                                <FileText className={`w-5 h-5 ${r.status === 'draft' ? 'text-gray-500' : 'text-indigo-600 dark:text-indigo-400'}`} />
                               </div>
                               <div>
                                 <p className='font-semibold text-sm text-gray-900 dark:text-white'>{r.title}</p>
-                                <p className='text-[11px] text-gray-500'>{monthNamesShort[r.month]} {r.year} • Submitted {new Date(r.submittedAt).toLocaleDateString()}</p>
+                                <p className='text-[11px] text-gray-500'>
+                                  {monthNamesShort[r.month]} {r.year}
+                                  {r.turnedIn ? ` • Turned in ${new Date(r.turnedInAt || r.submittedAt).toLocaleDateString()}` : ` • Draft uploaded ${new Date(r.submittedAt).toLocaleDateString()}`}
+                                  {r.replacedAt && !r.turnedIn && ` • Replaced ${new Date(r.replacedAt).toLocaleDateString()}`}
+                                </p>
                               </div>
                             </div>
                             <div className='flex items-center gap-2'>
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${statusColors[r.status] || ''}`}>
-                                {r.status === 'graded' ? `${r.score}/10` : r.status}
+                                {r.status === 'graded' ? (isMember ? 'Graded' : `${r.score}/10`) : r.status === 'draft' ? 'Draft' : r.status}
                               </span>
-                              {(isGuide && r.status === 'submitted') && (
-                                <button onClick={() => { setGradingReport(r); setGradeScore(r.score || 0); setGradeFeedback(r.feedback || '') }}
+                              {/* Student: Turn In button for drafts */}
+                              {isMember && r.status === 'draft' && !r.turnedIn && isDeadlineOpen && (
+                                <button onClick={() => turnInReport(r._id)} disabled={turningIn}
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition disabled:opacity-50'>
+                                  {turningIn ? <div className='w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin' /> : <Send className='w-3 h-3' />} Turn In
+                                </button>
+                              )}
+                              {/* Guide: Grade button for turned-in reports */}
+                              {(isGuide && r.turnedIn && r.status === 'submitted') && (
+                                <button onClick={() => { setGradingReport(r); setGradeScore(r.score || 0); setGradeFeedback(r.feedback || ''); setCriteriaScores({}); setPdfLoadError(false) }}
                                   className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition'>
                                   <Star className='w-3 h-3' /> Grade
                                 </button>
                               )}
+                              {/* Guide: Re-grade button for already graded */}
                               {(isGuide && r.status === 'graded') && (
-                                <button onClick={() => { setGradingReport(r); setGradeScore(r.score || 0); setGradeFeedback(r.feedback || '') }}
-                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition'>
-                                  <Eye className='w-3 h-3' /> View
+                                <button onClick={() => { setGradingReport(r); setGradeScore(r.score || 0); setGradeFeedback(r.feedback || ''); setCriteriaScores({}); setPdfLoadError(false) }}
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-800/30 transition'>
+                                  <Star className='w-3 h-3' /> Re-grade
                                 </button>
                               )}
-                              {(!isGuide && r.pdfUrl) && (
-                                <button onClick={() => setGradingReport(r)}
+                              {/* View PDF — anyone can view turned-in reports; students can view own drafts */}
+                              {r.pdfUrl && (r.turnedIn || isMember) && (
+                                <button onClick={() => { setGradingReport(r); setPdfLoadError(false); setCriteriaScores({}) }}
                                   className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition'>
-                                  <Eye className='w-3 h-3' /> View
+                                  <Eye className='w-3 h-3' /> View PDF
                                 </button>
                               )}
                             </div>
                           </div>
-                          {r.feedback && (
-                            <div className='mt-3 p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[11px] text-green-700 dark:text-green-300 flex items-start gap-1.5'>
+                          {/* Grade display — hidden from students */}
+                          {r.status === 'graded' && r.score !== undefined && !isMember && (
+                            <div className='mt-3 p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center gap-2'>
+                              <Star className='w-3 h-3 flex-shrink-0' />
+                              <span><span className='font-semibold'>Grade: {r.score}/10</span>{r.grade ? ` (${r.grade})` : ''}</span>
+                            </div>
+                          )}
+                          {r.feedback && !isMember && (
+                            <div className='mt-2 p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[11px] text-green-700 dark:text-green-300 flex items-start gap-1.5'>
                               <MessageSquare className='w-3 h-3 mt-0.5 flex-shrink-0' />
                               <div><span className='font-semibold'>Feedback:</span> {r.feedback}</div>
                             </div>
@@ -1864,12 +1975,33 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 ) : (
                   <div className='text-center py-10 text-gray-400'>
                     <FileText className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                    <p className='text-sm'>No reports submitted yet.</p>
+                    <p className='text-sm'>{isGuide ? 'No reports turned in yet.' : 'No reports submitted yet.'}</p>
                   </div>
-                )}
+                )
+                })()}
               </div>
 
-              {/* Student: Submit New Report */}
+              {/* Overall Grade Summary — hidden from students */}
+              {!isMember && gradedReports.length > 0 && (
+                <div className='p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
+                  <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3'>Overall Progress</h4>
+                  <div className='flex items-center gap-4'>
+                    <div className='flex-1'>
+                      <div className='w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                        <div className={`h-full transition-all duration-700 rounded-full ${
+                          avgProgress >= 8 ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                          avgProgress >= 5 ? 'bg-gradient-to-r from-amber-400 to-yellow-500' :
+                          'bg-gradient-to-r from-red-400 to-rose-500'
+                        }`} style={{ width: `${avgProgressPct}%` }} />
+                      </div>
+                    </div>
+                    <span className='text-lg font-bold text-gray-700 dark:text-gray-200'>{avgProgress}<span className='text-sm text-gray-400'>/10</span></span>
+                  </div>
+                  <p className='text-[10px] text-gray-500 mt-1'>Average across {gradedReports.length} graded report{gradedReports.length !== 1 ? 's' : ''}</p>
+                </div>
+              )}
+
+              {/* Student: Submit/Replace Report */}
               {isMember && (
                 <div className='space-y-3 border-t border-gray-200 dark:border-gray-700 pt-5'>
                   {/* Deadline Info */}
@@ -1880,21 +2012,31 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       : <span><span className='font-semibold'>{monthNames[currentMonth]} {currentYear}</span> — Submission deadline has passed (closed after 25th)</span>
                     }
                   </div>
-                  {alreadySubmittedThisMonth && (
+
+                  {/* Status messages */}
+                  {isTurnedIn && (
                     <div className='p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[12px] text-green-700 dark:text-green-300 flex items-center gap-2'>
                       <CheckCircle2 className='w-4 h-4 flex-shrink-0' />
-                      Report for {monthNames[currentMonth]} {currentYear} has already been submitted by your team.
+                      Report for {monthNames[currentMonth]} {currentYear} has been turned in. {currentMonthReport?.status === 'graded' ? 'Graded by guide.' : 'Awaiting grade from guide.'}
                     </div>
                   )}
+                  {alreadySubmittedThisMonth && !isTurnedIn && (
+                    <div className='p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-center gap-2'>
+                      <AlertTriangle className='w-4 h-4 flex-shrink-0' />
+                      Draft uploaded for {monthNames[currentMonth]} {currentYear}. You can replace the file or turn it in.
+                    </div>
+                  )}
+
+                  {/* Upload/Replace button */}
                   {canSubmitReport && (
                     <button onClick={()=>setAddingReport(a=>!a)} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${addingReport ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
-                      {addingReport ? <><XIcon className='w-3 h-3' /> Cancel</> : <><Plus className='w-3 h-3' /> Submit Report for {monthNamesShort[currentMonth]} {currentYear}</>}
+                      {addingReport ? <><XIcon className='w-3 h-3' /> Cancel</> : currentMonthReport && !isTurnedIn ? <><Upload className='w-3 h-3' /> Replace Report for {monthNamesShort[currentMonth]} {currentYear}</> : <><Plus className='w-3 h-3' /> Submit Report for {monthNamesShort[currentMonth]} {currentYear}</>}
                     </button>
                   )}
                   {addingReport && canSubmitReport && (
                     <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 space-y-3'>
                       <div className='p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[12px] text-indigo-700 dark:text-indigo-300 font-medium'>
-                        Submitting for: {monthNames[currentMonth]} {currentYear}
+                        {currentMonthReport && !isTurnedIn ? `Replacing report for: ${monthNames[currentMonth]} ${currentYear}` : `Submitting for: ${monthNames[currentMonth]} ${currentYear}`}
                       </div>
                       <div>
                         <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Report Title</label>
@@ -1902,13 +2044,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                           className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
                       </div>
                       <div>
-                        <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Upload PDF</label>
+                        <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Upload PDF <span className='text-gray-400'>(only .pdf files, max 10MB)</span></label>
                         <div 
                           onClick={() => fileInputRef.current?.click()}
                           className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${reportFile ? 'border-green-400 bg-green-50 dark:bg-green-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10'}`}
                         >
-                          <input ref={fileInputRef} type='file' accept='.pdf' className='hidden'
-                            onChange={e => { if (e.target.files[0]) setReportFile(e.target.files[0]) }} />
+                          <input ref={fileInputRef} type='file' accept='.pdf,application/pdf' className='hidden'
+                            onChange={e => { const f = e.target.files[0]; if (f) { if (f.type !== 'application/pdf') { toast.error('Only PDF files are allowed'); e.target.value = ''; return } setReportFile(f) } }} />
                           {reportFile ? (
                             <div className='flex items-center justify-center gap-2'>
                               <CheckCircle2 className='w-5 h-5 text-green-600' />
@@ -1919,7 +2061,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                             <div>
                               <Upload className='w-8 h-8 mx-auto mb-2 text-gray-400' />
                               <p className='text-sm text-gray-500'>Click to select PDF file</p>
-                              <p className='text-[10px] text-gray-400 mt-1'>Max size: 10MB</p>
+                              <p className='text-[10px] text-gray-400 mt-1'>Only .pdf files • Max size: 10MB</p>
                             </div>
                           )}
                         </div>
@@ -1929,7 +2071,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                         {uploading ? (
                           <><div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' /> Uploading...</>
                         ) : (
-                          <><Send className='w-4 h-4' /> Turn In</>
+                          <><Upload className='w-4 h-4' /> {currentMonthReport && !isTurnedIn ? 'Replace File' : 'Upload Report'}</>
                         )}
                       </button>
                     </div>
@@ -1943,28 +2085,31 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2'>
                     <Calendar className='w-3.5 h-3.5' /> Submission Status — {monthNamesShort[currentMonth]} {currentYear}
                   </h4>
-                  {alreadySubmittedThisMonth ? (
+                  {(() => {
+                    const turnedInThisMonth = (project.monthlyReports||[]).find(r => r.month===currentMonth && r.year===currentYear && r.turnedIn)
+                    return turnedInThisMonth ? (
                     <div className='p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[12px] text-green-700 dark:text-green-300 flex items-center gap-2'>
                       <CheckCircle2 className='w-4 h-4 flex-shrink-0' />
-                      <span>Report for {monthNames[currentMonth]} submitted{(() => { const r = (project.monthlyReports||[]).find(r => r.month===currentMonth && r.year===currentYear); return r ? ` on ${new Date(r.submittedAt).toLocaleDateString()}` : '' })()}</span>
+                      <span>Report for {monthNames[currentMonth]} turned in on {new Date(turnedInThisMonth.turnedInAt || turnedInThisMonth.submittedAt).toLocaleDateString()}</span>
                     </div>
                   ) : (
                     <div className={`p-3 rounded-lg text-[12px] flex items-center gap-2 ${isDeadlineOpen ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
                       <AlertTriangle className='w-4 h-4 flex-shrink-0' />
                       {isDeadlineOpen
-                        ? <span>Not yet submitted — deadline: 25th {monthNames[currentMonth]} ({25 - currentDay} days left)</span>
-                        : <span>Not submitted — deadline passed</span>
+                        ? <span>Not yet turned in — deadline: 25th {monthNames[currentMonth]} ({25 - currentDay} days left)</span>
+                        : <span>Not turned in — deadline passed</span>
                       }
                     </div>
-                  )}
+                  )
+                  })()}
                 </div>
               )}
             </div>
           )}
 
-          {/* Report Viewer + Grading Overlay */}
+          {/* Report Viewer + Rubric + Grading Overlay */}
           {gradingReport && (
-            <div className='fixed inset-0 z-[70] flex bg-black/70 backdrop-blur-sm' onClick={() => setGradingReport(null)}>
+            <div className='fixed inset-0 z-[70] flex bg-black/70 backdrop-blur-sm' onClick={() => { setGradingReport(null); setPdfLoadError(false) }}>
               <div className='flex w-full h-full' onClick={e => e.stopPropagation()}>
                 {/* PDF Viewer - Left side */}
                 <div className='flex-1 flex flex-col bg-gray-900'>
@@ -1975,116 +2120,223 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       <span className='text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300'>
                         {monthNamesShort[gradingReport.month]} {gradingReport.year}
                       </span>
+                      {gradingReport.status === 'graded' && !isMember && (
+                        <span className='text-[10px] px-2 py-0.5 rounded bg-green-700 text-green-200 font-semibold'>
+                          Graded: {gradingReport.score}/10
+                        </span>
+                      )}
                     </div>
-                    <button onClick={() => setGradingReport(null)} className='p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition'>
-                      <XIcon className='w-5 h-5' />
-                    </button>
+                    <div className='flex items-center gap-2'>
+                      {(() => {
+                        // Convert /uploads/reports/filename.pdf → /api/reports/pdf?file=filename.pdf
+                        const pdfApiUrl = gradingReport.pdfUrl?.startsWith('/uploads/reports/')
+                          ? `/api/reports/pdf?file=${gradingReport.pdfUrl.split('/').pop()}`
+                          : gradingReport.pdfUrl
+                        return (
+                          <>
+                          <a href={pdfApiUrl} target='_blank' rel='noopener noreferrer'
+                            className='p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition' title='Open in new tab'>
+                            <ExternalLink className='w-4 h-4' />
+                          </a>
+                          </>
+                        )
+                      })()}
+                      <button onClick={() => { setGradingReport(null); setPdfLoadError(false) }} className='p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition'>
+                        <XIcon className='w-5 h-5' />
+                      </button>
+                    </div>
                   </div>
-                  <div className='flex-1'>
-                    {/* React-PDF viewer for inline PDF display (client-only) */}
-                    <iframe
-  src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(gradingReport.pdfUrl)}`}
-  className="w-full h-full min-h-[70vh] border-0"
-  title="Report PDF"
-  allowFullScreen
-/>
+                  <div className='flex-1 relative'>
+                    {(() => {
+                      const pdfApiUrl = gradingReport.pdfUrl?.startsWith('/uploads/reports/')
+                        ? `/api/reports/pdf?file=${gradingReport.pdfUrl.split('/').pop()}`
+                        : gradingReport.pdfUrl
+                      return (
+                        <>
+                        {/* Toggle between direct embed and Google Docs viewer */}
+                        <div className='absolute top-2 right-2 z-10 flex items-center gap-1'>
+                          <button onClick={() => setPdfLoadError(prev => !prev)}
+                            className='px-2 py-1 rounded text-[10px] font-medium bg-gray-800/80 text-gray-300 hover:bg-gray-700 backdrop-blur-sm transition' title='Switch viewer'>
+                            {pdfLoadError ? 'Native Viewer' : 'Alt Viewer'}
+                          </button>
+                          <a href={pdfApiUrl} download
+                            className='px-2 py-1 rounded text-[10px] font-medium bg-gray-800/80 text-gray-300 hover:bg-gray-700 backdrop-blur-sm transition' title='Download PDF'>
+                            <Download className='w-3 h-3 inline' /> PDF
+                          </a>
+                        </div>
+                        {!pdfLoadError ? (
+                          <embed
+                            src={pdfApiUrl}
+                            type='application/pdf'
+                            className='w-full h-full border-0'
+                            title='Report PDF'
+                            style={{ minHeight: '80vh' }}
+                          />
+                        ) : (
+                          <iframe
+                            src={`https://docs.google.com/gview?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin + pdfApiUrl : pdfApiUrl)}&embedded=true`}
+                            className='w-full h-full border-0'
+                            title='Report PDF'
+                            style={{ minHeight: '80vh' }}
+                            allowFullScreen
+                          />
+                        )}
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
 
-                {/* Rubric + Grading - Right sidebar */}
-                {isGuide && (
-                  <div className='w-[380px] flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 overflow-y-auto'>
-                    <div className='px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'>
-                      <h3 className='text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-                        <Star className='w-4 h-4 text-amber-500' /> Evaluate Report
-                      </h3>
-                      <p className='text-[11px] text-gray-500 dark:text-gray-400 mt-0.5'>Grade this report out of 10 using the rubric criteria</p>
+                {/* Rubric + Grading - Right sidebar (hidden from students) */}
+                {!isMember && (
+                <div className='w-[400px] flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 overflow-y-auto'>
+                  <div className='px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20'>
+                    <h3 className='text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+                      {isGuide ? <><Star className='w-4 h-4 text-amber-500' /> Evaluate Report</> : <><BookOpen className='w-4 h-4 text-indigo-500' /> Report Details &amp; Rubric</>}
+                    </h3>
+                    <p className='text-[11px] text-gray-500 dark:text-gray-400 mt-0.5'>
+                      {isGuide ? 'Grade this report using the rubric criteria below' : 'View rubric criteria and grading details'}
+                    </p>
+                  </div>
+
+                  <div className='flex-1 p-5 space-y-5'>
+                    {/* Report Info */}
+                    <div className='p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-1.5'>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-[11px] text-gray-500'>Status</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
+                          gradingReport.status === 'graded' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
+                          gradingReport.status === 'submitted' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                          'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>{gradingReport.status}</span>
+                      </div>
+                      {gradingReport.status === 'graded' && gradingReport.score != null && !isMember && (
+                        <div className='flex items-center justify-between'>
+                          <span className='text-[11px] text-gray-500'>Current Score</span>
+                          <span className='text-sm font-bold text-green-600 dark:text-green-400'>{gradingReport.score}/10</span>
+                        </div>
+                      )}
+                      <div className='flex items-center justify-between'>
+                        <span className='text-[11px] text-gray-500'>Submitted</span>
+                        <span className='text-[11px] font-medium text-gray-700 dark:text-gray-300'>{new Date(gradingReport.submittedAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
 
-                    <div className='flex-1 p-5 space-y-5'>
-                      {/* Rubric Selection */}
-                      {rubrics.length > 0 && (
-                        <div>
-                          <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Rubric</label>
-                          <select value={selectedRubric?._id || ''} onChange={e => setSelectedRubric(rubrics.find(r => r._id === e.target.value) || null)}
-                            className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none'>
-                            <option value=''>Select rubric...</option>
-                            {rubrics.map(r => <option key={r._id} value={r._id}>{r.title}</option>)}
-                          </select>
-                        </div>
-                      )}
+                    {/* Existing Feedback Display (for HOD/admin only, not students) */}
+                    {gradingReport.feedback && !isGuide && !isMember && (
+                      <div className='p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'>
+                        <p className='text-[11px] font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-1.5 flex items-center gap-1.5'>
+                          <MessageSquare className='w-3 h-3' /> Guide Feedback
+                        </p>
+                        <p className='text-[12px] text-green-700 dark:text-green-300'>{gradingReport.feedback}</p>
+                      </div>
+                    )}
 
-                      {/* Rubric Criteria Display */}
-                      {selectedRubric && (
-                        <div className='space-y-2'>
-                          <p className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Criteria</p>
-                          <div className='space-y-2'>
-                            {selectedRubric.criteria.map((c, i) => (
-                              <div key={c._id || i} className='p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
-                                <div className='flex items-center justify-between mb-1'>
-                                  <span className='text-[12px] font-semibold text-gray-800 dark:text-gray-200'>{c.name}</span>
-                                  <span className='text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded'>Max {c.maxScore}</span>
-                                </div>
-                                {c.description && <p className='text-[10px] text-gray-500 dark:text-gray-400'>{c.description}</p>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* No rubrics message */}
-                      {rubrics.length === 0 && (
-                        <div className='p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-start gap-2'>
-                          <AlertTriangle className='w-4 h-4 mt-0.5 flex-shrink-0' />
-                          <div>No rubrics defined for this department. You can still grade the report manually. Ask your HOD to create rubrics from Settings.</div>
-                        </div>
-                      )}
-
-                      {/* Score Input */}
+                    {/* Rubric Selection — guides only */}
+                    {!isMember && rubrics.length > 0 && (
                       <div>
-                        <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Score (out of 10)</label>
+                        <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Rubric</label>
+                        <select value={selectedRubric?._id || ''} onChange={e => { const r = rubrics.find(r => r._id === e.target.value); setSelectedRubric(r || null); setCriteriaScores({}) }}
+                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none'>
+                          <option value=''>Select rubric...</option>
+                          {rubrics.map(r => <option key={r._id} value={r._id}>{r.title}</option>)}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Rubric Criteria with Per-Criteria Scoring — guides only */}
+                    {!isMember && selectedRubric && (
+                      <div className='space-y-2'>
+                        <p className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Evaluation Criteria</p>
+                        <div className='space-y-2'>
+                          {selectedRubric.criteria.map((c, i) => (
+                            <div key={c._id || i} className='p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
+                              <div className='flex items-center justify-between mb-1'>
+                                <span className='text-[12px] font-semibold text-gray-800 dark:text-gray-200'>{c.name}</span>
+                                <span className='text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded'>Max {c.maxScore}</span>
+                              </div>
+                              {c.description && <p className='text-[10px] text-gray-500 dark:text-gray-400 mb-2'>{c.description}</p>}
+                              {/* Per-criterion score input for guides */}
+                              {isGuide && (
+                                <div className='flex items-center gap-2 mt-2'>
+                                  <input type='range' min='0' max={c.maxScore} step='0.5'
+                                    value={criteriaScores[c._id] || 0}
+                                    onChange={e => setCriteriaScores(prev => ({ ...prev, [c._id]: Number(e.target.value) }))}
+                                    className='flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600'
+                                  />
+                                  <input type='number' min='0' max={c.maxScore} step='0.5'
+                                    value={criteriaScores[c._id] || 0}
+                                    onChange={e => setCriteriaScores(prev => ({ ...prev, [c._id]: Math.max(0, Math.min(c.maxScore, Number(e.target.value))) }))}
+                                    className='w-14 px-1.5 py-1 border border-gray-200 dark:border-gray-700 rounded text-[11px] text-center font-bold bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none'
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No rubrics message — guides only */}
+                    {!isMember && rubrics.length === 0 && (
+                      <div className='p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-start gap-2'>
+                        <AlertTriangle className='w-4 h-4 mt-0.5 flex-shrink-0' />
+                        <div>{isGuide ? 'No rubrics defined for this department. You can still grade manually below. Ask your HOD to create rubrics from Settings.' : 'No rubrics have been defined for this department yet.'}</div>
+                      </div>
+                    )}
+
+                    {/* Total Score Display (for all) */}
+                    {isGuide && (
+                      <div className='p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
+                        <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Total Score (out of 10)</label>
                         <div className='flex items-center gap-3'>
-                          <input type='range' min='0' max='10' step='0.5' value={gradeScore} onChange={e => setGradeScore(Number(e.target.value))}
+                          <input type='range' min='0' max='10' step='0.5' value={gradeScore} onChange={e => { setGradeScore(Number(e.target.value)); setCriteriaScores({}) }}
                             className='flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600' />
-                          <div className='w-16 text-center'>
-                            <input type='number' min='0' max='10' step='0.5' value={gradeScore} onChange={e => setGradeScore(Math.max(0, Math.min(10, Number(e.target.value))))}
-                              className='w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-center font-bold bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
+                          <div className='w-20 text-center'>
+                            <span className={`text-2xl font-black ${gradeScore >= 7 ? 'text-green-600 dark:text-green-400' : gradeScore >= 4 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>{gradeScore}</span>
+                            <span className='text-sm text-gray-400'>/10</span>
                           </div>
                         </div>
                         <div className='flex justify-between mt-1 text-[9px] text-gray-400'>
                           <span>Poor</span><span>Average</span><span>Excellent</span>
                         </div>
                       </div>
+                    )}
 
-                      {/* Feedback */}
+                    {/* Feedback */}
+                    {isGuide && (
                       <div>
                         <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Feedback</label>
-                        <textarea value={gradeFeedback} onChange={e => setGradeFeedback(e.target.value)} rows={4} placeholder='Write your feedback for the student...'
+                        <textarea value={gradeFeedback} onChange={e => setGradeFeedback(e.target.value)} rows={3} placeholder='Write your feedback for the student...'
                           className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none' />
                       </div>
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Submit Button */}
+                  {/* Submit Grade Button (guides only) */}
+                  {isGuide && (
                     <div className='px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
-                      <button onClick={submitGrade} disabled={grading}
+                      <button onClick={submitGrade} disabled={grading || gradeScore === 0}
                         className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50'>
                         {grading ? (
                           <><div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' /> Saving...</>
                         ) : (
-                          <><CheckCircle2 className='w-4 h-4' /> Submit Grade</>
+                          <><CheckCircle2 className='w-4 h-4' /> {gradingReport.status === 'graded' ? 'Update Grade' : 'Submit Grade'}</>
                         )}
                       </button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Non-guide: just show close button on right side */}
-                {!isGuide && (
-                  <div className='w-[60px] flex items-start justify-center pt-4 bg-gray-900/50'>
-                    <button onClick={() => setGradingReport(null)} className='p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition'>
-                      <XIcon className='w-5 h-5' />
-                    </button>
-                  </div>
+                  {/* Close button for non-guide users */}
+                  {!isGuide && (
+                    <div className='px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
+                      <button onClick={() => { setGradingReport(null); setPdfLoadError(false) }}
+                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-600 text-white text-sm font-semibold hover:bg-gray-700 transition'>
+                        <XIcon className='w-4 h-4' /> Close
+                      </button>
+                    </div>
+                  )}
+                </div>
                 )}
               </div>
             </div>
@@ -2092,6 +2344,29 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
           
             </motion.div>
           </AnimatePresence>
+        </div>
+
+        {/* Modal Footer */}
+        <div className='px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3'>
+          <button 
+            onClick={close} 
+            className='inline-flex items-center gap-2 px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition'
+          >
+            <XIcon className='w-4 h-4' /> Close
+          </button>
+          {canManage && (
+            <button 
+              onClick={saveManageChanges} 
+              disabled={saving || !hasGuideChanges}
+              className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition ${hasGuideChanges ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
+            >
+              {saving ? (
+                <><div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' /> Saving...</>
+              ) : (
+                <><CheckCircle2 className='w-4 h-4' /> Save</>
+              )}
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -2141,41 +2416,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
         </div>
       )}
 
-      {/* Guide Change Confirmation Overlay */}
-      {confirmGuideChange === 'confirm' && (
-        <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm' onClick={() => setConfirmGuideChange(false)}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className='bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center space-y-4 border border-gray-200 dark:border-gray-700'
-            onClick={e => e.stopPropagation()}
-          >
-            <div className='mx-auto w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center'>
-              <AlertTriangle className='w-6 h-6 text-amber-600 dark:text-amber-400' />
-            </div>
-            <div>
-              <h4 className='text-base font-bold text-gray-900 dark:text-white mb-1'>Change Internal Guide?</h4>
-              <p className='text-sm text-gray-500 dark:text-gray-400'>Are you sure you want to change the internal guide for this project? The current guide will be removed.</p>
-            </div>
-            <div className='flex items-center gap-3 pt-2'>
-              <button
-                onClick={() => setConfirmGuideChange(false)}
-                className='flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition'
-              >
-                No
-              </button>
-              <button
-                onClick={() => setConfirmGuideChange('select')}
-                className='flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition shadow-lg shadow-amber-500/25'
-              >
-                Yes
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+
     </div>
   )
 }

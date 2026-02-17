@@ -64,16 +64,25 @@ const userSchema = new mongoose.Schema({
     rollNumber: String,
     phoneNumber: String,
     address: String,
+    cgpa: {
+      type: Number,
+      min: 0,
+      max: 10,
+    },
   },
-  // Onboarding fields
+  // Onboarding / profile fields
   interests: [{
     type: String,
     enum: [
       'Web Development', 'Mobile Development', 'Data Science', 'AI/ML',
       'Cybersecurity', 'Cloud Computing', 'DevOps', 'UI/UX Design',
-      'Blockchain', 'IoT', 'Game Development', 'Software Engineering'
+      'Blockchain', 'IoT', 'Game Development', 'Software Engineering',
+      'Embedded Systems', 'AR/VR', 'Robotics'
     ]
   }],
+  skills: String,          // Comma-separated or free text for technologies known
+  githubProfile: String,   // GitHub profile URL
+  linkedinProfile: String,  // LinkedIn profile URL
   experience: String,
   specialization: String,
   education: String,
@@ -118,6 +127,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending',
+  },
+  // Force password change on first login
+  mustChangePassword: {
+    type: Boolean,
+    default: false,
   },
   // Password reset fields
   resetPasswordToken: String,

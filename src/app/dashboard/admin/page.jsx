@@ -27,6 +27,9 @@ import {
   Users,
   Eye,
   Building2,
+  Award,
+  Filter,
+  Download,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -752,6 +755,242 @@ function ProjectAssignmentBreakdownView({ filterValue, title, onBack }) {
 
 /* ──────── Main Dashboard ──────── */
 
+/* ──────── Student Grades Section (HOD view) ──────── */
+
+function StudentGradesSection() {
+  const [grades, setGrades] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [semesterFilter, setSemesterFilter] = useState('')
+  const [expandedStudent, setExpandedStudent] = useState(null)
+
+  useEffect(() => {
+    async function fetchGrades() {
+      try {
+        const params = new URLSearchParams()
+        if (semesterFilter) params.append('semester', semesterFilter)
+        const res = await fetch(`/api/projects/grades?${params}`, { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          setGrades(data.studentGrades || [])
+        } else {
+          toast.error('Failed to load grades')
+        }
+      } catch (e) {
+        console.error('Failed to fetch grades:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    setLoading(true)
+    fetchGrades()
+  }, [semesterFilter])
+
+  const filteredGrades = grades.filter(g => {
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    return (
+      g.studentName?.toLowerCase().includes(q) ||
+      g.rollNumber?.toLowerCase().includes(q) ||
+      g.projectTitle?.toLowerCase().includes(q) ||
+      g.groupId?.toLowerCase().includes(q)
+    )
+  })
+
+  const semesters = [...new Set(grades.map(g => g.semester))].sort((a, b) => a - b)
+
+  const getScoreColor = (score) => {
+    if (score === null || score === undefined) return 'text-gray-400'
+    if (score >= 80) return 'text-green-600'
+    if (score >= 60) return 'text-blue-600'
+    if (score >= 40) return 'text-amber-600'
+    return 'text-red-600'
+  }
+
+  const getScoreBg = (score) => {
+    if (score === null || score === undefined) return 'bg-gray-50 dark:bg-gray-700/30'
+    if (score >= 80) return 'bg-green-50 dark:bg-green-900/20'
+    if (score >= 60) return 'bg-blue-50 dark:bg-blue-900/20'
+    if (score >= 40) return 'bg-amber-50 dark:bg-amber-900/20'
+    return 'bg-red-50 dark:bg-red-900/20'
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+          <span className="ml-2 text-sm text-gray-500">Loading student grades...</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Award className="w-5 h-5 text-purple-500" /> Student Grades
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">{filteredGrades.length} student record{filteredGrades.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Semester filter */}
+          <div className="relative">
+            <Filter className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <select
+              value={semesterFilter}
+              onChange={(e) => setSemesterFilter(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Semesters</option>
+              {semesters.map(s => <option key={s} value={s}>Semester {s}</option>)}
+            </select>
+          </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search name, roll no..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48"
+            />
+          </div>
+        </div>
+      </div>
+
+      {filteredGrades.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <Award className="w-10 h-10 mb-3 opacity-50" />
+          <p className="text-sm font-medium">No grades found</p>
+          <p className="text-xs mt-1">Grades will appear here once guides submit evaluations</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Student</th>
+                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Roll No</th>
+                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Project</th>
+                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Guide</th>
+                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Sem</th>
+                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Reports</th>
+                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Avg Score</th>
+                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredGrades.map((g, i) => (
+                <>
+                  <tr
+                    key={`row-${g.studentId}-${g.groupId}`}
+                    className={`border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${expandedStudent === `${g.studentId}-${g.groupId}` ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                  >
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                          {g.studentName?.charAt(0) || '?'}
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-900 dark:text-white text-sm">{g.studentName}</span>
+                          {g.role === 'leader' && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 font-medium">Leader</span>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{g.rollNumber || '—'}</td>
+                    <td className="py-2.5 px-3">
+                      <div className="max-w-[180px] truncate text-gray-700 dark:text-gray-300" title={g.projectTitle}>{g.projectTitle || 'Untitled'}</div>
+                      <div className="text-[10px] text-gray-400 font-mono">{g.groupId}</div>
+                    </td>
+                    <td className="py-2.5 px-3 text-gray-600 dark:text-gray-400 text-xs">{g.guideName}</td>
+                    <td className="py-2.5 px-3 text-center text-gray-600 dark:text-gray-400">{g.semester}</td>
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="text-xs">
+                        <span className="font-semibold text-green-600">{g.gradedReports}</span>
+                        <span className="text-gray-400">/{g.totalReports}</span>
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      {g.avgScore !== null ? (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${getScoreColor(g.avgScore)} ${getScoreBg(g.avgScore)}`}>
+                          {g.avgScore}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      {g.reportDetails && g.reportDetails.length > 0 ? (
+                        <button
+                          onClick={() => setExpandedStudent(expandedStudent === `${g.studentId}-${g.groupId}` ? null : `${g.studentId}-${g.groupId}`)}
+                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-gray-500 hover:text-blue-600"
+                        >
+                          {expandedStudent === `${g.studentId}-${g.groupId}` ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                  {/* Expanded report details row */}
+                  <AnimatePresence>
+                    {expandedStudent === `${g.studentId}-${g.groupId}` && g.reportDetails && g.reportDetails.length > 0 && (
+                      <motion.tr
+                        key={`detail-${g.studentId}-${g.groupId}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <td colSpan="8" className="py-0 px-3">
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: 'auto' }}
+                            exit={{ height: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="py-3 pl-9 space-y-1.5">
+                              <p className="text-[11px] font-semibold text-gray-500 uppercase mb-2">Monthly Report Scores</p>
+                              <div className="flex flex-wrap gap-2">
+                                {g.reportDetails.map((r, j) => (
+                                  <div
+                                    key={j}
+                                    className={`px-3 py-1.5 rounded-lg border text-xs ${getScoreBg(r.score)} border-gray-200 dark:border-gray-600`}
+                                    title={r.feedback || 'No feedback'}
+                                  >
+                                    <span className="text-gray-500">{r.month}/{r.year}</span>
+                                    <span className={`ml-2 font-bold ${getScoreColor(r.score)}`}>{r.score}</span>
+                                    {r.grade && <span className="ml-1 text-gray-400">({r.grade})</span>}
+                                  </div>
+                                ))}
+                              </div>
+                              {g.progressScore > 0 && (
+                                <p className="text-[11px] text-gray-500 mt-2">Overall progress: <span className="font-semibold text-gray-700 dark:text-gray-300">{g.progressScore}%</span></p>
+                              )}
+                            </div>
+                          </motion.div>
+                        </td>
+                      </motion.tr>
+                    )}
+                  </AnimatePresence>
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -1016,6 +1255,9 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* Student Grades Section */}
+      <StudentGradesSection />
     </div>
   )
 }
