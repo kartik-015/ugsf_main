@@ -5,10 +5,10 @@ import { createContext, useContext, useEffect, useState } from 'react'
 const ThemeContext = createContext()
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState('light')
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark'
+    const savedTheme = localStorage.getItem('theme') || 'light'
     setTheme(savedTheme)
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark')
