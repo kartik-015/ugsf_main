@@ -2,9 +2,8 @@ import mongoose from 'mongoose'
 
 const MONGODB_URI = process.env.MONGODB_URI
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local')
-}
+// Don't throw at import time — allows build to succeed without env vars
+// The check is moved into dbConnect() which runs only at request time
 
 let cached = global.mongoose
 
@@ -13,6 +12,11 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  const uri = process.env.MONGODB_URI || MONGODB_URI
+  if (!uri) {
+    throw new Error('Please define the MONGODB_URI environment variable inside .env.local')
+  }
+
   if (cached.conn) {
     return cached.conn
   }
@@ -29,7 +33,7 @@ async function dbConnect() {
       maxIdleTimeMS: 30000,   // Close idle connections after 30s
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(uri, opts).then((mongoose) => {
       return mongoose
     })
   }
