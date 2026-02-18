@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useState, useMemo, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -14,6 +14,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
+  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { studentEmailPattern, deriveFromStudentEmail, validatePhoneRuntime, validateNameRuntime } from '@/lib/clientValidation'
@@ -45,12 +47,31 @@ function RegisterContent() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
+  // OTP verification state
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', ''])
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [isResending, setIsResending] = useState(false)
+  const otpInputRefs = useRef([])
+
   useEffect(() => {
     if (roleFromUrl && (roleFromUrl === 'student' || roleFromUrl === 'guide')) {
       setFormData(prev => ({ ...prev, role: roleFromUrl }))
       setRoleChosen(true)
     }
   }, [roleFromUrl])
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) { clearInterval(timer); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const studentDerived = useMemo(() => formData.role === 'student' ? deriveFromStudentEmail(formData.email) : null, [formData.email, formData.role])
   const emailValid = useMemo(() => {
@@ -107,7 +128,7 @@ function RegisterContent() {
       return false
     }
     if (!formData.phoneNumber || !validatePhoneRuntime(formData.phoneNumber)) {
-      toast.error('Please enter a valid phone number (e.g. +919876543210)')
+      toast.error('Please enter a valid 10-digit phone number')
       return false
     }
     if (!formData.address || formData.address.trim().length < 5) {
@@ -131,6 +152,38 @@ function RegisterContent() {
     if (step === 1 && validateStep1()) setStep(2)
   }
 
+  // OTP input handlers
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return // only digits
+    const newDigits = [...otpDigits]
+    newDigits[index] = value.slice(-1) // only last char
+    setOtpDigits(newDigits)
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length > 0) {
+      const newDigits = [...otpDigits]
+      for (let i = 0; i < 6; i++) {
+        newDigits[i] = pasted[i] || ''
+      }
+      setOtpDigits(newDigits)
+      const focusIdx = Math.min(pasted.length, 5)
+      otpInputRefs.current[focusIdx]?.focus()
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateStep2()) return
@@ -140,13 +193,25 @@ function RegisterContent() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phoneNumber: '+91' + formData.phoneNumber,
+        }),
       })
       const data = await response.json()
 
       if (response.ok) {
-        toast.success('Registration successful! Your default password is depstar@123. Please login.')
-        router.push('/')
+        if (data.requiresVerification) {
+          // Student needs OTP verification — go to step 3
+          toast.success('OTP sent to your email! Please check your inbox.')
+          setStep(3)
+          setResendCooldown(60)
+          // Focus first OTP box after animation
+          setTimeout(() => otpInputRefs.current[0]?.focus(), 400)
+        } else {
+          toast.success('Registration successful! Your default password is depstar@123. Please login.')
+          router.push('/')
+        }
       } else {
         toast.error(data.error || 'Registration failed')
       }
@@ -157,7 +222,63 @@ function RegisterContent() {
     }
   }
 
-  const totalSteps = formData.role === 'student' ? 2 : 1
+  const handleVerifyOTP = async () => {
+    const otp = otpDigits.join('')
+    if (otp.length !== 6) {
+      toast.error('Please enter the complete 6-digit OTP')
+      return
+    }
+    setIsVerifying(true)
+    try {
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, otp }),
+      })
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success('Email verified! Your default password is depstar@123. Redirecting to login...')
+        setTimeout(() => router.push('/'), 1500)
+      } else {
+        toast.error(data.error || 'Verification failed')
+        setOtpDigits(['', '', '', '', '', ''])
+        otpInputRefs.current[0]?.focus()
+      }
+    } catch (error) {
+      toast.error('An error occurred during verification')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleResendOTP = async () => {
+    if (resendCooldown > 0 || isResending) return
+    setIsResending(true)
+    try {
+      const response = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('New OTP sent to your email!')
+        setResendCooldown(60)
+        setOtpDigits(['', '', '', '', '', ''])
+        otpInputRefs.current[0]?.focus()
+      } else {
+        toast.error(data.error || 'Failed to resend OTP')
+      }
+    } catch (error) {
+      toast.error('Failed to resend OTP')
+    } finally {
+      setIsResending(false)
+    }
+  }
+
+  const totalSteps = formData.role === 'student' ? 3 : 1
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -232,7 +353,7 @@ function RegisterContent() {
               <div>
                 {/* Step indicator */}
                 <div className="flex items-center justify-center mb-6">
-                  {[1, 2].map((s, i) => (
+                  {[1, 2, 3].map((s, i) => (
                     <div key={s} className="flex items-center">
                       {i > 0 && <div className={`w-12 h-1 mx-1 rounded ${step >= s ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`} />}
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${step >= s ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'}`}>{s}</div>
@@ -316,18 +437,21 @@ function RegisterContent() {
                         {/* Phone Number */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number *</label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <div className="relative flex">
+                            <span className="inline-flex items-center px-3 py-3 rounded-l-xl border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold select-none">
+                              +91
+                            </span>
                             <input
                               type="tel"
+                              maxLength={10}
                               value={formData.phoneNumber}
-                              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                              className={`w-full pl-10 pr-4 py-3 rounded-xl border ${formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                              placeholder="+919876543210"
+                              onChange={(e) => handleInputChange('phoneNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                              className={`w-full pr-4 py-3 rounded-r-xl border ${formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-3`}
+                              placeholder="9876543210"
                             />
                           </div>
                           {formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) && (
-                            <p className="text-xs text-red-500 mt-1">Must start with +91 and have 10 digits after</p>
+                            <p className="text-xs text-red-500 mt-1">Enter a valid 10-digit mobile number</p>
                           )}
                         </div>
 
@@ -381,7 +505,7 @@ function RegisterContent() {
                             ))}
                           </div>
                           {formData.interestedDomains.length > 0 && (
-                            <p className="text-xs text-green-500 mt-1">✓ {formData.interestedDomains.length} selected</p>
+                            <p className="text-xs text-green-500 mt-1">{formData.interestedDomains.length} selected</p>
                           )}
                         </div>
 
@@ -411,17 +535,94 @@ function RegisterContent() {
                             {isLoading ? (
                               <>
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                Registering...
+                                Sending OTP...
                               </>
                             ) : (
                               <>
-                                <CheckCircle className="w-5 h-5" />
-                                Register
+                                <Mail className="w-5 h-5" />
+                                Send OTP & Verify
                               </>
                             )}
                           </motion.button>
                         </div>
                       </form>
+                    </motion.div>
+                  )}
+
+                  {step === 3 && (
+                    <motion.div
+                      key="step3"
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                      className="space-y-5"
+                    >
+                      <div className="text-center">
+                        <ShieldCheck className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Verify Your Email</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                          We&apos;ve sent a 6-digit OTP to
+                        </p>
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{formData.email}</p>
+                      </div>
+
+                      {/* OTP Input Boxes */}
+                      <div className="flex justify-center gap-2">
+                        {otpDigits.map((digit, idx) => (
+                          <input
+                            key={idx}
+                            ref={el => otpInputRefs.current[idx] = el}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handleOtpChange(idx, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                            onPaste={idx === 0 ? handleOtpPaste : undefined}
+                            className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
+                          />
+                        ))}
+                      </div>
+
+                      {/* Verify Button */}
+                      <motion.button
+                        type="button"
+                        onClick={handleVerifyOTP}
+                        disabled={isVerifying || otpDigits.join('').length !== 6}
+                        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {isVerifying ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-5 h-5" />
+                            Verify & Complete Registration
+                          </>
+                        )}
+                      </motion.button>
+
+                      {/* Resend OTP */}
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Didn&apos;t receive the OTP?</p>
+                        <button
+                          type="button"
+                          onClick={handleResendOTP}
+                          disabled={resendCooldown > 0 || isResending}
+                          className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isResending ? 'animate-spin' : ''}`} />
+                          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
+                        </button>
+                      </div>
+
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-sm text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs">Check your spam/junk folder if you don&apos;t see the email. The OTP expires in 10 minutes.</p>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -464,13 +665,19 @@ function RegisterContent() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone *</label>
-                  <input
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+919876543210"
-                  />
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 py-3 rounded-l-xl border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold select-none">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      value={formData.phoneNumber}
+                      onChange={(e) => handleInputChange('phoneNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      className="w-full pr-4 py-3 rounded-r-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-3"
+                      placeholder="9876543210"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address *</label>

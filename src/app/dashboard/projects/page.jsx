@@ -596,26 +596,59 @@ export default function ProjectsPage(){
     setCurrentPage(1);
   }
 
-  // Export functionality
+  // Export functionality — one row per member, grouped by project
   const exportToCSV = () => {
-    const headers = ['Title', 'Group ID', 'Leader', 'Department', 'Semester', 'Domain', 'HOD Status', 'Progress', 'Members Count']
-    const rows = sortedFiltered.map(p => [
-      p.title || '',
-      p.groupId || '',
-      p.leader?.academicInfo?.name || p.leader?.email || '',
-      p.department || '',
-      p.semester || '',
-      p.domain || '',
-      p.hodApproval || 'pending',
-      p.progressScore || 0,
-      p.members?.length || 0
-    ])
-    
+    const headers = [
+      'Group ID', 'Project Title', 'Domain', 'Department', 'Semester', 'Status',
+      'Internal Guide', 'External Guide',
+      'Member Name', 'Member Email', 'Member Roll No', 'Member Role',
+      'Total Reports', 'Graded Reports', 'Avg Report Score', 'Progress %'
+    ]
+
+    const rows = []
+    for (const p of sortedFiltered) {
+      const gradedReports = (p.monthlyReports || []).filter(r => r.status === 'graded')
+      const avgScore = gradedReports.length > 0
+        ? Math.round((gradedReports.reduce((s, r) => s + (r.score || 0), 0) / gradedReports.length) * 10) / 10
+        : ''
+
+      const internalGuide = p.internalGuide?.academicInfo?.name || p.internalGuide?.email || ''
+      const externalGuide = p.externalGuide?.name || ''
+      const members = p.members || []
+
+      if (members.length === 0) {
+        // No members — still show the project row
+        rows.push([
+          p.groupId || '', p.title || '', p.domain || '', p.department || '',
+          p.semester || '', p.hodApproval || 'pending',
+          internalGuide, externalGuide,
+          '', '', '', '',
+          (p.monthlyReports || []).length, gradedReports.length, avgScore, p.progressScore || 0
+        ])
+      } else {
+        members.forEach((m, idx) => {
+          const student = m.student || {}
+          // Only first row of each group shows group info; rest are blank
+          const groupCols = idx === 0
+            ? [p.groupId || '', p.title || '', p.domain || '', p.department || '',
+               p.semester || '', p.hodApproval || 'pending',
+               internalGuide, externalGuide]
+            : ['', '', '', '', '', '', '', '']
+          rows.push([
+            ...groupCols,
+            student.academicInfo?.name || '', student.email || '',
+            student.academicInfo?.rollNumber || '', m.role || 'member',
+            (p.monthlyReports || []).length, gradedReports.length, avgScore, p.progressScore || 0
+          ])
+        })
+      }
+    }
+
     const csvContent = [headers, ...rows]
-      .map(row => row.map(field => `"${field}"`).join(','))
+      .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
       .join('\n')
     
-    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url

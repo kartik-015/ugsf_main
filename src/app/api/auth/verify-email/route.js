@@ -39,11 +39,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 })
     }
     user.isEmailVerified = true
+    user.isRegistered = true // Finalize registration after email verification
     user.emailVerificationOTP = undefined
     user.emailVerificationExpires = undefined
     user.emailVerificationAttemptCount = 0
     await user.save()
-    return NextResponse.json({ success: true, message: 'Email verified' })
+    return NextResponse.json({ success: true, message: 'Email verified successfully! Your default password is depstar@123. You can now login.' })
   } catch (e) {
     console.error('Verify email error:', e)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

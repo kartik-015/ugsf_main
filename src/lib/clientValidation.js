@@ -12,13 +12,14 @@ export function deriveFromStudentEmail(email){
   // Handle D-prefix: extract numeric year digits only
   const hasPrefix = yyRaw.toLowerCase().startsWith('d')
   const yearDigits = hasPrefix ? yyRaw.slice(1) : yyRaw
-  const admissionYear = 2000 + parseInt(yearDigits, 10)
+  // D-prefix = direct second year (lateral entry), so effective admission is 1 year earlier
+  const admissionYear = 2000 + parseInt(yearDigits, 10) - (hasPrefix ? 1 : 0)
   // Build roll number preserving original prefix
   const localPart = email.split('@')[0]
   const rollNumber = localPart.toUpperCase()
   return { admissionYear, department, institute, rollNumber }
 }
-export const phonePattern = /^\+91[1-9]\d{9}$/
+export const phonePattern = /^[6-9]\d{9}$/
 export function validatePhoneRuntime(v){ return phonePattern.test((v||'').trim()) }
 export function validateNameRuntime(n){ return /^[A-Za-z][A-Za-z\s'.-]{0,98}[A-Za-z]$/.test((n||'').trim()) }
 export function passwordStrength(p){

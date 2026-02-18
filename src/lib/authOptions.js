@@ -28,6 +28,11 @@ export const authOptions = {
           throw new Error('Please register first before logging in.')
         }
 
+        // Check if student email is verified
+        if (user.role === 'student' && !user.isEmailVerified) {
+          throw new Error('Please verify your email before logging in. Check your inbox for the OTP.')
+        }
+
         // Block sign-in if not approved (for non-student roles that need approval)
         if (user.role !== 'student') {
           if (user.approvalStatus === 'pending') {

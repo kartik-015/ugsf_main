@@ -1,8 +1,8 @@
 // ================= General Validation Utilities ================= //
 // Name: letters, spaces and limited punctuation, 2-100 chars
 export const NAME_REGEX = /^[A-Za-z][A-Za-z\s'.-]{0,98}[A-Za-z]$/
-// Phone: must start with +91 followed by 10 digits
-export const PHONE_REGEX = /^\+91[1-9]\d{9}$/
+// Phone: 10-digit Indian mobile number
+export const PHONE_REGEX = /^[6-9]\d{9}$/
 // Roll number: optional D prefix + 2 digits (year) + 2-3 letters (dept) + 3 digits sequence (e.g. 23CSE001, 23DIT002, D25DIT079)
 export const ROLL_REGEX = /^D?\d{2}[A-Z]{2,3}\d{3}$/i
 // Student email pattern: optional 'd' prefix + yy + dep(2/3) + rol(3) @charusat.edu.in
@@ -28,7 +28,8 @@ export function parseStudentEmail(email){
   // Handle D-prefix (e.g. d25dit079) - extract year digits only
   const hasPrefix = yyRaw.toLowerCase().startsWith('d')
   const yearDigits = hasPrefix ? yyRaw.slice(1) : yyRaw
-  const admissionYear = 2000 + parseInt(yearDigits, 10)
+  // D-prefix = direct second year (lateral entry), so effective admission is 1 year earlier
+  const admissionYear = 2000 + parseInt(yearDigits, 10) - (hasPrefix ? 1 : 0)
   const rollNumber = `${yyRaw}${depUpper}${roll}`.toUpperCase()
   return { admissionYear, department, institute, rollNumber }
 }

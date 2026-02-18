@@ -5,6 +5,8 @@ import { parseStudentEmail, validateStudentEmail } from '@/lib/validation'
 import { ROLES } from '@/lib/roles'
 import { calculateCurrentSemester } from '@/lib/semester'
 import { PROJECT_DOMAINS } from '@/lib/domains'
+import { createOTPRecord } from '@/lib/otp'
+import { sendEmail } from '@/lib/mailer'
 
 const DEFAULT_PASSWORD = 'depstar@123'
 
@@ -62,7 +64,7 @@ export async function POST(request) {
 
     // Check if user already exists and is fully registered
     const existingUser = await User.findOne({ email: email.toLowerCase() })
-    if (existingUser && existingUser.isRegistered) {
+    if (existingUser && existingUser.isRegistered && existingUser.isEmailVerified) {
       return NextResponse.json(
         { error: 'User with this email is already registered' }, 
         { status: 409 }
@@ -82,15 +84,24 @@ export async function POST(request) {
       autoSemester = calculateCurrentSemester(admissionYear)
     }
 
+    // For students: create/update user but require OTP verification before they can login
+    const isStudent = role === ROLES.STUDENT
+
+    // Generate OTP for student email verification
+    let otpData = null
+    if (isStudent) {
+      otpData = createOTPRecord(10) // 10 minute expiry
+    }
+
     if (existingUser) {
-      // Student email exists in DB (pre-seeded) - update with registration details
+      // Student email exists in DB (pre-seeded or incomplete registration) - update with registration details
       existingUser.password = DEFAULT_PASSWORD
-      existingUser.isRegistered = true
+      existingUser.isRegistered = !isStudent // For students, registration completes after OTP verification
       existingUser.isOnboarded = true  // Already collecting all info during registration
       existingUser.isApproved = true
       existingUser.approvalStatus = 'approved'
       existingUser.isActive = true
-      existingUser.isEmailVerified = true
+      existingUser.isEmailVerified = !isStudent // Students must verify email first
       existingUser.mustChangePassword = true
       existingUser.department = department || existingUser.department
       existingUser.admissionYear = admissionYear || existingUser.admissionYear
@@ -105,7 +116,40 @@ export async function POST(request) {
         address: address || '',
       }
       existingUser.interests = interestedDomains || []
+
+      if (isStudent && otpData) {
+        existingUser.emailVerificationOTP = otpData.hash
+        existingUser.emailVerificationExpires = new Date(otpData.expires)
+        existingUser.emailVerificationLastSent = new Date()
+        existingUser.emailVerificationResendCount = 1
+        existingUser.emailVerificationAttemptCount = 0
+      }
+
       await existingUser.save()
+
+      // Send OTP email for students
+      if (isStudent && otpData) {
+        await sendEmail({
+          to: existingUser.email,
+          subject: 'EvalProX - Email Verification OTP',
+          text: `Your email verification OTP is: ${otpData.otp}\n\nThis OTP expires in 10 minutes.\nDo not share this OTP with anyone.`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:20px">
+            <h2 style="color:#2563eb">EvalProX - Email Verification</h2>
+            <p>Your verification OTP is:</p>
+            <div style="background:#f1f5f9;padding:16px;border-radius:8px;text-align:center;margin:16px 0">
+              <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#1e40af">${otpData.otp}</span>
+            </div>
+            <p style="color:#64748b;font-size:14px">This OTP expires in 10 minutes. Do not share it with anyone.</p>
+          </div>`
+        })
+
+        return NextResponse.json({ 
+          success: true,
+          requiresVerification: true,
+          message: 'OTP sent to your email. Please verify to complete registration.',
+          email: existingUser.email,
+        })
+      }
 
       return NextResponse.json({ 
         success: true,
@@ -119,7 +163,7 @@ export async function POST(request) {
       })
     } else {
       // New user - create fresh
-      const user = new User({
+      const userData = {
         email: email.toLowerCase(),
         password: DEFAULT_PASSWORD,
         role,
@@ -137,15 +181,48 @@ export async function POST(request) {
         } : undefined,
         interests: role === ROLES.STUDENT ? (interestedDomains || []) : undefined,
         isOnboarded: role === ROLES.STUDENT ? true : false,
-        isRegistered: true,
+        isRegistered: !isStudent, // Students complete registration after OTP
         isApproved: true,
         approvalStatus: 'approved',
         isActive: true,
-        isEmailVerified: true,
+        isEmailVerified: !isStudent, // Students must verify email first
         mustChangePassword: true,
-      })
+      }
 
+      if (isStudent && otpData) {
+        userData.emailVerificationOTP = otpData.hash
+        userData.emailVerificationExpires = new Date(otpData.expires)
+        userData.emailVerificationLastSent = new Date()
+        userData.emailVerificationResendCount = 1
+        userData.emailVerificationAttemptCount = 0
+      }
+
+      const user = new User(userData)
       await user.save()
+
+      // Send OTP email for students
+      if (isStudent && otpData) {
+        await sendEmail({
+          to: user.email,
+          subject: 'EvalProX - Email Verification OTP',
+          text: `Your email verification OTP is: ${otpData.otp}\n\nThis OTP expires in 10 minutes.\nDo not share this OTP with anyone.`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:20px">
+            <h2 style="color:#2563eb">EvalProX - Email Verification</h2>
+            <p>Your verification OTP is:</p>
+            <div style="background:#f1f5f9;padding:16px;border-radius:8px;text-align:center;margin:16px 0">
+              <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#1e40af">${otpData.otp}</span>
+            </div>
+            <p style="color:#64748b;font-size:14px">This OTP expires in 10 minutes. Do not share it with anyone.</p>
+          </div>`
+        })
+
+        return NextResponse.json({ 
+          success: true,
+          requiresVerification: true,
+          message: 'OTP sent to your email. Please verify to complete registration.',
+          email: user.email,
+        })
+      }
 
       return NextResponse.json({ 
         success: true,
