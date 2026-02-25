@@ -14,22 +14,14 @@ import {
   BarChart3,
   FileText,
   XCircle,
-  ArrowLeft,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
-  X,
   User,
   Search,
   Loader2,
   FolderOpen,
   Tag,
   Users,
-  Eye,
-  Building2,
-  Award,
-  Filter,
-  Download,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -155,19 +147,15 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
     return (s.name?.toLowerCase().includes(q) || s.rollNumber?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q))
   })
 
-  const statusColor = (s) => {
-    if (s.project?.status === 'completed') return 'text-green-600'
-    if (s.project?.status === 'in-progress') return 'text-amber-600'
-    if (s.project?.status === 'rejected') return 'text-red-600'
-    return 'text-gray-500'
+  const statusBg = (s) => {
+    if (!s.hasProject) return 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400'
+    if (s.project?.status === 'in-progress') return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+    return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
   }
 
-  const statusBg = (s) => {
-    if (s.project?.status === 'completed') return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-    if (s.project?.status === 'in-progress') return 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
-    if (s.project?.status === 'rejected') return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-    if (s.hasProject) return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-    return 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400'
+  const getDisplayStatus = (s) => {
+    if (!s.hasProject) return 'no project'
+    return 'under review'
   }
 
   return (
@@ -239,7 +227,7 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBg(s)}`}>
-                  {s.project ? s.project.status : (s.hasProject ? 'assigned' : 'no project')}
+                  {getDisplayStatus(s)}
                 </span>
                 {s.isOnboarded ? (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 font-medium">onboarded</span>
@@ -309,15 +297,20 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
     return (p.title?.toLowerCase().includes(q) || p.domain?.toLowerCase().includes(q) || p.guideName?.toLowerCase().includes(q) || p.groupId?.toLowerCase().includes(q))
   })
 
-  const statusBg = (status) => {
-    const map = {
-      'completed': 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300',
-      'in-progress': 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300',
-      'rejected': 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
-      'approved': 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300',
-      'submitted': 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300',
-    }
-    return map[status] || 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400'
+  const statusBg = (p) => {
+    // Compute display: "Submitted" if all reports graded, else "Under Review"
+    const totalReports = p.totalReports ?? 0
+    const gradedReports = p.gradedReports ?? 0
+    const isSubmitted = totalReports > 0 && gradedReports === totalReports
+    return isSubmitted
+      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+  }
+
+  const getDisplayStatus = (p) => {
+    const totalReports = p.totalReports ?? 0
+    const gradedReports = p.gradedReports ?? 0
+    return totalReports > 0 && gradedReports === totalReports ? 'Submitted' : 'Under Review'
   }
 
   return (
@@ -369,7 +362,7 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBg(p.status)}`}>{p.status}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBg(p)}`}>{getDisplayStatus(p)}</span>
                 {p.hasCurrentMonthReport ? (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 font-medium flex items-center gap-0.5">
                     <FileText className="w-2.5 h-2.5" /> report submitted
@@ -755,7 +748,182 @@ function ProjectAssignmentBreakdownView({ filterValue, title, onBack }) {
 
 /* ──────── Main Dashboard ──────── */
 
-/* ──────── Student Grades Section (HOD view) ──────── */
+/* ──────── All Projects Dashboard Section ──────── */
+
+function AllProjectsSection() {
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState(null)
+
+  useEffect(() => {
+    async function fetchProjects() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/projects', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          setProjects((data.projects || []).filter(p => p.status !== 'rejected'))
+        }
+      } catch (e) { console.error(e) }
+      finally { setLoading(false) }
+    }
+    fetchProjects()
+  }, [])
+
+  const getDisplayStatus = (p) => {
+    const reports = p.monthlyReports || []
+    if (p.status === 'completed') return { label: 'Completed', cls: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' }
+    if (reports.length === 0) return { label: 'In Progress', cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' }
+    const allGraded = reports.every(r => r.status === 'graded')
+    if (allGraded) return { label: 'Submitted', cls: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' }
+    return { label: 'Under Review', cls: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' }
+  }
+
+  const filtered = projects.filter(p => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      p.title?.toLowerCase().includes(q) ||
+      p.domain?.toLowerCase().includes(q) ||
+      p.groupId?.toLowerCase().includes(q) ||
+      p.internalGuide?.academicInfo?.name?.toLowerCase().includes(q)
+    )
+  })
+
+  if (loading) return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex items-center justify-center py-10">
+      <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" />
+      <span className="text-sm text-gray-500">Loading projects...</span>
+    </div>
+  )
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
+      <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-blue-500" /> All Projects
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">{filtered.length} project{filtered.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search title, domain, guide..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none w-56"
+          />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <Briefcase className="w-10 h-10 mb-3 opacity-50" />
+          <p className="text-sm font-medium">No projects found</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+          {filtered.map((p) => {
+            const status = getDisplayStatus(p)
+            const reports = p.monthlyReports || []
+            const gradedReports = reports.filter(r => r.status === 'graded')
+            const guideName = p.internalGuide?.academicInfo?.name || p.internalGuide?.email || 'Not assigned'
+            const isExpanded = expanded === p._id
+
+            return (
+              <div
+                key={p._id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors cursor-pointer"
+                onClick={() => setExpanded(isExpanded ? null : p._id)}
+              >
+                <div className="flex items-center gap-4 px-5 py-3.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{p.title || 'Untitled'}</span>
+                      <span className="text-[10px] font-mono text-gray-400 hidden sm:block">{p.groupId}</span>
+                    </div>
+                    <div className="flex items-center gap-4 mt-1 ml-6 text-xs text-gray-500">
+                      {p.domain && <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{p.domain}</span>}
+                      <span>Sem {p.semester}</span>
+                      <span className="flex items-center gap-1 truncate"><Users className="w-3 h-3" />{guideName}</span>
+                      <span>{(p.members || []).length} member{(p.members || []).length !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-xs text-gray-500">
+                      <span className="font-semibold text-green-600">{gradedReports.length}</span>/{reports.length} graded
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${status.cls}`}>{status.label}</span>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-3 ml-6 space-y-2">
+                        {p.members && p.members.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-400 uppercase mb-1">Team Members</p>
+                            <div className="flex flex-wrap gap-2">
+                              {p.members.map((m, j) => {
+                                const studentName = m.student?.academicInfo?.name || m.student?.email || `Member ${j + 1}`
+                                const rollNo = m.student?.academicInfo?.rollNumber || ''
+                                return (
+                                  <div key={j} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs">
+                                    <User className="w-3 h-3 text-gray-400" />
+                                    <span>{studentName}</span>
+                                    {rollNo && <span className="text-gray-400 font-mono">{rollNo}</span>}
+                                    {m.role === 'leader' && <span className="text-[10px] px-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">Leader</span>}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {reports.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-400 uppercase mb-1">Monthly Reports</p>
+                            <div className="flex flex-wrap gap-2">
+                              {reports.map((r, j) => {
+                                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                                const label = `${months[r.month - 1]} ${r.year}`
+                                const isGraded = r.status === 'graded'
+                                return (
+                                  <div key={j} className={`px-2.5 py-1 rounded-lg border text-xs ${isGraded ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300'}`}>
+                                    {label}{isGraded && r.score !== undefined ? ` — ${r.score}` : ' (pending)'}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </motion.div>
+  )
+}
 
 function StudentGradesSection() {
   const [grades, setGrades] = useState([])
@@ -1057,13 +1225,6 @@ export default function AdminDashboard() {
   if (!session || !allowed.includes(session.user.role)) return null
 
   /* ---- Cards ---- */
-  const statCards = [
-    { name: 'Total Students', value: stats.totalStudents || 0, icon: GraduationCap, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800', link: '/dashboard/students' },
-    { name: 'Onboarded', value: stats.onboardedStudents || 0, icon: UserCheck, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800' },
-    { name: 'Total Guides', value: stats.totalFaculty || 0, icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800', link: '/dashboard/guides' },
-    { name: 'Total Projects', value: stats.totalProjects || 0, icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-200 dark:border-indigo-800', link: '/dashboard/projects' },
-  ]
-
   const projectCards = [
     { name: 'In Progress', value: stats.inProgressProjects || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800' },
     { name: 'Completed', value: stats.completedProjects || 0, icon: CheckCircle, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-900/20', border: 'border-teal-200 dark:border-teal-800' },
@@ -1077,30 +1238,6 @@ export default function AdminDashboard() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{getRoleTitle()}</h1>
         <p className="text-base text-gray-500 dark:text-gray-400 mt-1">{getRoleDesc()}</p>
-      </div>
-
-      {/* Top Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        {statCards.map((stat, i) => (
-          <motion.div
-            key={stat.name}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
-            onClick={() => stat.link && router.push(stat.link)}
-            className={`bg-white dark:bg-gray-800 rounded-xl p-5 border ${stat.border} ${stat.link ? 'cursor-pointer hover:shadow-md' : ''} transition-shadow`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.name}</p>
-                <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
-              </div>
-              <div className={`w-12 h-12 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
-              </div>
-            </div>
-          </motion.div>
-        ))}
       </div>
 
       {/* Project Overview */}
@@ -1256,8 +1393,6 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* Student Grades Section */}
-      <StudentGradesSection />
     </div>
   )
 }

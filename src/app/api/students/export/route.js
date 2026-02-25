@@ -121,77 +121,103 @@ export async function POST(request) {
 
     const body = await request.json()
     const ids = Array.isArray(body.ids) ? body.ids : []
-    const visibleFields = Array.isArray(body.fields) ? body.fields : []
 
-    let students = []
-    if (ids.length > 0) {
-      students = await User.find({ _id: { $in: ids } }).select('-password').sort({ 'academicInfo.name': 1 })
-    } else {
-      return NextResponse.json({ message: 'No ids provided' }, { status: 400 })
-    }
+    if (!ids.length) return NextResponse.json({ message: 'No ids provided' }, { status: 400 })
 
-    // Fetch project data for students
+    const students = await User.find({ _id: { $in: ids } }).select('-password').sort({ 'academicInfo.name': 1 })
+
+    // Fetch project data including monthly reports with grades
     const projects = await ProjectGroup.find({ 'members.student': { $in: ids } })
       .populate('internalGuide', 'academicInfo.name email')
-      .select('title domain status members internalGuide')
-    const projectMap = {}
+      .select('title domain status members internalGuide monthlyReports')
+
+    // Month name abbreviations
+    const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+    // Build per-student maps: projectMap, gradeMap, monthGradeMap
+    const projectMap = {}   // studentId -> first project info
+    const monthGradeMap = {}  // studentId -> { "Feb,2026": score }
+    const allMonthKeys = new Set()
+
     projects.forEach(p => {
+      // Collect all graded reports for this project
+      const gradedReports = (p.monthlyReports || []).filter(r => r.status === 'graded' && r.score != null)
+
       p.members?.forEach(m => {
         const sid = String(m.student)
-        if (!projectMap[sid]) projectMap[sid] = []
-        projectMap[sid].push({
-          title: p.title,
-          domain: p.domain,
-          status: p.status,
-          guideName: p.internalGuide?.academicInfo?.name || p.internalGuide?.email || ''
+        if (!projectMap[sid]) {
+          projectMap[sid] = {
+            title: p.title,
+            domain: p.domain,
+            guideName: p.internalGuide?.academicInfo?.name || p.internalGuide?.email || 'NA',
+          }
+        }
+        if (!monthGradeMap[sid]) monthGradeMap[sid] = {}
+
+        gradedReports.forEach(r => {
+          const key = `${MONTH_NAMES[r.month - 1]},${r.year}`
+          allMonthKeys.add(key)
+          monthGradeMap[sid][key] = r.score
         })
       })
+    })
+
+    // Sort month columns chronologically
+    const sortedMonthKeys = Array.from(allMonthKeys).sort((a, b) => {
+      const [ma, ya] = a.split(',')
+      const [mb, yb] = b.split(',')
+      const ia = Number(ya) * 12 + MONTH_NAMES.indexOf(ma)
+      const ib = Number(yb) * 12 + MONTH_NAMES.indexOf(mb)
+      return ia - ib
+    })
+
+    // Compute overall avg score per student
+    const avgScoreMap = {}
+    Object.entries(monthGradeMap).forEach(([sid, months]) => {
+      const scores = Object.values(months).filter(s => s != null)
+      avgScoreMap[sid] = scores.length > 0
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+        : null
     })
 
     const wb = new ExcelJS.Workbook()
     const ws = wb.addWorksheet('Students')
 
-    // Build columns based on visible fields
+    // Fixed columns: Name, Email, ID Number, Semester, Mobile, Overall Grade
     const columns = [
-      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Name', key: 'name', width: 28 },
       { header: 'Email', key: 'email', width: 30 },
+      { header: 'ID Number', key: 'roll', width: 14 },
+      { header: 'Semester', key: 'semester', width: 10 },
+      { header: 'Mobile', key: 'phone', width: 16 },
+      { header: 'Overall Grade', key: 'overallGrade', width: 14 },
     ]
-    if (visibleFields.includes('roll')) columns.push({ header: 'Roll Number', key: 'roll', width: 15 })
-    if (visibleFields.includes('phone')) columns.push({ header: 'Phone', key: 'phone', width: 15 })
-    if (visibleFields.includes('semester')) columns.push({ header: 'Semester', key: 'semester', width: 10 })
-    if (visibleFields.includes('department')) columns.push({ header: 'Department', key: 'department', width: 15 })
-    if (visibleFields.includes('interests')) columns.push({ header: 'Domain Interests', key: 'interests', width: 30 })
-    if (visibleFields.includes('projectTitle')) columns.push({ header: 'Project Title', key: 'projectTitle', width: 30 })
-    if (visibleFields.includes('projectDomain')) columns.push({ header: 'Project Domain', key: 'projectDomain', width: 20 })
-    if (visibleFields.includes('projectStatus')) columns.push({ header: 'Project Status', key: 'projectStatus', width: 15 })
-    if (visibleFields.includes('guideName')) columns.push({ header: 'Guide', key: 'guideName', width: 25 })
-    if (visibleFields.includes('address')) columns.push({ header: 'Address', key: 'address', width: 30 })
-    // Fallback if no visible fields
-    if (columns.length <= 2) {
-      columns.push(
-        { header: 'Department', key: 'department', width: 15 },
-        { header: 'Semester', key: 'semester', width: 10 },
-        { header: 'Roll Number', key: 'roll', width: 15 }
-      )
-    }
+    // Dynamic monthly report columns
+    sortedMonthKeys.forEach(key => {
+      columns.push({ header: key, key: `month_${key}`, width: 12 })
+    })
     ws.columns = columns
 
+    // Style header row
+    ws.getRow(1).font = { bold: true }
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EAF6' } }
+
     students.forEach(s => {
-      const proj = projectMap[String(s._id)]?.[0]
-      ws.addRow({
+      const sid = String(s._id)
+      const rowData = {
         name: s.academicInfo?.name || '',
         email: s.email,
-        department: s.department || '',
-        semester: s.academicInfo?.semester || '',
         roll: s.academicInfo?.rollNumber || '',
+        semester: s.academicInfo?.semester || '',
         phone: s.academicInfo?.phoneNumber || '',
-        interests: (s.interests || []).join(', ') || 'NA',
-        projectTitle: proj?.title || 'NA',
-        projectDomain: proj?.domain || 'NA',
-        projectStatus: proj?.status || 'NA',
-        guideName: proj?.guideName || 'NA',
-        address: s.academicInfo?.address || ''
+        overallGrade: avgScoreMap[sid] != null ? avgScoreMap[sid] : '',
+      }
+      // Fill monthly grades (blank if not submitted/graded)
+      sortedMonthKeys.forEach(key => {
+        const score = monthGradeMap[sid]?.[key]
+        rowData[`month_${key}`] = score != null ? score : ''
       })
+      ws.addRow(rowData)
     })
 
     const buffer = await wb.xlsx.writeBuffer()

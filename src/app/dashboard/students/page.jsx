@@ -29,11 +29,8 @@ export default function StudentsPage() {
     { key: 'roll', label: 'ID Number' },
     { key: 'semester', label: 'Semester' },
     { key: 'interests', label: 'Domain Interest' },
-    { key: 'onboarding', label: 'Onboarding' },
-    { key: 'phone', label: 'Mobile Number' },
-    { key: 'grouped', label: 'Grouped' },
   ]
-  const [visibleFields, setVisibleFields] = useState(['roll','semester','interests','onboarding','phone','grouped'])
+  const [visibleFields, setVisibleFields] = useState(['roll','semester','interests'])
 
   const toggleExclusive = (currentValue, setter, value) => {
     setter(currentValue === value ? '' : value)
@@ -86,14 +83,18 @@ export default function StudentsPage() {
         if (data.projectMemberships) {
           window.__studentProjectMemberships = data.projectMemberships
         }
-        // Fetch project details for students
-        await fetchProjectDetails(data.students || [])
+        // Fetch project details and grades for students
+        await Promise.all([
+          fetchProjectDetails(data.students || []),
+          fetchGrades(data.students || []),
+        ])
       } else toast.error('Failed to fetch students')
     } catch { toast.error('Error fetching students') } finally { setLoading(false) }
   }, [searchTerm, department, semester])
 
   // Fetch project details for the student list
   const [projectMap, setProjectMap] = useState({})
+  const [gradeMap, setGradeMap] = useState({}) // studentId -> avgScore
   const fetchProjectDetails = async (studentList) => {
     try {
       const ids = studentList.map(s => s._id)
@@ -120,12 +121,29 @@ export default function StudentsPage() {
     } catch { /* ignore */ }
   }
 
+  const fetchGrades = async (studentList) => {
+    try {
+      const res = await fetch('/api/projects/grades', { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        const gmap = {}
+        ;(data.studentGrades || []).forEach(g => {
+          const sid = String(g.studentId)
+          if (!gmap[sid] || gmap[sid] === null) {
+            gmap[sid] = g.avgScore
+          }
+        })
+        setGradeMap(gmap)
+      }
+    } catch { /* ignore */ }
+  }
+
   const baseDepartments = ['CSE','CE','IT']
   const departments = baseDepartments
   const semesters = ['1','2','3','4','5','6','7','8']
 
   const submitHandler = async (e) => { e.preventDefault(); setLoading(true); setShowSearchDropdown(false); await fetchStudents(); setSubmitted(true) }
-  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setStudents([]); setSubmitted(false); setProjectMap({}) }
+  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setStudents([]); setSubmitted(false); setProjectMap({}); setGradeMap({}) }
 
   const exportExcel = async () => {
     try {
@@ -332,9 +350,7 @@ export default function StudentsPage() {
                       {visibleFields.includes('roll') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]'>ID Number</th>}
                       {visibleFields.includes('semester') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[7%]'>Sem</th>}
                       {visibleFields.includes('interests') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[14%]'>Domain</th>}
-                      {visibleFields.includes('onboarding') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]'>Onboarding</th>}
-                      {visibleFields.includes('phone') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[12%]'>Mobile</th>}
-                      {visibleFields.includes('grouped') && <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[9%]'>Grouped</th>}
+                      <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]'>Overall Grade</th>
                     </tr>
                   </thead>
                   <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
@@ -367,25 +383,14 @@ export default function StudentsPage() {
                             ) : <span className='text-gray-400 text-xs'>NA</span>}
                           </td>
                         )}
-                        {visibleFields.includes('onboarding') && (
-                          <td className='px-3 py-3 text-sm'>
-                            {s.isOnboarded ? (
-                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'>Onboarded</span>
-                            ) : (
-                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200'>Pending</span>
-                            )}
-                          </td>
-                        )}
-                        {visibleFields.includes('phone') && <td className='px-3 py-3 text-sm text-gray-900 dark:text-gray-300 truncate'>{s.academicInfo?.phoneNumber || '—'}</td>}
-                        {visibleFields.includes('grouped') && (
-                          <td className='px-3 py-3 text-sm'>
-                            {projectMap[String(s._id)] ? (
-                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'>Grouped</span>
-                            ) : (
-                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'>Ungrouped</span>
-                            )}
-                          </td>
-                        )}
+                        <td className='px-3 py-3 text-sm'>
+                          {(() => {
+                            const score = gradeMap[String(s._id)]
+                            if (score === null || score === undefined) return <span className='text-gray-400 text-xs'>—</span>
+                            const color = score >= 8 ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : score >= 6 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : score >= 4 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
+                            return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${color}`}>{score}</span>
+                          })()}
+                        </td>
                       </motion.tr>
                     )})}
                   </tbody>

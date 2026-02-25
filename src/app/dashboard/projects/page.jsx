@@ -81,7 +81,7 @@ export default function ProjectsPage(){
     ? [session?.user?.academicInfo?.department].filter(Boolean)
     : ['CSE','CE','IT']
   const semesters = ['1','2','3','4','5','6','7','8']
-  const statuses = ['submitted','under-review','approved','rejected']
+  const statuses = ['under-review','submitted']
 
   const loadProjects = useCallback(async ()=>{
     setLoading(true)
@@ -362,10 +362,17 @@ export default function ProjectsPage(){
       })
     : guides
   
+  // Helper to compute display status from monthly reports
+  const getDisplayStatus = (p) => {
+    const reports = p.monthlyReports || []
+    const graded = reports.filter(r => r.status === 'graded').length
+    return reports.length > 0 && graded === reports.length ? 'submitted' : 'under-review'
+  }
+
   const filtered = base
     .filter(p => !department || p.department===department)
     .filter(p => !semester || String(p.semester)===semester)
-    .filter(p => !status || p.status===status)
+    .filter(p => !status || getDisplayStatus(p)===status)
     .filter(p => !domain || p.domain===domain)
     .filter(p => !guide || (p.internalGuide && String(p.internalGuide._id)===guide))
     .filter(p => {
@@ -833,7 +840,7 @@ export default function ProjectsPage(){
                       <h3 className='font-bold text-base text-gray-900 dark:text-white truncate'>{p.title}</h3>
                       <div className='flex items-center gap-2 mt-1'>
                         <span className='text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-700/50 text-indigo-700 dark:text-indigo-200 font-semibold'>{p.groupId}</span>
-                        <StatusBadge status={p.hodApproval || 'pending'} />
+                        <StatusBadge status={p.hodApproval || 'pending'} reports={p.monthlyReports} />
                       </div>
                     </div>
                     {/* Progress ring */}
@@ -1405,20 +1412,22 @@ function FieldSelector({ fields, visible, toggle }) {
   )
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, reports }) {
+  // Compute display status: if all reports graded → 'submitted', else 'under-review'
+  const gradedCount = (reports || []).filter(r => r.status === 'graded').length
+  const totalCount = (reports || []).length
+  const displayStatus = totalCount > 0 && gradedCount === totalCount ? 'submitted' : 'under-review'
+
   const config = {
-    approved: { bg: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800', icon: CheckCircle2 },
-    rejected: { bg: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800', icon: XCircle },
-    pending: { bg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800', icon: Clock },
-    'under-review': { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800', icon: Eye },
-    submitted: { bg: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800', icon: Send },
+    'under-review': { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800', icon: Eye, label: 'Under Review' },
+    'submitted': { bg: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800', icon: CheckCircle2, label: 'Submitted' },
   }
-  const c = config[status] || { bg: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300', icon: CircleDot }
+  const c = config[displayStatus] || config['under-review']
   const Icon = c.icon
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${c.bg} badge-animate`}>
       <Icon className='w-2.5 h-2.5' />
-      {status}
+      {c.label}
     </span>
   )
 }
@@ -1804,7 +1813,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 </h4>
                 <div className='flex items-center gap-2'>
                   <span className='text-[11px] text-gray-500'>Current Status:</span>
-                  <StatusBadge status={project.hodApproval || 'pending'} />
+                  <StatusBadge status={project.hodApproval || 'pending'} reports={project.monthlyReports} />
                 </div>
                 {isHod && (project.hodApproval !== 'approved') && (
                   <div className='flex flex-wrap gap-2'>

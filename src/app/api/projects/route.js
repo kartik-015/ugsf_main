@@ -202,14 +202,24 @@ export async function PATCH(request) {
     if (body.hodApproval !== undefined) {
       if (role !== 'hod' && role !== 'project_coordinator') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only HOD or Project Coordinator' } }, { status: 403 })
       if (project.department !== (session.user.department || '').toUpperCase()) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Wrong department' } }, { status: 403 })
+
+      if (body.hodApproval === 'rejected') {
+        // Notify members before deletion
+        const memberIds = project.members.map(m => m.student._id || m.student)
+        await Notification.createBulk(memberIds, { type: 'project-rejected', title: 'Project Rejected', message: `Your project "${project.title}" was rejected by HOD.${body.hodRemarks ? ' Remarks: ' + body.hodRemarks : ''}`, link: '/dashboard/projects', relatedProject: project._id })
+        // Delete the project from DB — do not persist rejected state
+        await ProjectGroup.findByIdAndDelete(project._id)
+        return NextResponse.json({ ok: true, message: 'Project rejected and removed' })
+      }
+
       project.hodApproval = body.hodApproval
       project.hodRemarks = body.hodRemarks || ''
       project.hodApprovedBy = session.user.id
       project.hodApprovedAt = new Date()
-      project.status = body.hodApproval === 'approved' ? 'approved' : 'rejected'
+      project.status = 'approved'
       await project.save()
       const memberIds = project.members.map(m => m.student._id || m.student)
-      await Notification.createBulk(memberIds, { type: body.hodApproval === 'approved' ? 'project-approved' : 'project-rejected', title: `Project ${body.hodApproval}`, message: `Project "${project.title}" ${body.hodApproval} by HOD.${body.hodRemarks ? ' Remarks: ' + body.hodRemarks : ''}`, link: '/dashboard/projects', relatedProject: project._id })
+      await Notification.createBulk(memberIds, { type: 'project-approved', title: 'Project Approved', message: `Project "${project.title}" approved by HOD.${body.hodRemarks ? ' Remarks: ' + body.hodRemarks : ''}`, link: '/dashboard/projects', relatedProject: project._id })
       return NextResponse.json({ ok: true, data: project })
     }
 
