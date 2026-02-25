@@ -2,8 +2,14 @@
 // Supports both normal (23dit015) and D-prefix (d25dit079) email formats
 export const studentEmailPattern = /^(d?\d{2})(cs|ce|it|me|ec|cie|dcs|dce|dit)\d{3}@charusat\.edu\.in$/i
 // Guide email: fullnamewithoutspaces.dept@charusat.ac.in (dept = dit|dcs|dce)
+// Also allow whitelisted test emails
 export const guideEmailPattern = /^[a-zA-Z]+\.(dit|dcs|dce)@charusat\.ac\.in$/i
-export function validateGuideEmail(email) { return guideEmailPattern.test((email || '').trim()) }
+const guideTestEmails = ['kartikguleriagame@gmail.com']
+export function validateGuideEmail(email) {
+  const trimmed = (email || '').trim().toLowerCase()
+  if (guideTestEmails.includes(trimmed)) return true
+  return guideEmailPattern.test(trimmed)
+}
 export function deriveFromStudentEmail(email){
   const m = email.match(studentEmailPattern)
   if(!m) return null

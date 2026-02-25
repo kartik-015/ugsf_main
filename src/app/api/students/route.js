@@ -38,7 +38,7 @@ export async function GET(request) {
   const admissionYear = searchParams.get('admissionYear')
 
 
-    let query = { role: 'student', isActive: true }
+    let query = { role: 'student', isActive: true, isRegistered: true, isEmailVerified: true }
 
     // Department filtering logic
     if ((session.user.role === ROLES.HOD || session.user.role === ROLES.PROJECT_COORDINATOR) && session.user.department) {

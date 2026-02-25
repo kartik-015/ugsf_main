@@ -7,9 +7,17 @@ export const NAME_REGEX = /^[A-Za-z][A-Za-z\s'.-]{0,98}[A-Za-z]$/
 export const GUIDE_EMAIL_REGEX = /^([a-zA-Z]+)\.([a-zA-Z]+)@charusat\.ac\.in$/i
 const GUIDE_DEPT_MAP = { dit: 'IT', dcs: 'CSE', dce: 'CE' }
 
+// Whitelisted test guide emails (non-charusat)
+const GUIDE_TEST_EMAILS = ['kartikguleriagame@gmail.com']
+
 export function parseGuideEmail(email) {
   if (!email) return null
-  const m = email.trim().match(GUIDE_EMAIL_REGEX)
+  const trimmed = email.trim().toLowerCase()
+  // Allow whitelisted test emails
+  if (GUIDE_TEST_EMAILS.includes(trimmed)) {
+    return { name: trimmed.split('@')[0], department: 'IT', institute: 'DEPSTAR' }
+  }
+  const m = trimmed.match(GUIDE_EMAIL_REGEX)
   if (!m) return null
   const [, namePart, deptCode] = m
   const dept = GUIDE_DEPT_MAP[deptCode.toLowerCase()]

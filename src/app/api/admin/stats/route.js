@@ -458,10 +458,10 @@ export async function GET(request) {
       rejectedProjects,
       completedProjects,
     ] = await Promise.all([
-      User.countDocuments({ role: 'student', ...userDeptFilter }),
+      User.countDocuments({ role: 'student', isRegistered: true, isEmailVerified: true, ...userDeptFilter }),
       User.countDocuments({ role: 'guide', ...userDeptFilter }),
       isDeptScoped
-        ? User.countDocuments({ approvalStatus: 'pending', role: 'student', ...userDeptFilter })
+        ? User.countDocuments({ approvalStatus: 'pending', role: 'student', isRegistered: true, isEmailVerified: true, ...userDeptFilter })
         : User.countDocuments({ approvalStatus: 'pending' }),
       ProjectGroup.countDocuments(projectDeptFilter),
       ProjectGroup.countDocuments({ hodApproval: 'approved', ...projectDeptFilter }),

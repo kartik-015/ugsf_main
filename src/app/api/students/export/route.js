@@ -25,7 +25,7 @@ export async function GET(request) {
     const university = searchParams.get('university')
     const institute = searchParams.get('institute')
 
-    let query = { role: 'student', isActive: true }
+    let query = { role: 'student', isActive: true, isRegistered: true, isEmailVerified: true }
 
   if (session.user.role === 'admin' && session.user.department) {
       if (searchParams.has('department')) {
