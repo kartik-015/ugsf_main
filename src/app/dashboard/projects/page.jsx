@@ -1603,9 +1603,10 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   // Compute total score from criteria scores
   useEffect(()=>{
     if(selectedRubric && selectedRubric.criteria?.length > 0){
-      const total = selectedRubric.criteria.reduce((sum, c) => sum + (criteriaScores[c._id] || 0), 0)
+      const total = selectedRubric.criteria.reduce((sum, c) => sum + (Number(criteriaScores[c._id]) || 0), 0)
       const maxTotal = selectedRubric.criteria.reduce((sum, c) => sum + (c.maxScore || 10), 0)
-      const normalized = maxTotal > 0 ? Math.round((total / maxTotal) * 10 * 10) / 10 : 0
+      // Normalize to /10, rounded to nearest integer
+      const normalized = maxTotal > 0 ? Math.round((total / maxTotal) * 10) : 0
       setGradeScore(normalized)
     }
   },[criteriaScores, selectedRubric])
@@ -2207,7 +2208,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                           />
                         ) : (
                           <iframe
-                            src={`https://docs.google.com/gview?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin + pdfApiUrl : pdfApiUrl)}&embedded=true`}
+                            src={pdfApiUrl}
                             className='w-full h-full border-0'
                             title='Report PDF'
                             style={{ minHeight: '80vh' }}
@@ -2280,32 +2281,60 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     {/* Rubric Criteria with Per-Criteria Scoring — guides only */}
                     {!isMember && selectedRubric && (
                       <div className='space-y-2'>
-                        <p className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Evaluation Criteria</p>
+                        <div className='flex items-center justify-between'>
+                          <p className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Evaluation Criteria</p>
+                          {isGuide && selectedRubric.criteria?.length > 0 && (
+                            <span className='text-[11px] font-bold text-indigo-600 dark:text-indigo-400'>
+                              {selectedRubric.criteria.reduce((s,c)=>s+(criteriaScores[c._id]||0),0)}
+                              <span className='text-gray-400 font-normal'>/{selectedRubric.criteria.reduce((s,c)=>s+(c.maxScore||10),0)} pts</span>
+                            </span>
+                          )}
+                        </div>
                         <div className='space-y-2'>
-                          {selectedRubric.criteria.map((c, i) => (
+                          {selectedRubric.criteria.map((c, i) => {
+                            const score = criteriaScores[c._id] ?? ''
+                            const filled = score !== '' && Number(score) > 0
+                            return (
                             <div key={c._id || i} className='p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
                               <div className='flex items-center justify-between mb-1'>
-                                <span className='text-[12px] font-semibold text-gray-800 dark:text-gray-200'>{c.name}</span>
-                                <span className='text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded'>Max {c.maxScore}</span>
+                                <span className='text-[12px] font-semibold text-gray-800 dark:text-gray-200 flex-1 pr-2'>{i+1}. {c.name}</span>
+                                {isGuide ? (
+                                  <div className='flex items-center gap-1.5 flex-shrink-0'>
+                                    <input
+                                      type='number' min='0' max={c.maxScore} step='1'
+                                      value={score}
+                                      placeholder='0'
+                                      onChange={e => {
+                                        const v = e.target.value === '' ? '' : Math.max(0, Math.min(c.maxScore, Math.round(Number(e.target.value))))
+                                        setCriteriaScores(prev => ({ ...prev, [c._id]: v }))
+                                      }}
+                                      onBlur={e => {
+                                        if (e.target.value === '') setCriteriaScores(prev => ({ ...prev, [c._id]: 0 }))
+                                      }}
+                                      className={`w-16 px-2 py-1.5 border-2 rounded-lg text-sm text-center font-bold bg-white dark:bg-gray-800 outline-none transition-colors ${
+                                        filled
+                                          ? 'border-indigo-500 text-indigo-700 dark:text-indigo-300 focus:ring-2 focus:ring-indigo-500'
+                                          : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400'
+                                      }`}
+                                    />
+                                    <span className='text-[11px] text-gray-400 font-medium'>/{c.maxScore}</span>
+                                  </div>
+                                ) : (
+                                  <span className='text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded'>Max {c.maxScore}</span>
+                                )}
                               </div>
-                              {c.description && <p className='text-[10px] text-gray-500 dark:text-gray-400 mb-2'>{c.description}</p>}
-                              {/* Per-criterion score input for guides */}
-                              {isGuide && (
-                                <div className='flex items-center gap-2 mt-2'>
-                                  <input type='range' min='0' max={c.maxScore} step='0.5'
-                                    value={criteriaScores[c._id] || 0}
-                                    onChange={e => setCriteriaScores(prev => ({ ...prev, [c._id]: Number(e.target.value) }))}
-                                    className='flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600'
-                                  />
-                                  <input type='number' min='0' max={c.maxScore} step='0.5'
-                                    value={criteriaScores[c._id] || 0}
-                                    onChange={e => setCriteriaScores(prev => ({ ...prev, [c._id]: Math.max(0, Math.min(c.maxScore, Number(e.target.value))) }))}
-                                    className='w-14 px-1.5 py-1 border border-gray-200 dark:border-gray-700 rounded text-[11px] text-center font-bold bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none'
+                              {c.description && <p className='text-[10px] text-gray-500 dark:text-gray-400 mt-1'>{c.description}</p>}
+                              {/* Progress bar for filled score */}
+                              {isGuide && score !== '' && (
+                                <div className='mt-2 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-200 ${Number(score)/c.maxScore >= 0.7 ? 'bg-green-500' : Number(score)/c.maxScore >= 0.4 ? 'bg-amber-400' : 'bg-red-400'}`}
+                                    style={{ width: `${Math.min(100, (Number(score)/(c.maxScore||10))*100)}%` }}
                                   />
                                 </div>
                               )}
                             </div>
-                          ))}
+                          )})}
                         </div>
                       </div>
                     )}
@@ -2321,18 +2350,31 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     {/* Total Score Display (for all) */}
                     {isGuide && (
                       <div className='p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
-                        <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Total Score (out of 10)</label>
-                        <div className='flex items-center gap-3'>
-                          <input type='range' min='0' max='10' step='0.5' value={gradeScore} onChange={e => { setGradeScore(Number(e.target.value)); setCriteriaScores({}) }}
-                            className='flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600' />
-                          <div className='w-20 text-center'>
-                            <span className={`text-2xl font-black ${gradeScore >= 7 ? 'text-green-600 dark:text-green-400' : gradeScore >= 4 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>{gradeScore}</span>
-                            <span className='text-sm text-gray-400'>/10</span>
+                        <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>
+                          Total Score (out of 10)
+                          {selectedRubric?.criteria?.length > 0 && <span className='ml-1.5 text-[10px] text-indigo-400 normal-case font-normal'>auto-calculated from criteria</span>}
+                        </label>
+                        {selectedRubric?.criteria?.length > 0 ? (
+                          /* Auto mode: show big number computed from criteria */
+                          <div className='flex items-center gap-4'>
+                            <div className='flex-1 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                              <div className={`h-full rounded-full transition-all duration-300 ${gradeScore >= 7 ? 'bg-gradient-to-r from-green-400 to-emerald-500' : gradeScore >= 4 ? 'bg-gradient-to-r from-amber-400 to-yellow-500' : 'bg-gradient-to-r from-red-400 to-rose-500'}`} style={{ width: `${(gradeScore/10)*100}%` }} />
+                            </div>
+                            <span className={`text-3xl font-black tabular-nums w-20 text-right ${gradeScore >= 7 ? 'text-green-600 dark:text-green-400' : gradeScore >= 4 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {gradeScore}<span className='text-sm font-normal text-gray-400'>/10</span>
+                            </span>
                           </div>
-                        </div>
-                        <div className='flex justify-between mt-1 text-[9px] text-gray-400'>
-                          <span>Poor</span><span>Average</span><span>Excellent</span>
-                        </div>
+                        ) : (
+                          /* Manual mode: slider + input when no rubric */
+                          <div className='flex items-center gap-3'>
+                            <input type='range' min='0' max='10' step='1' value={gradeScore} onChange={e => setGradeScore(Number(e.target.value))}
+                              className='flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600' />
+                            <input type='number' min='0' max='10' step='1' value={gradeScore}
+                              onChange={e => setGradeScore(Math.max(0, Math.min(10, Math.round(Number(e.target.value)))))}
+                              className='w-16 px-2 py-1.5 border-2 border-indigo-400 rounded-lg text-center text-xl font-black text-indigo-700 dark:text-indigo-300 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
+                            <span className='text-sm text-gray-400 font-medium'>/10</span>
+                          </div>
+                        )}
                       </div>
                     )}
 

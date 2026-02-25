@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import dbConnect from '@/lib/mongodb'
+import ReportFile from '@/models/ReportFile'
 
 export async function POST(request) {
   try {
@@ -27,20 +27,23 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Save to local public/uploads/reports directory
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'reports')
-    await mkdir(uploadsDir, { recursive: true })
-
+    await dbConnect()
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const uniqueName = `${Date.now()}_${safeName}`
-    const filePath = path.join(uploadsDir, uniqueName)
-    await writeFile(filePath, buffer)
 
-    // Return URL path that can be served by Next.js static file serving
-    const url = `/uploads/reports/${uniqueName}`
+    // Store PDF binary in MongoDB (works on Vercel — no local filesystem needed)
+    const reportFile = await ReportFile.create({
+      filename: safeName,
+      contentType: 'application/pdf',
+      data: buffer,
+      size: buffer.length,
+      uploadedBy: session.user.id,
+    })
+
+    // Return a URL that serves from MongoDB via the PDF route
+    const url = `/api/reports/pdf?id=${reportFile._id}`
     return NextResponse.json({ success: true, url, filename: safeName })
   } catch (error) {
     console.error('Upload error:', error)
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Upload failed: ' + error.message }, { status: 500 })
   }
 }

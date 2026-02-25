@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-import { readFile } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import dbConnect from '@/lib/mongodb'
+import ReportFile from '@/models/ReportFile'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request) {
   try {
@@ -11,24 +12,26 @@ export async function GET(request) {
     if (!session) return new NextResponse('Unauthorized', { status: 401 })
 
     const { searchParams } = new URL(request.url)
-    const file = searchParams.get('file')
-    if (!file) return new NextResponse('Missing file parameter', { status: 400 })
+    const id = searchParams.get('id')
+    if (!id) return new NextResponse('Missing id parameter', { status: 400 })
 
-    // Sanitize to prevent directory traversal
-    const safeFile = path.basename(file)
-    const filePath = path.join(process.cwd(), 'public', 'uploads', 'reports', safeFile)
+    await dbConnect()
+    const reportFile = await ReportFile.findById(id).select('filename contentType data').lean()
+    if (!reportFile) return new NextResponse('File not found', { status: 404 })
 
-    if (!existsSync(filePath)) {
-      return new NextResponse('File not found', { status: 404 })
-    }
-
-    const buffer = await readFile(filePath)
+    // MongoDB Binary (BSON) → Node.js Buffer
+    const rawData = reportFile.data
+    const buffer = Buffer.isBuffer(rawData)
+      ? rawData
+      : rawData?.buffer
+        ? Buffer.from(rawData.buffer)
+        : Buffer.from(rawData)
 
     return new Response(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${safeFile}"`,
+        'Content-Disposition': `inline; filename="${reportFile.filename}"`,
         'Content-Length': buffer.length.toString(),
         'Cache-Control': 'private, max-age=3600',
       },
