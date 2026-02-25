@@ -59,6 +59,8 @@ export default function DashboardLayout({ children }) {
     }
 
     // Check if user needs onboarding (any role) but honor temporary cookie set immediately after completion
+    // Guides and admins are always considered onboarded (all info collected during registration)
+    const roleSkipsOnboarding = ['guide', 'admin', 'mainadmin', 'hod', 'principal', 'project_coordinator', 'pc'].includes(session.user.role)
     let cookieOnboarded = false
     try {
       const cookieStr = document.cookie || ''
@@ -68,7 +70,7 @@ export default function DashboardLayout({ children }) {
         if (val && session.user.id && val === session.user.id) cookieOnboarded = true
       }
     } catch {}
-    const needsOnboarding = !(session.user.isOnboarded || cookieOnboarded)
+    const needsOnboarding = !roleSkipsOnboarding && !(session.user.isOnboarded || cookieOnboarded)
     if (needsOnboarding && pathname !== '/onboarding') {
       router.push('/onboarding')
       return

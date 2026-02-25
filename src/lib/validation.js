@@ -1,6 +1,25 @@
 // ================= General Validation Utilities ================= //
 // Name: letters, spaces and limited punctuation, 2-100 chars
 export const NAME_REGEX = /^[A-Za-z][A-Za-z\s'.-]{0,98}[A-Za-z]$/
+
+// Guide email: fullnamewithoutspaces.dept@charusat.ac.in
+// e.g. kartikguleria.dit@charusat.ac.in (IT), radhikapatel.dcs@charusat.ac.in (CSE), sachinpatel.dce@charusat.ac.in (CE)
+export const GUIDE_EMAIL_REGEX = /^([a-zA-Z]+)\.([a-zA-Z]+)@charusat\.ac\.in$/i
+const GUIDE_DEPT_MAP = { dit: 'IT', dcs: 'CSE', dce: 'CE' }
+
+export function parseGuideEmail(email) {
+  if (!email) return null
+  const m = email.trim().match(GUIDE_EMAIL_REGEX)
+  if (!m) return null
+  const [, namePart, deptCode] = m
+  const dept = GUIDE_DEPT_MAP[deptCode.toLowerCase()]
+  if (!dept) return null
+  return { name: namePart, department: dept, institute: 'DEPSTAR' }
+}
+
+export function validateGuideEmail(email) {
+  return !!parseGuideEmail(email)
+}
 // Phone: 10-digit Indian mobile number
 export const PHONE_REGEX = /^[6-9]\d{9}$/
 // Roll number: optional D prefix + 2 digits (year) + 2-3 letters (dept) + 3 digits sequence (e.g. 23CSE001, 23DIT002, D25DIT079)

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
-import { parseStudentEmail, validateStudentEmail } from '@/lib/validation'
+import { parseStudentEmail, validateStudentEmail, parseGuideEmail, validateGuideEmail } from '@/lib/validation'
 import { ROLES } from '@/lib/roles'
 import { calculateCurrentSemester } from '@/lib/semester'
 import { PROJECT_DOMAINS } from '@/lib/domains'
@@ -55,6 +55,13 @@ export async function POST(request) {
           return NextResponse.json({ error: `Invalid domain: ${d}` }, { status: 400 })
         }
       }
+    } else if (role === ROLES.GUIDE) {
+      if (!validateGuideEmail(email)) {
+        return NextResponse.json({ error: 'Invalid guide email. Required format: fullname.dit@charusat.ac.in (IT), fullname.dcs@charusat.ac.in (CSE), fullname.dce@charusat.ac.in (CE)' }, { status: 400 })
+      }
+      if (!name || !phoneNumber || !address) {
+        return NextResponse.json({ error: 'Name, phone number and address are required for guide registration' }, { status: 400 })
+      }
     } else {
       const staffValid = /@charusat\.(ac|edu)\.in$/i.test(email)
       if(!staffValid) {
@@ -84,24 +91,32 @@ export async function POST(request) {
       autoSemester = calculateCurrentSemester(admissionYear)
     }
 
-    // For students: create/update user but require OTP verification before they can login
-    const isStudent = role === ROLES.STUDENT
+    if (role === ROLES.GUIDE) {
+      const parsed = parseGuideEmail(email)
+      department = parsed.department
+      institute = parsed.institute
+    }
 
-    // Generate OTP for student email verification
+    // For students and guides: require OTP verification before they can login
+    const isStudent = role === ROLES.STUDENT
+    const isGuide = role === ROLES.GUIDE
+    const requiresOTP = isStudent || isGuide
+
+    // Generate OTP for email verification
     let otpData = null
-    if (isStudent) {
+    if (requiresOTP) {
       otpData = createOTPRecord(10) // 10 minute expiry
     }
 
     if (existingUser) {
       // Student email exists in DB (pre-seeded or incomplete registration) - update with registration details
       existingUser.password = DEFAULT_PASSWORD
-      existingUser.isRegistered = !isStudent // For students, registration completes after OTP verification
+      existingUser.isRegistered = !requiresOTP // Completes after OTP verification
       existingUser.isOnboarded = true  // Already collecting all info during registration
       existingUser.isApproved = true
       existingUser.approvalStatus = 'approved'
       existingUser.isActive = true
-      existingUser.isEmailVerified = !isStudent // Students must verify email first
+      existingUser.isEmailVerified = !requiresOTP // Must verify email first
       existingUser.mustChangePassword = true
       existingUser.department = department || existingUser.department
       existingUser.admissionYear = admissionYear || existingUser.admissionYear
@@ -117,7 +132,7 @@ export async function POST(request) {
       }
       existingUser.interests = interestedDomains || []
 
-      if (isStudent && otpData) {
+      if (requiresOTP && otpData) {
         existingUser.emailVerificationOTP = otpData.hash
         existingUser.emailVerificationExpires = new Date(otpData.expires)
         existingUser.emailVerificationLastSent = new Date()
@@ -127,8 +142,8 @@ export async function POST(request) {
 
       await existingUser.save()
 
-      // Send OTP email for students
-      if (isStudent && otpData) {
+      // Send OTP email
+      if (requiresOTP && otpData) {
         await sendEmail({
           to: existingUser.email,
           subject: 'EvalProX - Email Verification OTP',
@@ -180,16 +195,16 @@ export async function POST(request) {
           address: address || '',
         } : undefined,
         interests: role === ROLES.STUDENT ? (interestedDomains || []) : undefined,
-        isOnboarded: role === ROLES.STUDENT ? true : false,
-        isRegistered: !isStudent, // Students complete registration after OTP
+        isOnboarded: true, // All roles collect info during registration, no onboarding step needed
+        isRegistered: !requiresOTP, // Students & guides complete registration after OTP
         isApproved: true,
         approvalStatus: 'approved',
         isActive: true,
-        isEmailVerified: !isStudent, // Students must verify email first
+        isEmailVerified: !requiresOTP, // Students & guides must verify email first
         mustChangePassword: true,
       }
 
-      if (isStudent && otpData) {
+      if (requiresOTP && otpData) {
         userData.emailVerificationOTP = otpData.hash
         userData.emailVerificationExpires = new Date(otpData.expires)
         userData.emailVerificationLastSent = new Date()
@@ -200,8 +215,8 @@ export async function POST(request) {
       const user = new User(userData)
       await user.save()
 
-      // Send OTP email for students
-      if (isStudent && otpData) {
+      // Send OTP email
+      if (requiresOTP && otpData) {
         await sendEmail({
           to: user.email,
           subject: 'EvalProX - Email Verification OTP',

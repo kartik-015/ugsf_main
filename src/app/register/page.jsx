@@ -18,7 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { studentEmailPattern, deriveFromStudentEmail, validatePhoneRuntime, validateNameRuntime } from '@/lib/clientValidation'
+import { studentEmailPattern, deriveFromStudentEmail, validatePhoneRuntime, validateNameRuntime, validateGuideEmail } from '@/lib/clientValidation'
 import { PROJECT_DOMAINS } from '@/lib/domains'
 
 export default function RegisterPage() {
@@ -77,7 +77,7 @@ function RegisterContent() {
   const emailValid = useMemo(() => {
     if (!formData.email) return false
     if (formData.role === 'student') return studentEmailPattern.test(formData.email)
-    if (formData.role === 'guide') return /@charusat\.ac\.in$/i.test(formData.email)
+    if (formData.role === 'guide') return validateGuideEmail(formData.email)
     return false
   }, [formData.email, formData.role])
 
@@ -278,7 +278,7 @@ function RegisterContent() {
     }
   }
 
-  const totalSteps = formData.role === 'student' ? 3 : 1
+  const totalSteps = 3
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -348,8 +348,8 @@ function RegisterContent() {
                   </motion.button>
                 </div>
               </div>
-            ) : formData.role === 'student' ? (
-              /* ──── Student Registration 3-step ──── */
+            ) : (
+              /* ──── Unified Registration: Student & Guide (3-step with OTP) ──── */
               <div>
                 {/* Step indicator */}
                 <div className="flex items-center justify-center mb-6">
@@ -383,12 +383,14 @@ function RegisterContent() {
                             value={formData.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                            placeholder="23dit015@charusat.edu.in"
+                            placeholder={formData.role === 'guide' ? 'kartikguleria.dit@charusat.ac.in' : '23dit015@charusat.edu.in'}
                           />
                         </div>
                         <div className="mt-1 text-xs">
                           <p className={`${emailValid ? 'text-green-500' : 'text-red-500'}`}>
-                            {emailValid ? '✓ Valid email' : 'Invalid — use format: yydeprol@charusat.edu.in'}
+                            {emailValid ? '✓ Valid email' : formData.role === 'guide'
+                              ? 'Format: fullname.dit@charusat.ac.in (IT) / fullname.dcs@charusat.ac.in (CSE) / fullname.dce@charusat.ac.in (CE)'
+                              : 'Invalid — use format: yydeprol@charusat.edu.in'}
                           </p>
                         </div>
                       </div>
@@ -470,7 +472,8 @@ function RegisterContent() {
                           </div>
                         </div>
 
-                        {/* Batch */}
+                        {/* Batch — students only */}
+                        {formData.role === 'student' && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Batch *</label>
                           <select
@@ -482,8 +485,10 @@ function RegisterContent() {
                             {batches.map(b => <option key={b} value={b}>{b}</option>)}
                           </select>
                         </div>
+                        )}
 
-                        {/* Interested Domains */}
+                        {/* Interested Domains — students only */}
+                        {formData.role === 'student' && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-amber-500" /> Interested Domains * <span className="text-xs text-gray-400 ml-1">(select up to 3)</span>
@@ -508,6 +513,7 @@ function RegisterContent() {
                             <p className="text-xs text-green-500 mt-1">{formData.interestedDomains.length} selected</p>
                           )}
                         </div>
+                        )}
 
                         {/* Default password info */}
                         <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-sm text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
@@ -636,78 +642,6 @@ function RegisterContent() {
                   </p>
                 </div>
               </div>
-            ) : (
-              /* ──── Guide registration ──── */
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white text-center">Guide Registration</h2>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="user@charusat.ac.in"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone *</label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 py-3 rounded-l-xl border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold select-none">
-                      +91
-                    </span>
-                    <input
-                      type="tel"
-                      maxLength={10}
-                      value={formData.phoneNumber}
-                      onChange={(e) => handleInputChange('phoneNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      className="w-full pr-4 py-3 rounded-r-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-3"
-                      placeholder="9876543210"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address *</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    rows={2}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your address"
-                  />
-                </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-sm text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                  <p className="font-semibold">Default Password: depstar@123</p>
-                  <p className="text-xs mt-1">You can change this after your first login.</p>
-                </div>
-                <motion.button
-                  type="submit"
-                  disabled={isLoading || !emailValid}
-                  className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {isLoading ? 'Registering...' : 'Register'}
-                </motion.button>
-                <div className="text-center">
-                  <button onClick={() => router.push('/')} className="text-blue-600 dark:text-blue-400 font-semibold hover:underline text-sm">
-                    Already have an account? Sign In
-                  </button>
-                </div>
-              </form>
             )}
           </motion.div>
         </motion.div>

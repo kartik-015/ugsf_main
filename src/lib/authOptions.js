@@ -23,13 +23,13 @@ export const authOptions = {
           throw new Error('User not found')
         }
 
-        // isRegistered check only applies to students (guides/admins are seeded, not self-registered)
-        if (user.role === 'student' && !user.isRegistered) {
+        // isRegistered check only applies to students and guides (admins/hods/pcs are seeded)
+        if ((user.role === 'student' || user.role === 'guide') && !user.isRegistered) {
           throw new Error('Please register first before logging in.')
         }
 
-        // Check if student email is verified
-        if (user.role === 'student' && !user.isEmailVerified) {
+        // Check if email is verified (students and guides must verify)
+        if ((user.role === 'student' || user.role === 'guide') && !user.isEmailVerified) {
           throw new Error('Please verify your email before logging in. Check your inbox for the OTP.')
         }
 
