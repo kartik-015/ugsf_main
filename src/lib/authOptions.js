@@ -23,27 +23,14 @@ export const authOptions = {
           throw new Error('User not found')
         }
 
-        // Check if user is registered
-        if (!user.isRegistered) {
+        // isRegistered check only applies to students (guides/admins are seeded, not self-registered)
+        if (user.role === 'student' && !user.isRegistered) {
           throw new Error('Please register first before logging in.')
         }
 
         // Check if student email is verified
         if (user.role === 'student' && !user.isEmailVerified) {
           throw new Error('Please verify your email before logging in. Check your inbox for the OTP.')
-        }
-
-        // Block sign-in if not approved (for non-student roles that need approval)
-        if (user.role !== 'student') {
-          if (user.approvalStatus === 'pending') {
-            throw new Error('Your registration is pending admin approval. Please wait for approval.')
-          }
-          if (user.approvalStatus === 'rejected') {
-            throw new Error('Your registration has been rejected. Please contact admin.')
-          }
-          if (!user.isApproved || !user.isActive) {
-            throw new Error('Your account is not active. Please contact admin.')
-          }
         }
 
         const isValidPassword = await user.comparePassword(credentials.password)
