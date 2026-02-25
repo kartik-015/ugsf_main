@@ -256,16 +256,9 @@ export async function PATCH(request) {
       return NextResponse.json({ ok: true, data: project })
     }
 
-    // SET DEADLINE
+    // SET DEADLINE — feature disabled
     if (body.setDeadline) {
-      if (role !== 'guide' || String(project.internalGuide) !== String(session.user.id)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only assigned guide' } }, { status: 403 })
-      const { deadlineTitle, deadlineDescription, dueDate } = body.setDeadline
-      if (!deadlineTitle || !dueDate) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Title & date required' } }, { status: 400 })
-      project.deadlines.push({ title: deadlineTitle, description: deadlineDescription, dueDate: new Date(dueDate), setBy: session.user.id })
-      await project.save()
-      const memberIds = project.members.map(m => m.student._id || m.student)
-      await Notification.createBulk(memberIds, { type: 'deadline-set', title: 'New Deadline', message: `Deadline "${deadlineTitle}" set for "${project.title}". Due: ${new Date(dueDate).toLocaleDateString()}`, link: '/dashboard/projects', relatedProject: project._id })
-      return NextResponse.json({ ok: true, data: project })
+      return NextResponse.json({ ok: false, error: { code: 'DISABLED', message: 'Deadline feature is disabled' } }, { status: 400 })
     }
 
     // SUBMIT MONTHLY REPORT (create draft or replace existing draft)
@@ -274,11 +267,6 @@ export async function PATCH(request) {
       if (!isMember) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only members can submit' } }, { status: 403 })
       const { month, year, title, pdfUrl } = body.submitReport
       if (!month || !year || !title || !pdfUrl) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'All fields required' } }, { status: 400 })
-      
-      // Check deadline (25th of month)
-      const now = new Date()
-      const reportDate = new Date(year, month - 1, 25, 23, 59, 59)
-      if (now > reportDate) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Submission deadline has passed (25th of the month)' } }, { status: 400 })
       
       const existing = project.monthlyReports.find(r => r.month === month && r.year === year)
       if (existing) {

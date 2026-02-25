@@ -52,7 +52,6 @@ export async function POST(request) {
           const admissionYear = parseInt(row.getCell(5).value)
           const batch = row.getCell(6).value?.toString()
           const phoneNumber = row.getCell(7).value?.toString()
-          const address = row.getCell(8).value?.toString()
 
           if (!email || !name || !department || !admissionYear) {
             results.failed++
@@ -87,7 +86,6 @@ export async function POST(request) {
                 semester,
                 batch,
                 phoneNumber,
-                address,
                 rollNumber: email.split('@')[0].toUpperCase()
               },
               isOnboarded: true,
@@ -200,8 +198,7 @@ export async function GET(request) {
         { header: 'Department', key: 'department', width: 15 },
         { header: 'Admission Year', key: 'admissionYear', width: 15 },
         { header: 'Batch', key: 'batch', width: 10 },
-        { header: 'Phone', key: 'phone', width: 15 },
-        { header: 'Address', key: 'address', width: 30 }
+        { header: 'Phone', key: 'phone', width: 15 }
       ]
 
       if (type === 'data') {
@@ -218,8 +215,7 @@ export async function GET(request) {
             department: student.department || '',
             admissionYear: student.admissionYear || '',
             batch: student.academicInfo?.batch || '',
-            phone: student.academicInfo?.phoneNumber || '',
-            address: student.academicInfo?.address || ''
+            phone: student.academicInfo?.phoneNumber || ''
           })
         })
       } else {
@@ -231,8 +227,7 @@ export async function GET(request) {
           department: 'CSE',
           admissionYear: 2025,
           batch: 'A',
-          phone: '+919876543210',
-          address: 'Anand, Gujarat'
+          phone: '+919876543210'
         })
       }
     } else {

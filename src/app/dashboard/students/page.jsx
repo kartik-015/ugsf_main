@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { Users, Search, Upload, FileSpreadsheet, AlertCircle, Download } from 'lucide-react'
+import { Users, Search, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function StudentsPage() {
@@ -18,12 +18,6 @@ export default function StudentsPage() {
   const [submitted, setSubmitted] = useState(false)
   const searchRef = useRef(null)
   const searchTimeout = useRef(null)
-
-  // Import state
-  const [showImport, setShowImport] = useState(false)
-  const [importMode, setImportMode] = useState('append')
-  const [importFile, setImportFile] = useState(null)
-  const [uploading, setUploading] = useState(false)
 
   const FIELD_OPTIONS = [
     { key: 'roll', label: 'ID Number' },
@@ -155,56 +149,6 @@ export default function StudentsPage() {
     } catch { toast.error('Export failed') }
   }
 
-  // Import handlers
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0]
-    if (selectedFile) {
-      if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
-        toast.error('Please upload an Excel file (.xlsx or .xls)')
-        return
-      }
-      setImportFile(selectedFile)
-    }
-  }
-
-  const handleDownloadTemplate = async () => {
-    try {
-      const res = await fetch('/api/admin/import-export?type=template&userType=student')
-      if (res.ok) {
-        const blob = await res.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'student_template.xlsx'
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        a.remove()
-        toast.success('Template downloaded')
-      } else toast.error('Failed to download template')
-    } catch { toast.error('Error downloading template') }
-  }
-
-  const handleImport = async () => {
-    if (!importFile) { toast.error('Please select a file first'); return }
-    setUploading(true)
-    const formData = new FormData()
-    formData.append('file', importFile)
-    formData.append('mode', importMode)
-    formData.append('userType', 'student')
-    try {
-      const res = await fetch('/api/admin/import-export', { method: 'POST', body: formData })
-      const data = await res.json()
-      if (res.ok) {
-        toast.success(data.message)
-        setImportFile(null)
-        setShowImport(false)
-        if (submitted) { setLoading(true); await fetchStudents() }
-      } else toast.error(data.message || 'Import failed')
-    } catch { toast.error('Error importing file') }
-    finally { setUploading(false) }
-  }
-
   const isAdmin = ['admin','mainadmin'].includes(session?.user?.role)
 
   return (
@@ -265,11 +209,7 @@ export default function StudentsPage() {
             <button type='button' onClick={exportExcel} className='ml-3 px-4 py-2 rounded bg-green-600 text-white font-semibold flex items-center gap-2'>
               <Download className='h-4 w-4' /> Download
             </button>
-            {isAdmin && (
-              <button type='button' onClick={() => setShowImport(!showImport)} className='px-4 py-2 rounded bg-purple-600 text-white font-semibold flex items-center gap-2'>
-                <Upload className='h-4 w-4' /> Import Students
-              </button>
-            )}
+
             <div className='ml-auto text-sm text-gray-600'>{submitted ? `${students.length} result(s)` : 'No results yet'}</div>
           </div>
           {/* Ungrouped students info */}
@@ -281,57 +221,7 @@ export default function StudentsPage() {
           )}
         </form>
 
-        {/* Import Section */}
-        {showImport && isAdmin && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className='card p-6 mb-6 space-y-4'>
-            <div className='flex items-center justify-between mb-4'>
-              <h3 className='text-lg font-semibold flex items-center gap-2'><Upload className='h-5 w-5' /> Import Students from Excel</h3>
-              <button onClick={() => setShowImport(false)} className='text-gray-400 hover:text-gray-600'>✕</button>
-            </div>
-            <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
-              <div className='flex items-start gap-3'>
-                <AlertCircle className='h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
-                <div className='text-sm text-blue-800 dark:text-blue-200'>
-                  <p className='font-semibold mb-1'>Import Instructions:</p>
-                  <ul className='list-disc list-inside space-y-1'>
-                    <li><strong>Create New:</strong> Skip existing entries (no duplicates)</li>
-                    <li><strong>Append:</strong> Add new entries without affecting existing data</li>
-                    <li>Download the template first to see the required format</li>
-                    <li>All imported students will be auto-approved and activated</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div>
-              <button onClick={handleDownloadTemplate} className='flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors'>
-                <FileSpreadsheet className='h-4 w-4' /> Download Template
-              </button>
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Import Mode</label>
-              <div className='grid grid-cols-2 gap-3'>
-                {[
-                  { value: 'append', label: 'Append to Existing', desc: 'Add new entries only' },
-                  { value: 'create', label: 'Create New', desc: 'Skip existing entries' }
-                ].map((mode) => (
-                  <button key={mode.value} type='button' onClick={() => setImportMode(mode.value)}
-                    className={`p-3 rounded-lg border-2 transition-all ${importMode === mode.value ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}>
-                    <div className='font-medium text-gray-900 dark:text-gray-100'>{mode.label}</div>
-                    <div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>{mode.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Select Excel File</label>
-              <input type='file' accept='.xlsx,.xls' onChange={handleFileChange} className='block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none p-2' />
-              {importFile && <p className='mt-2 text-sm text-green-600 dark:text-green-400'>Selected: {importFile.name}</p>}
-            </div>
-            <button onClick={handleImport} disabled={!importFile || uploading} className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
-              {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import Data</>)}
-            </button>
-          </motion.div>
-        )}
+
 
         {!submitted ? (<div className='text-center py-16'><p className='text-gray-500'>Use the filters above and click Submit.</p></div>) : (
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden'>

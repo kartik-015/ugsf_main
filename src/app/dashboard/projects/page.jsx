@@ -1459,7 +1459,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const currentMonth = now.getMonth() + 1
   const currentYear = now.getFullYear()
   const currentDay = now.getDate()
-  const isDeadlineOpen = currentDay <= 25
+  const isDeadlineOpen = true // deadline feature disabled
   const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December']
   const monthNamesShort = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const currentMonthReport = (project.monthlyReports || []).find(r => r.month === currentMonth && r.year === currentYear)
@@ -1483,7 +1483,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const isMember = project.members.some(m=> String(m.student?._id||m.student)===String(session.user.id))
   const isLeader = String(project.leader?._id || project.leader) === String(session.user.id)
   // Can submit: member, deadline open, and either no report yet OR existing draft (not turned in)
-  const canSubmitReport = isMember && isDeadlineOpen && (!alreadySubmittedThisMonth || !isTurnedIn)
+  const canSubmitReport = isMember && (!alreadySubmittedThisMonth || !isTurnedIn)
 
   // Compute average progress from graded monthly reports
   const gradedReports = (project.monthlyReports || []).filter(r => r.status === 'graded' && r.score !== undefined && r.score !== null)
@@ -1969,7 +1969,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                                 {r.status === 'graded' ? (isMember ? 'Graded' : `${r.score}/10`) : r.status === 'draft' ? 'Draft' : r.status}
                               </span>
                               {/* Student: Turn In button for drafts */}
-                              {isMember && r.status === 'draft' && !r.turnedIn && isDeadlineOpen && (
+                              {isMember && r.status === 'draft' && !r.turnedIn && (
                                 <button onClick={() => turnInReport(r._id)} disabled={turningIn}
                                   className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition disabled:opacity-50'>
                                   {turningIn ? <div className='w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin' /> : <Send className='w-3 h-3' />} Turn In
@@ -2047,14 +2047,6 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
               {/* Student: Submit/Replace Report */}
               {isMember && (
                 <div className='space-y-3 border-t border-gray-200 dark:border-gray-700 pt-5'>
-                  {/* Deadline Info */}
-                  <div className={`p-3 rounded-lg text-[12px] flex items-center gap-2 ${isDeadlineOpen ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
-                    <Calendar className='w-4 h-4 flex-shrink-0' />
-                    {isDeadlineOpen
-                      ? <span><span className='font-semibold'>{monthNames[currentMonth]} {currentYear}</span> — Submission open until 25th ({25 - currentDay} days left)</span>
-                      : <span><span className='font-semibold'>{monthNames[currentMonth]} {currentYear}</span> — Submission deadline has passed (closed after 25th)</span>
-                    }
-                  </div>
 
                   {/* Status messages */}
                   {isTurnedIn && (
@@ -2136,12 +2128,9 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       <span>Report for {monthNames[currentMonth]} turned in on {new Date(turnedInThisMonth.turnedInAt || turnedInThisMonth.submittedAt).toLocaleDateString()}</span>
                     </div>
                   ) : (
-                    <div className={`p-3 rounded-lg text-[12px] flex items-center gap-2 ${isDeadlineOpen ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
+                    <div className='p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-center gap-2'>
                       <AlertTriangle className='w-4 h-4 flex-shrink-0' />
-                      {isDeadlineOpen
-                        ? <span>Not yet turned in — deadline: 25th {monthNames[currentMonth]} ({25 - currentDay} days left)</span>
-                        : <span>Not turned in — deadline passed</span>
-                      }
+                      <span>Not yet turned in for {monthNames[currentMonth]} {currentYear}</span>
                     </div>
                   )
                   })()}

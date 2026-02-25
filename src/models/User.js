@@ -63,7 +63,6 @@ const userSchema = new mongoose.Schema({
     },
     rollNumber: String,
     phoneNumber: String,
-    address: String,
     cgpa: {
       type: Number,
       min: 0,

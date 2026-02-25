@@ -7,9 +7,7 @@ import {
   User,
   Mail,
   Phone,
-  MapPin,
   GraduationCap,
-  Users,
   CheckCircle,
   ArrowLeft,
   ArrowRight,
@@ -39,7 +37,6 @@ function RegisterContent() {
     role: '',
     name: '',
     phoneNumber: '',
-    address: '',
     batch: '',
     interestedDomains: [],
   })
@@ -129,10 +126,6 @@ function RegisterContent() {
     }
     if (!formData.phoneNumber || !validatePhoneRuntime(formData.phoneNumber)) {
       toast.error('Please enter a valid 10-digit phone number')
-      return false
-    }
-    if (!formData.address || formData.address.trim().length < 5) {
-      toast.error('Please enter a valid address')
       return false
     }
     if (formData.role === 'student' && !formData.batch) {
@@ -324,29 +317,18 @@ function RegisterContent() {
           >
             {!roleChosen ? (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-white">Choose Account Type</h2>
-                <div className="grid grid-cols-2 gap-6">
-                  <motion.button
-                    type="button"
-                    onClick={() => handleRoleClick('student')}
-                    className="p-6 rounded-xl text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all duration-300"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <GraduationCap className="w-8 h-8 mx-auto mb-2" />
-                    Student
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    onClick={() => handleRoleClick('guide')}
-                    className="p-6 rounded-xl text-lg font-semibold bg-green-600 hover:bg-green-700 text-white shadow-sm transition-all duration-300"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Users className="w-8 h-8 mx-auto mb-2" />
-                    Guide
-                  </motion.button>
-                </div>
+                <h2 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-white">Student Registration</h2>
+                <motion.button
+                  type="button"
+                  onClick={() => handleRoleClick('student')}
+                  className="w-full p-6 rounded-xl text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <GraduationCap className="w-8 h-8 mx-auto mb-2" />
+                  Continue as Student
+                </motion.button>
+                <p className="text-center text-xs text-gray-400">Guides are added by administrators.</p>
               </div>
             ) : (
               /* ──── Unified Registration: Student & Guide (3-step with OTP) ──── */
@@ -455,21 +437,6 @@ function RegisterContent() {
                           {formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) && (
                             <p className="text-xs text-red-500 mt-1">Enter a valid 10-digit mobile number</p>
                           )}
-                        </div>
-
-                        {/* Address */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address *</label>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                            <textarea
-                              value={formData.address}
-                              onChange={(e) => handleInputChange('address', e.target.value)}
-                              rows={2}
-                              className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder="Enter your address"
-                            />
-                          </div>
                         </div>
 
                         {/* Batch — students only */}

@@ -14,6 +14,8 @@ import {
   BarChart3,
   FileText,
   XCircle,
+  ArrowLeft,
+  ChevronRight,
   ChevronDown,
   ChevronUp,
   User,
@@ -22,6 +24,8 @@ import {
   FolderOpen,
   Tag,
   Users,
+  Award,
+  Filter,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -925,12 +929,8 @@ function AllProjectsSection() {
   )
 }
 
-function StudentGradesSection() {
-  const [grades, setGrades] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [semesterFilter, setSemesterFilter] = useState('')
-  const [expandedStudent, setExpandedStudent] = useState(null)
+// StudentGradesSection removed — grades are shown in the Students module
+function _StudentGradesSection_removed() {
 
   useEffect(() => {
     async function fetchGrades() {
@@ -1164,8 +1164,6 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({})
-  const [drillDown, setDrillDown] = useState(null) // 'registration' | 'assignment' | null
-  const [deepDrill, setDeepDrill] = useState(null) // { type: 'student'|'project', filterBy, filterValue, title } | null
 
   useEffect(() => {
     if (status === 'loading') return
@@ -1268,130 +1266,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Modal Overlay for Drill-down */}
-      <AnimatePresence>
-        {drillDown && (
-          <motion.div
-            key="modal-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-start justify-center pt-12 pb-8 px-4 overflow-y-auto"
-            onClick={() => { setDeepDrill(null); setDrillDown(null) }}
-          >
-            {/* Blurred backdrop */}
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-
-            {/* Modal content */}
-            <motion.div
-              key={`modal-${drillDown}`}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close button */}
-              <button
-                onClick={() => { setDeepDrill(null); setDrillDown(null) }}
-                className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Level 3: Deep drill-down */}
-              {deepDrill ? (
-                deepDrill.type === 'project' ? (
-                  <ProjectListView
-                    filterBy={deepDrill.filterBy}
-                    filterValue={deepDrill.filterValue}
-                    title={deepDrill.title}
-                    onBack={() => setDeepDrill(null)}
-                  />
-                ) : deepDrill.type === 'onboardingBreakdown' ? (
-                  <OnboardingBreakdownView
-                    filterValue={deepDrill.filterValue}
-                    title={deepDrill.title}
-                    onBack={() => setDeepDrill(null)}
-                  />
-                ) : deepDrill.type === 'projectAssignmentBreakdown' ? (
-                  <ProjectAssignmentBreakdownView
-                    filterValue={deepDrill.filterValue}
-                    title={deepDrill.title}
-                    onBack={() => setDeepDrill(null)}
-                  />
-                ) : (
-                  <StudentListView
-                    filterBy={deepDrill.filterBy}
-                    filterValue={deepDrill.filterValue}
-                    title={deepDrill.title}
-                    onBack={() => setDeepDrill(null)}
-                  />
-                )
-              ) : (
-                <>
-                  {/* Level 2: Summary drill-down */}
-                  {drillDown === 'registration' && (
-                    <RegistrationDrillDown
-                      stats={stats}
-                      onBack={() => setDrillDown(null)}
-                      onDrillDeeper={(cfg) => setDeepDrill({ type: cfg.type || 'student', ...cfg })}
-                    />
-                  )}
-                  {drillDown === 'assignment' && (
-                    <ProjectAssignmentDrillDown
-                      stats={stats}
-                      onBack={() => setDrillDown(null)}
-                      onDrillDeeper={(cfg) => setDeepDrill({ type: cfg.type || 'student', ...cfg })}
-                    />
-                  )}
-                </>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Two clickable donut charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Student Registration Status */}
-        <motion.div
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          onClick={() => { setDeepDrill(null); setDrillDown(drillDown === 'registration' ? null : 'registration') }}
-        >
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Student Registration Status</h3>
-          <p className="text-sm text-gray-400 mb-4">Click to view detailed breakdown</p>
-          <DonutChart data={[
-            { name: 'Onboarded', value: stats.onboardedStudents || 0 },
-            { name: 'Pending Onboarding', value: stats.notOnboardedStudents || 0 },
-          ]} />
-        </motion.div>
-
-        {/* Student Project Assignment */}
-        <motion.div
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          onClick={() => { setDeepDrill(null); setDrillDown(drillDown === 'assignment' ? null : 'assignment') }}
-        >
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Project Group Assignment</h3>
-          <p className="text-sm text-gray-400 mb-4">Click to view detailed breakdown</p>
-          <DonutChart data={[
-            { name: 'Guide Assigned', value: stats.assignedGroups || 0 },
-            { name: 'Not Assigned', value: stats.unassignedGroups || 0 },
-          ]} centerLabel='groups' />
-          <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800">
-            <FileText className="w-3 h-3" />
-            <span><strong>{stats.noTitleGroups || 0}</strong> group{(stats.noTitleGroups || 0) !== 1 ? 's' : ''} without project title</span>
-          </div>
-        </motion.div>
-      </div>
+      {/* All Projects Section */}
+      <AllProjectsSection />
 
     </div>
   )

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import { Upload, FileSpreadsheet, AlertCircle, Download, Search } from 'lucide-react'
+import { Upload, FileSpreadsheet, AlertCircle, Download, Search, Copy, CheckCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function GuidesPage(){
@@ -29,9 +29,12 @@ export default function GuidesPage(){
   const [visibleFields, setVisibleFields] = useState(['email','specialization','status'])
   const [guideProjectMap, setGuideProjectMap] = useState({})
   const [showImport, setShowImport] = useState(false)
-  const [importMode, setImportMode] = useState('append')
   const [importFile, setImportFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [importedCredentials, setImportedCredentials] = useState([])
+  const [showCredentials, setShowCredentials] = useState(false)
+  const [sendingEmails, setSendingEmails] = useState(false)
+  const [copiedIdx, setCopiedIdx] = useState(null)
 
   const departments = ['CSE','CE','IT']
   const roleOptions = ['guide','project_coordinator']
@@ -125,13 +128,13 @@ export default function GuidesPage(){
 
   const handleDownloadTemplate = async () => {
     try {
-      const res = await fetch('/api/admin/import-export?type=template&userType=guide')
+      const res = await fetch('/api/guides/import')
       if (res.ok) {
         const blob = await res.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'guide_template.xlsx'
+        a.download = 'guide_import_template.xlsx'
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
@@ -156,21 +159,23 @@ export default function GuidesPage(){
     }
   }
 
-  const handleImport = async () => {
+  const handleImport = async (sendCredentials = false) => {
     if (!importFile) { toast.error('Please select a file first'); return }
     setUploading(true)
-    const formData = new FormData()
-    formData.append('file', importFile)
-    formData.append('mode', importMode)
-    formData.append('userType', 'guide')
+    const fd = new FormData()
+    fd.append('file', importFile)
+    fd.append('sendCredentials', String(sendCredentials))
     try {
-      const res = await fetch('/api/admin/import-export', { method: 'POST', body: formData })
+      const res = await fetch('/api/guides/import', { method: 'POST', body: fd })
       const data = await res.json()
       if (res.ok) {
         toast.success(data.message)
-        if (data.results?.errors?.length > 0) console.log('Import errors:', data.results.errors)
         setImportFile(null)
         setShowImport(false)
+        if (data.created?.length > 0) {
+          setImportedCredentials(data.created)
+          setShowCredentials(true)
+        }
         if (submitted) await fetchGuides()
       } else {
         toast.error(data.message || 'Import failed')
@@ -180,6 +185,38 @@ export default function GuidesPage(){
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleSendEmailsNow = async () => {
+    if (!importedCredentials.length) return
+    setSendingEmails(true)
+    try {
+      // Re-import with sendCredentials=true but only pass the credential list
+      // Call a lightweight endpoint — we just need to send emails
+      const res = await fetch('/api/guides/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendEmailsOnly: true, credentials: importedCredentials })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Credential emails sent to all guides')
+      } else {
+        toast.error(data.message || 'Failed to send emails')
+      }
+    } catch {
+      toast.error('Failed to send emails')
+    } finally {
+      setSendingEmails(false)
+    }
+  }
+
+  const copyToClipboard = async (text, idx) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedIdx(idx)
+      setTimeout(() => setCopiedIdx(null), 2000)
+    } catch { /* ignore */ }
   }
 
   const submit = e => { e.preventDefault(); fetchGuides() }
@@ -258,12 +295,13 @@ export default function GuidesPage(){
               <div className='flex items-start gap-3'>
                 <AlertCircle className='h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
                 <div className='text-sm text-blue-800 dark:text-blue-200'>
-                  <p className='font-semibold mb-1'>Import Instructions:</p>
+                  <p className='font-semibold mb-1'>How Guide Import Works:</p>
                   <ul className='list-disc list-inside space-y-1'>
-                    <li><strong>Create New:</strong> Skip existing entries (no duplicates)</li>
-                    <li><strong>Append:</strong> Add new entries without affecting existing data</li>
-                    <li>Download the template first to see the required format</li>
-                    <li>All imported guides will be automatically approved and activated</li>
+                    <li>Download the template and fill in: <strong>Name, Department, Phone, Specialization, Education</strong></li>
+                    <li>Email is <strong>auto-generated</strong>: <code>firstname+lastname.dcs/dce/dit@charusat.ac.in</code></li>
+                    <li>Password is <strong>auto-generated</strong>: e.g. <code>AkashPatel@DIT24</code></li>
+                    <li>Existing guide emails are automatically skipped</li>
+                    <li>After import, you can view and send credentials by email</li>
                   </ul>
                 </div>
               </div>
@@ -274,29 +312,68 @@ export default function GuidesPage(){
               </button>
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Import Mode</label>
-              <div className='grid grid-cols-2 gap-3'>
-                {[
-                  { value: 'append', label: 'Append to Existing', desc: 'Add new entries only' },
-                  { value: 'create', label: 'Create New', desc: 'Skip existing entries' }
-                ].map((mode) => (
-                  <button key={mode.value} type='button' onClick={() => setImportMode(mode.value)}
-                    className={`p-3 rounded-lg border-2 transition-all ${importMode === mode.value ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}>
-                    <div className='font-medium text-gray-900 dark:text-gray-100'>{mode.label}</div>
-                    <div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>{mode.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Select Excel File</label>
               <input type='file' accept='.xlsx,.xls' onChange={handleFileChange} className='block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none p-2' />
               {importFile && <p className='mt-2 text-sm text-green-600 dark:text-green-400'>Selected: {importFile.name}</p>}
             </div>
-            <button onClick={handleImport} disabled={!importFile || uploading} className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
-              {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import Data</>)}
-            </button>
+            <div className='flex gap-3'>
+              <button onClick={() => handleImport(false)} disabled={!importFile || uploading} className='flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+                {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import & Show Credentials</>)}
+              </button>
+              <button onClick={() => handleImport(true)} disabled={!importFile || uploading} className='flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+                {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import & Send Emails</>)}
+              </button>
+            </div>
           </motion.div>
+        )}
+
+        {/* Credentials Modal */}
+        {showCredentials && importedCredentials.length > 0 && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col'>
+              <div className='flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'>
+                <div>
+                  <h3 className='text-xl font-bold text-gray-900 dark:text-white'>Import Complete — {importedCredentials.length} Guide(s) Created</h3>
+                  <p className='text-sm text-gray-500 mt-1'>Save these credentials. Passwords cannot be recovered later.</p>
+                </div>
+                <button onClick={() => setShowCredentials(false)} className='text-gray-400 hover:text-gray-600 text-xl font-bold'>✕</button>
+              </div>
+              <div className='overflow-y-auto flex-1 p-6 space-y-3'>
+                {importedCredentials.map((cred, idx) => (
+                  <div key={idx} className='rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/50'>
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='font-semibold text-gray-900 dark:text-gray-100'>{cred.name}</span>
+                      <span className='text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded-full'>{cred.department}</span>
+                    </div>
+                    <div className='space-y-1 text-sm'>
+                      <div className='flex items-center justify-between gap-2'>
+                        <span className='text-gray-500 w-20 flex-shrink-0'>Email</span>
+                        <span className='font-mono text-gray-800 dark:text-gray-200 truncate flex-1'>{cred.email}</span>
+                        <button onClick={() => copyToClipboard(cred.email, `e${idx}`)} className='text-gray-400 hover:text-blue-600 flex-shrink-0'>
+                          {copiedIdx === `e${idx}` ? <CheckCheck className='h-4 w-4 text-green-500' /> : <Copy className='h-4 w-4' />}
+                        </button>
+                      </div>
+                      <div className='flex items-center justify-between gap-2'>
+                        <span className='text-gray-500 w-20 flex-shrink-0'>Password</span>
+                        <span className='font-mono text-gray-800 dark:text-gray-200 flex-1'>{cred.password}</span>
+                        <button onClick={() => copyToClipboard(cred.password, `p${idx}`)} className='text-gray-400 hover:text-blue-600 flex-shrink-0'>
+                          {copiedIdx === `p${idx}` ? <CheckCheck className='h-4 w-4 text-green-500' /> : <Copy className='h-4 w-4' />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className='p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3'>
+                <button onClick={handleSendEmailsNow} disabled={sendingEmails} className='flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50'>
+                  {sendingEmails ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Sending...</>) : 'Send Credentials via Email'}
+                </button>
+                <button onClick={() => setShowCredentials(false)} className='px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold'>
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {/* Results */}

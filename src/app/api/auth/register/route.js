@@ -14,7 +14,7 @@ export async function POST(request) {
   try {
     await dbConnect()
     const body = await request.json()
-    const { email, role, name, phoneNumber, address, batch,
+    const { email, role, name, phoneNumber, batch,
       interestedDomains } = body
 
     // Validate required fields
@@ -39,8 +39,8 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Invalid student email format. Expected: yydeprol@charusat.edu.in' }, { status:400 })
       }
       // Validate required student fields
-      if (!name || !phoneNumber || !address || !batch) {
-        return NextResponse.json({ error: 'Name, phone number, address, and batch are required for student registration' }, { status: 400 })
+      if (!name || !phoneNumber || !batch) {
+        return NextResponse.json({ error: 'Name, phone number, and batch are required for student registration' }, { status: 400 })
       }
       if (!interestedDomains || !Array.isArray(interestedDomains) || interestedDomains.length === 0) {
         return NextResponse.json({ error: 'Please select at least one interested domain' }, { status: 400 })
@@ -59,8 +59,8 @@ export async function POST(request) {
       if (!validateGuideEmail(email)) {
         return NextResponse.json({ error: 'Invalid guide email. Required format: fullname.dit@charusat.ac.in (IT), fullname.dcs@charusat.ac.in (CSE), fullname.dce@charusat.ac.in (CE)' }, { status: 400 })
       }
-      if (!name || !phoneNumber || !address) {
-        return NextResponse.json({ error: 'Name, phone number and address are required for guide registration' }, { status: 400 })
+      if (!name || !phoneNumber) {
+        return NextResponse.json({ error: 'Name and phone number are required for guide registration' }, { status: 400 })
       }
     } else {
       const staffValid = /@charusat\.(ac|edu)\.in$/i.test(email)
@@ -128,7 +128,6 @@ export async function POST(request) {
         semester: autoSemester,
         batch: batch || '',
         phoneNumber: phoneNumber || '',
-        address: address || '',
       }
       existingUser.interests = interestedDomains || []
 
@@ -192,7 +191,6 @@ export async function POST(request) {
           semester: autoSemester,
           batch: batch || '',
           phoneNumber: phoneNumber || '',
-          address: address || '',
         } : undefined,
         interests: role === ROLES.STUDENT ? (interestedDomains || []) : undefined,
         isOnboarded: true, // All roles collect info during registration, no onboarding step needed
