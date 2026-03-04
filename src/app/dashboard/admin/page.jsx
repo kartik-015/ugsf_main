@@ -1224,69 +1224,6 @@ export default function AdminDashboard() {
   const allowed = ['admin', 'mainadmin', 'principal', 'hod', 'project_coordinator']
   if (!session || !allowed.includes(session.user.role)) return null
 
-  /* ---- Cards ---- */
-  const overviewCards = [
-    { name: 'Total Students', value: stats.totalStudents || 0, icon: GraduationCap, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800' },
-    { name: 'Total Guides', value: stats.totalFaculty || 0, icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-200 dark:border-indigo-800' },
-    { name: 'Total Projects', value: stats.totalProjects || 0, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800' },
-    { name: 'Pending Approvals', value: stats.pendingRegistrations || 0, icon: UserCheck, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800' },
-  ]
-
-  const projectCards = [
-    { name: 'In Progress', value: stats.inProgressProjects || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800' },
-    { name: 'Completed', value: stats.completedProjects || 0, icon: CheckCircle, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-900/20', border: 'border-teal-200 dark:border-teal-800' },
-    { name: 'Reports Submitted', value: stats.reportsSubmittedCount || 0, icon: FileText, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800' },
-    { name: 'Reports Pending', value: stats.reportsPendingCount || 0, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800' },
-  ]
-
-  /* ---- Drill-down views ---- */
-  if (drillView) {
-    if (drillView.type === 'registration') {
-      return (
-        <div className="space-y-6">
-          <RegistrationDrillDown
-            stats={stats}
-            onBack={() => setDrillView(null)}
-            onDrillDeeper={(params) => setDrillView(params)}
-          />
-        </div>
-      )
-    }
-    if (drillView.type === 'projectAssignment') {
-      return (
-        <div className="space-y-6">
-          <ProjectAssignmentDrillDown
-            stats={stats}
-            onBack={() => setDrillView(null)}
-            onDrillDeeper={(params) => setDrillView(params)}
-          />
-        </div>
-      )
-    }
-    if (drillView.type === 'onboardingBreakdown') {
-      return (
-        <div className="space-y-6">
-          <OnboardingBreakdownView
-            filterValue={drillView.filterValue}
-            title={drillView.title}
-            onBack={() => setDrillView({ type: 'registration' })}
-          />
-        </div>
-      )
-    }
-    if (drillView.type === 'projectAssignmentBreakdown') {
-      return (
-        <div className="space-y-6">
-          <ProjectAssignmentBreakdownView
-            filterValue={drillView.filterValue}
-            title={drillView.title}
-            onBack={() => setDrillView({ type: 'projectAssignment' })}
-          />
-        </div>
-      )
-    }
-  }
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -1295,69 +1232,13 @@ export default function AdminDashboard() {
         <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">{getRoleDesc()}</p>
       </div>
 
-      {/* Overview Stats */}
-      <div>
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5" /> Overview
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-          {overviewCards.map((stat, i) => (
-            <motion.div
-              key={stat.name}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className={`bg-white dark:bg-gray-800 rounded p-3 sm:p-5 border ${stat.border} transition-shadow`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.name}</p>
-                  <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                </div>
-                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Project Status */}
-      <div>
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" /> Project Status
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-          {projectCards.map((stat, i) => (
-            <motion.div
-              key={stat.name}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.2 + i * 0.05 }}
-              className={`bg-white dark:bg-gray-800 rounded p-3 sm:p-5 border ${stat.border} transition-shadow`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.name}</p>
-                  <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                </div>
-                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
       {/* Charts Row: Registration + Project Assignment */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Registration Overview */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.1 }}
           className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
           onClick={() => setDrillView({ type: 'registration' })}
         >
@@ -1381,7 +1262,7 @@ export default function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.15 }}
           className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
           onClick={() => setDrillView({ type: 'projectAssignment' })}
         >
@@ -1408,7 +1289,7 @@ export default function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.2 }}
           className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
         >
           <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -1421,7 +1302,7 @@ export default function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
+          transition={{ delay: 0.25 }}
           className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
         >
           <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -1437,7 +1318,7 @@ export default function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.3 }}
           className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
         >
           <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -1450,7 +1331,7 @@ export default function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55 }}
+          transition={{ delay: 0.35 }}
           className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
         >
           <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -1466,9 +1347,67 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* All Projects Section */}
-      <AllProjectsSection />
+      {/* Drill-down Modal Overlay */}
+      <AnimatePresence>
+        {drillView && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setDrillView(null) }}
+          >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="relative bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 shadow-lg w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6"
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setDrillView(null)}
+                className="absolute top-3 right-3 p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
 
+              {drillView.type === 'registration' && (
+                <RegistrationDrillDown
+                  stats={stats}
+                  onBack={() => setDrillView(null)}
+                  onDrillDeeper={(params) => setDrillView(params)}
+                />
+              )}
+              {drillView.type === 'projectAssignment' && (
+                <ProjectAssignmentDrillDown
+                  stats={stats}
+                  onBack={() => setDrillView(null)}
+                  onDrillDeeper={(params) => setDrillView(params)}
+                />
+              )}
+              {drillView.type === 'onboardingBreakdown' && (
+                <OnboardingBreakdownView
+                  filterValue={drillView.filterValue}
+                  title={drillView.title}
+                  onBack={() => setDrillView({ type: 'registration' })}
+                />
+              )}
+              {drillView.type === 'projectAssignmentBreakdown' && (
+                <ProjectAssignmentBreakdownView
+                  filterValue={drillView.filterValue}
+                  title={drillView.title}
+                  onBack={() => setDrillView({ type: 'projectAssignment' })}
+                />
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

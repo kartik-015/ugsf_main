@@ -25,6 +25,7 @@ export default function StudentsPage() {
     { key: 'interests', label: 'Domain Interest' },
   ]
   const [visibleFields, setVisibleFields] = useState(['roll','semester','interests'])
+  const [showUngroupedOnly, setShowUngroupedOnly] = useState(false)
 
   const toggleExclusive = (currentValue, setter, value) => {
     setter(currentValue === value ? '' : value)
@@ -137,7 +138,7 @@ export default function StudentsPage() {
   const semesters = ['1','2','3','4','5','6','7','8']
 
   const submitHandler = async (e) => { e.preventDefault(); setLoading(true); setShowSearchDropdown(false); await fetchStudents(); setSubmitted(true) }
-  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setStudents([]); setSubmitted(false); setProjectMap({}); setGradeMap({}) }
+  const reset = () => { setDepartment(''); setSemester(''); setSearchTerm(''); setStudents([]); setSubmitted(false); setProjectMap({}); setGradeMap({}); setShowUngroupedOnly(false) }
 
   const exportExcel = async () => {
     try {
@@ -217,6 +218,13 @@ export default function StudentsPage() {
             <div className='flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-3 py-2 border border-amber-200 dark:border-amber-800'>
               <Users className='w-3 h-3 flex-shrink-0' />
               <span><strong>{students.filter(s => !projectMap[String(s._id)]).length}</strong> student{students.filter(s => !projectMap[String(s._id)]).length !== 1 ? 's' : ''} not yet part of any group</span>
+              <button
+                type='button'
+                onClick={() => setShowUngroupedOnly(!showUngroupedOnly)}
+                className={`ml-auto px-3 py-1 rounded text-xs font-medium transition-colors ${showUngroupedOnly ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40'}`}
+              >
+                {showUngroupedOnly ? 'Show All' : 'See All Ungrouped'}
+              </button>
             </div>
           )}
         </form>
@@ -230,7 +238,15 @@ export default function StudentsPage() {
                 <Users className='mx-auto h-12 w-12 text-gray-400'/>
                 <h3 className='mt-2 text-sm font-medium'>No students found</h3>
               </div>
-            ) : (
+            ) : (() => {
+              const displayStudents = showUngroupedOnly ? students.filter(s => !projectMap[String(s._id)]) : students
+              return displayStudents.length === 0 ? (
+                <div className='text-center py-12'>
+                  <Users className='mx-auto h-12 w-12 text-gray-400'/>
+                  <h3 className='mt-2 text-sm font-medium'>No ungrouped students found</h3>
+                  <p className='text-xs text-gray-400 mt-1'>All students are part of a group</p>
+                </div>
+              ) : (
               <div className='overflow-x-auto'>
                 <table className='w-full min-w-[600px] divide-y divide-gray-200 dark:divide-gray-700'>
                   <thead className='bg-gray-50 dark:bg-gray-700'>
@@ -244,7 +260,7 @@ export default function StudentsPage() {
                     </tr>
                   </thead>
                   <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
-                    {students.map((s, index) => {
+                    {displayStudents.map((s, index) => {
                       const proj = projectMap[String(s._id)]
                       const firstProject = proj?.[0]
                       return (
@@ -286,7 +302,8 @@ export default function StudentsPage() {
                   </tbody>
                 </table>
               </div>
-            )}
+            )
+            })()}
           </div>
         )}
       </motion.div>
