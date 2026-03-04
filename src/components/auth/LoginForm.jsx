@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function LoginForm() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -91,16 +93,16 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+    <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
       {/* Hidden dummy fields to discourage Chrome autofill */}
       <input type="text" name="fake_user" className="hidden" autoComplete="off" />
       <input type="password" name="fake_pass" className="hidden" autoComplete="new-password" />
       <div>
-        <label htmlFor="login-email" className="block text-sm font-semibold text-foreground mb-2">
+        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             id="login-email"
             type="email"
@@ -109,7 +111,7 @@ export default function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             onFocus={handleEmailFocus}
             placeholder="your@charusat.edu.in"
-            className="w-full pl-11 pr-4 py-3 border-2 border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
             required
             autoComplete="one-time-code"
           />
@@ -117,11 +119,11 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label htmlFor="login-password" className="block text-sm font-semibold text-foreground mb-2">
+        <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
           Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             id="login-password"
             type={showPassword ? 'text' : 'password'}
@@ -129,29 +131,39 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full pl-11 pr-12 py-3 border-2 border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
+            className="w-full pl-10 pr-12 py-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
             required
             autoComplete="new-password"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => router.push('/forgot-password')}
+          className="text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors"
+        >
+          Forgot Password?
+        </button>
+      </div>
+
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-lg font-semibold hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-primary-600"
+        className="w-full bg-blue-600 text-white py-2.5 px-4 rounded font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
       </button>
 
-      <div className="text-center text-xs font-medium text-muted-foreground">
+      <div className="text-center text-xs text-gray-500 dark:text-gray-400">
         <p>Use your college email to access the portal</p>
       </div>
     </form>

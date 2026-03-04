@@ -73,7 +73,7 @@ export default function ChatWithAdmin(){
       </button>
       <AnimatePresence>
         {open && (
-          <motion.div initial={{opacity:0, y:40}} animate={{opacity:1,y:0}} exit={{opacity:0,y:40}} className="fixed bottom-24 right-6 z-40 w-80 max-h-[60vh] flex flex-col rounded-xl border bg-white dark:bg-gray-800 shadow-xl overflow-hidden">
+          <motion.div initial={{opacity:0, y:40}} animate={{opacity:1,y:0}} exit={{opacity:0,y:40}} className="fixed bottom-24 right-3 sm:right-6 z-40 w-[calc(100vw-1.5rem)] sm:w-80 max-h-[60vh] flex flex-col rounded-xl border bg-white dark:bg-gray-800 shadow-xl overflow-hidden">
             <div className="px-4 py-3 border-b text-sm font-semibold bg-gray-50 dark:bg-gray-700 flex items-center justify-between">
               <span>Chat with Admin</span>
               <button onClick={()=>setOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>

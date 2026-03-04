@@ -31,19 +31,19 @@ export default function ApprovalsPage() {
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => router.push('/dashboard/admin')}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold">Pending Approvals</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Pending Approvals</h1>
             <p className="text-gray-600 dark:text-gray-300 mt-1">
               Review and approve/reject new registrations
             </p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-6">
           <PendingRegistrations key={refreshKey} onUpdate={handleUpdate} />
         </div>
       </motion.div>

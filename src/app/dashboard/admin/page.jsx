@@ -49,20 +49,20 @@ function DonutChart({ data, onClick, onSegmentClick, centerLabel }) {
 
   return (
     <div
-      className={`flex items-center gap-6 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`flex flex-col sm:flex-row items-center gap-4 sm:gap-6 ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <div className="w-36 h-36 rounded-full flex-shrink-0 relative" style={{ background: `conic-gradient(${grad})` }}>
-        <div className="absolute inset-4 bg-white dark:bg-gray-800 rounded-full flex flex-col items-center justify-center">
-          <span className="text-lg font-bold text-gray-700 dark:text-gray-200">{total}</span>
+      <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full flex-shrink-0 relative" style={{ background: `conic-gradient(${grad})` }}>
+        <div className="absolute inset-3 sm:inset-4 bg-white dark:bg-gray-800 rounded-full flex flex-col items-center justify-center">
+          <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200">{total}</span>
           {centerLabel && <span className="text-[9px] text-gray-400 -mt-0.5">{centerLabel}</span>}
         </div>
       </div>
-      <div className="flex-1 space-y-2">
+      <div className="flex-1 space-y-2 w-full">
         {segs.map((s, i) => (
           <div
             key={i}
-            className={`flex items-center gap-2.5 text-sm ${onSegmentClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+            className={`flex items-center gap-2.5 text-sm ${onSegmentClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 py-1 -mx-2 transition-colors' : ''}`}
             onClick={(e) => {
               if (onSegmentClick) {
                 e.stopPropagation()
@@ -72,7 +72,7 @@ function DonutChart({ data, onClick, onSegmentClick, centerLabel }) {
           >
             <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
             <span className="text-gray-600 dark:text-gray-300 truncate" title={s.name}>{s.name}</span>
-            <span className="ml-auto font-semibold text-gray-700 dark:text-gray-200">{s.value}</span>
+            <span className="ml-auto font-medium text-gray-700 dark:text-gray-200">{s.value}</span>
             {onSegmentClick && <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
           </div>
         ))}
@@ -93,13 +93,13 @@ function BarChart({ data, colorClass = 'bg-blue-500', onBarClick }) {
       {data.map((item, i) => (
         <div
           key={i}
-          className={`flex items-center gap-3 ${onBarClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+          className={`flex items-center gap-3 ${onBarClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 py-1 -mx-2 transition-colors' : ''}`}
           onClick={() => onBarClick && item.value > 0 && onBarClick(item)}
         >
           <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-24 truncate" title={item.name}>
             {item.name}
           </span>
-          <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-5 overflow-hidden">
+          <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
             <motion.div
               className={`h-full rounded-full ${colorClass}`}
               initial={{ width: 0 }}
@@ -107,7 +107,7 @@ function BarChart({ data, colorClass = 'bg-blue-500', onBarClick }) {
               transition={{ duration: 0.8, delay: i * 0.1 }}
             />
           </div>
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 w-8 text-right">{item.value}</span>
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-200 w-8 text-right">{item.value}</span>
           {onBarClick && item.value > 0 && <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
         </div>
       ))}
@@ -165,7 +165,7 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
-        <button onClick={onBack} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={onBack} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -182,7 +182,7 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
           placeholder="Search by name, roll number, or email..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full pl-9 pr-4 py-2 text-sm rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none"
         />
       </div>
 
@@ -196,7 +196,7 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: Math.min(i * 0.02, 0.5) }}
-            className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+            className="bg-gray-50 dark:bg-gray-700/30 rounded p-3 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -222,7 +222,7 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
                 {s.interests && s.interests.length > 0 && (
                   <div className="mt-1.5 ml-6 flex flex-wrap gap-1">
                     {s.interests.map((int, j) => (
-                      <span key={j} className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                      <span key={j} className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                         {int}
                       </span>
                     ))}
@@ -230,13 +230,13 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
                 )}
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBg(s)}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${statusBg(s)}`}>
                   {getDisplayStatus(s)}
                 </span>
                 {s.isOnboarded ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 font-medium">onboarded</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/20 text-green-600 font-medium">onboarded</span>
                 ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-medium">not onboarded</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-medium">not onboarded</span>
                 )}
               </div>
             </div>
@@ -246,14 +246,14 @@ function StudentListView({ filterBy, filterValue, title, onBack }) {
 
       {/* Interest domain breakdown */}
       {data.interestBreakdown && data.interestBreakdown.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
             <Tag className="w-4 h-4" />
             Interest Domains
           </h4>
           <div className="flex flex-wrap gap-2">
             {data.interestBreakdown.map((d, i) => (
-              <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
+              <span key={i} className="text-xs px-3 py-1.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
                 {d.name} <span className="font-bold ml-1">{d.value}</span>
               </span>
             ))}
@@ -320,7 +320,7 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
-        <button onClick={onBack} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={onBack} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -336,7 +336,7 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
           placeholder="Search by title, domain, guide, or group ID..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full pl-9 pr-4 py-2 text-sm rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none"
         />
       </div>
 
@@ -349,7 +349,7 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: Math.min(i * 0.02, 0.5) }}
-            className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors cursor-pointer"
+            className="bg-gray-50 dark:bg-gray-700/30 rounded p-3 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors cursor-pointer"
             onClick={() => setExpanded(expanded === p._id ? null : p._id)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -366,13 +366,13 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBg(p)}`}>{getDisplayStatus(p)}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${statusBg(p)}`}>{getDisplayStatus(p)}</span>
                 {p.hasCurrentMonthReport ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 font-medium flex items-center gap-0.5">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/20 text-green-600 font-medium flex items-center gap-0.5">
                     <FileText className="w-2.5 h-2.5" /> report submitted
                   </span>
                 ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-medium flex items-center gap-0.5">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-medium flex items-center gap-0.5">
                     <FileText className="w-2.5 h-2.5" /> report pending
                   </span>
                 )}
@@ -389,7 +389,7 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
                   className="mt-2 ml-6 overflow-hidden"
                 >
                   <div className="border-t border-gray-200 dark:border-gray-600 pt-2 space-y-1">
-                    <p className="text-[11px] font-semibold text-gray-500 uppercase">Team Members</p>
+                    <p className="text-[11px] font-medium text-gray-500 uppercase">Team Members</p>
                     {p.members.map((m, j) => (
                       <div key={j} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                         <User className="w-3 h-3 text-gray-400" />
@@ -408,14 +408,14 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
 
       {/* Domain breakdown */}
       {data.domainBreakdown && data.domainBreakdown.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
             <Tag className="w-4 h-4" />
             Domain Distribution
           </h4>
           <div className="flex flex-wrap gap-2">
             {data.domainBreakdown.map((d, i) => (
-              <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-medium">
+              <span key={i} className="text-xs px-3 py-1.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-medium">
                 {d.name} <span className="font-bold ml-1">{d.value}</span>
               </span>
             ))}
@@ -470,7 +470,7 @@ function OnboardingBreakdownView({ filterValue, title, onBack }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={selectedDept ? () => setSelectedDept(null) : onBack} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={selectedDept ? () => setSelectedDept(null) : onBack} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -499,18 +499,18 @@ function OnboardingBreakdownView({ filterValue, title, onBack }) {
             {!selectedDeptData || selectedDeptData.semesters.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                 <GraduationCap className="w-10 h-10 mb-3" />
-                <p className="font-semibold text-gray-600 dark:text-gray-300">No students found in {selectedDept}</p>
+                <p className="font-medium text-gray-600 dark:text-gray-300">No students found in {selectedDept}</p>
               </div>
             ) : (
               <>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700">
                   <DonutChart
                     data={selectedDeptData.semesters.map(s => ({ name: s.name, value: s.value }))}
                   />
                 </div>
                 <div className="space-y-2">
                   {selectedDeptData.semesters.map((sem, j) => (
-                    <div key={j} className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700">
+                    <div key={j} className="flex items-center justify-between px-4 py-2.5 rounded bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-2">
                         <GraduationCap className="w-4 h-4 text-indigo-500" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sem.name}</span>
@@ -530,8 +530,8 @@ function OnboardingBreakdownView({ filterValue, title, onBack }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Department Distribution</h4>
+            <div className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">Department Distribution</h4>
               <p className="text-[10px] text-gray-400 mb-3">Click a department to view semester-wise breakdown</p>
               <DonutChart
                 data={deptDonutData}
@@ -562,7 +562,7 @@ function RegistrationDrillDown({ stats, onBack, onDrillDeeper }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={onBack} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -572,8 +572,8 @@ function RegistrationDrillDown({ stats, onBack, onDrillDeeper }) {
       </div>
 
       {/* Onboarding Status Donut — clickable segments */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Onboarding Status</h4>
+      <div className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700">
+        <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">Onboarding Status</h4>
         <p className="text-[10px] text-gray-400 mb-4">Click a category to see department-wise & semester-wise breakdown</p>
         <DonutChart
           data={[
@@ -593,7 +593,7 @@ function ProjectAssignmentDrillDown({ stats, onBack, onDrillDeeper }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={onBack} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -603,8 +603,8 @@ function ProjectAssignmentDrillDown({ stats, onBack, onDrillDeeper }) {
       </div>
 
       {/* Assignment Status Donut — clickable segments */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Guide Assignment Status</h4>
+      <div className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700">
+        <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">Guide Assignment Status</h4>
         <p className="text-[10px] text-gray-400 mb-4">Click a category to see department-wise & semester-wise breakdown</p>
         <DonutChart
           data={[
@@ -617,12 +617,12 @@ function ProjectAssignmentDrillDown({ stats, onBack, onDrillDeeper }) {
       </div>
 
       {/* No Project Title Warning */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800 flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40">
+      <div className="bg-amber-50 dark:bg-amber-900/20 rounded p-4 border border-amber-200 dark:border-amber-800 flex items-center gap-3">
+        <div className="p-2 rounded bg-amber-100 dark:bg-amber-900/40">
           <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">No Project Title Submitted</p>
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">No Project Title Submitted</p>
           <p className="text-xs text-amber-600 dark:text-amber-400">{stats.noTitleGroups || 0} group{(stats.noTitleGroups || 0) !== 1 ? 's' : ''} haven&apos;t submitted a project title yet</p>
         </div>
         <span className="ml-auto text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.noTitleGroups || 0}</span>
@@ -675,7 +675,7 @@ function ProjectAssignmentBreakdownView({ filterValue, title, onBack }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={selectedDept ? () => setSelectedDept(null) : onBack} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={selectedDept ? () => setSelectedDept(null) : onBack} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -704,18 +704,18 @@ function ProjectAssignmentBreakdownView({ filterValue, title, onBack }) {
             {!selectedDeptData || selectedDeptData.semesters.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                 <GraduationCap className="w-10 h-10 mb-3" />
-                <p className="font-semibold text-gray-600 dark:text-gray-300">No students found in {selectedDept}</p>
+                <p className="font-medium text-gray-600 dark:text-gray-300">No students found in {selectedDept}</p>
               </div>
             ) : (
               <>
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700">
                   <DonutChart
                     data={selectedDeptData.semesters.map(s => ({ name: s.name, value: s.value }))}
                   />
                 </div>
                 <div className="space-y-2">
                   {selectedDeptData.semesters.map((sem, j) => (
-                    <div key={j} className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700">
+                    <div key={j} className="flex items-center justify-between px-4 py-2.5 rounded bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-2">
                         <GraduationCap className="w-4 h-4 text-indigo-500" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{sem.name}</span>
@@ -735,8 +735,8 @@ function ProjectAssignmentBreakdownView({ filterValue, title, onBack }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Department Distribution</h4>
+            <div className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">Department Distribution</h4>
               <p className="text-[10px] text-gray-400 mb-3">Click a department to view semester-wise breakdown</p>
               <DonutChart
                 data={deptDonutData}
@@ -796,7 +796,7 @@ function AllProjectsSection() {
   })
 
   if (loading) return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 flex items-center justify-center py-10">
+    <div className="bg-white dark:bg-gray-800 rounded p-6 border border-gray-200 dark:border-gray-700 flex items-center justify-center py-10">
       <Loader2 className="w-5 h-5 animate-spin text-blue-500 mr-2" />
       <span className="text-sm text-gray-500">Loading projects...</span>
     </div>
@@ -807,23 +807,23 @@ function AllProjectsSection() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+      className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-blue-500" /> All Projects
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">{filtered.length} project{filtered.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search title, domain, guide..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none w-56"
+            className="pl-9 pr-4 py-2 text-sm rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-56"
           />
         </div>
       </div>
@@ -848,25 +848,25 @@ function AllProjectsSection() {
                 className="hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors cursor-pointer"
                 onClick={() => setExpanded(isExpanded ? null : p._id)}
               >
-                <div className="flex items-center gap-4 px-5 py-3.5">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <FolderOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
                       <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{p.title || 'Untitled'}</span>
                       <span className="text-[10px] font-mono text-gray-400 hidden sm:block">{p.groupId}</span>
                     </div>
-                    <div className="flex items-center gap-4 mt-1 ml-6 text-xs text-gray-500">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 ml-6 text-xs text-gray-500">
                       {p.domain && <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{p.domain}</span>}
                       <span>Sem {p.semester}</span>
                       <span className="flex items-center gap-1 truncate"><Users className="w-3 h-3" />{guideName}</span>
                       <span>{(p.members || []).length} member{(p.members || []).length !== 1 ? 's' : ''}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs text-gray-500">
-                      <span className="font-semibold text-green-600">{gradedReports.length}</span>/{reports.length} graded
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <span className="text-xs text-gray-500 hidden sm:inline">
+                      <span className="font-medium text-green-600">{gradedReports.length}</span>/{reports.length} graded
                     </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${status.cls}`}>{status.label}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${status.cls}`}>{status.label}</span>
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                   </div>
                 </div>
@@ -882,13 +882,13 @@ function AllProjectsSection() {
                       <div className="px-5 pb-3 ml-6 space-y-2">
                         {p.members && p.members.length > 0 && (
                           <div>
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase mb-1">Team Members</p>
+                            <p className="text-[11px] font-medium text-gray-400 uppercase mb-1">Team Members</p>
                             <div className="flex flex-wrap gap-2">
                               {p.members.map((m, j) => {
                                 const studentName = m.student?.academicInfo?.name || m.student?.email || `Member ${j + 1}`
                                 const rollNo = m.student?.academicInfo?.rollNumber || ''
                                 return (
-                                  <div key={j} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs">
+                                  <div key={j} className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-gray-100 dark:bg-gray-700 text-xs">
                                     <User className="w-3 h-3 text-gray-400" />
                                     <span>{studentName}</span>
                                     {rollNo && <span className="text-gray-400 font-mono">{rollNo}</span>}
@@ -901,14 +901,14 @@ function AllProjectsSection() {
                         )}
                         {reports.length > 0 && (
                           <div>
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase mb-1">Monthly Reports</p>
+                            <p className="text-[11px] font-medium text-gray-400 uppercase mb-1">Monthly Reports</p>
                             <div className="flex flex-wrap gap-2">
                               {reports.map((r, j) => {
                                 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
                                 const label = `${months[r.month - 1]} ${r.year}`
                                 const isGraded = r.status === 'graded'
                                 return (
-                                  <div key={j} className={`px-2.5 py-1 rounded-lg border text-xs ${isGraded ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300'}`}>
+                                  <div key={j} className={`px-2.5 py-1 rounded border text-xs ${isGraded ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300'}`}>
                                     {label}{isGraded && r.score !== undefined ? ` — ${r.score}` : ' (pending)'}
                                   </div>
                                 )
@@ -985,7 +985,7 @@ function _StudentGradesSection_removed() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
           <span className="ml-2 text-sm text-gray-500">Loading student grades...</span>
@@ -999,11 +999,11 @@ function _StudentGradesSection_removed() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700"
+      className="bg-white dark:bg-gray-800 rounded p-6 border border-gray-200 dark:border-gray-700"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-medium text-gray-900 dark:text-white flex items-center gap-2">
             <Award className="w-5 h-5 text-purple-500" /> Student Grades
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">{filteredGrades.length} student record{filteredGrades.length !== 1 ? 's' : ''}</p>
@@ -1015,7 +1015,7 @@ function _StudentGradesSection_removed() {
             <select
               value={semesterFilter}
               onChange={(e) => setSemesterFilter(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-8 pr-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Semesters</option>
               {semesters.map(s => <option key={s} value={s}>Semester {s}</option>)}
@@ -1029,7 +1029,7 @@ function _StudentGradesSection_removed() {
               placeholder="Search name, roll no..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48"
+              className="pl-8 pr-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48"
             />
           </div>
         </div>
@@ -1046,14 +1046,14 @@ function _StudentGradesSection_removed() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Student</th>
-                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Roll No</th>
-                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Project</th>
-                <th className="text-left py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Guide</th>
-                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Sem</th>
-                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Reports</th>
-                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Avg Score</th>
-                <th className="text-center py-2.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Details</th>
+                <th className="text-left py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Student</th>
+                <th className="text-left py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Roll No</th>
+                <th className="text-left py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Project</th>
+                <th className="text-left py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Guide</th>
+                <th className="text-center py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Sem</th>
+                <th className="text-center py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Reports</th>
+                <th className="text-center py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Avg Score</th>
+                <th className="text-center py-2.5 px-3 font-medium text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wider">Details</th>
               </tr>
             </thead>
             <tbody>
@@ -1083,13 +1083,13 @@ function _StudentGradesSection_removed() {
                     <td className="py-2.5 px-3 text-center text-gray-600 dark:text-gray-400">{g.semester}</td>
                     <td className="py-2.5 px-3 text-center">
                       <span className="text-xs">
-                        <span className="font-semibold text-green-600">{g.gradedReports}</span>
+                        <span className="font-medium text-green-600">{g.gradedReports}</span>
                         <span className="text-gray-400">/{g.totalReports}</span>
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {g.avgScore !== null ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${getScoreColor(g.avgScore)} ${getScoreBg(g.avgScore)}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getScoreColor(g.avgScore)} ${getScoreBg(g.avgScore)}`}>
                           {g.avgScore}
                         </span>
                       ) : (
@@ -1126,12 +1126,12 @@ function _StudentGradesSection_removed() {
                             className="overflow-hidden"
                           >
                             <div className="py-3 pl-9 space-y-1.5">
-                              <p className="text-[11px] font-semibold text-gray-500 uppercase mb-2">Monthly Report Scores</p>
+                              <p className="text-[11px] font-medium text-gray-500 uppercase mb-2">Monthly Report Scores</p>
                               <div className="flex flex-wrap gap-2">
                                 {g.reportDetails.map((r, j) => (
                                   <div
                                     key={j}
-                                    className={`px-3 py-1.5 rounded-lg border text-xs ${getScoreBg(r.score)} border-gray-200 dark:border-gray-600`}
+                                    className={`px-3 py-1.5 rounded border text-xs ${getScoreBg(r.score)} border-gray-200 dark:border-gray-600`}
                                     title={r.feedback || 'No feedback'}
                                   >
                                     <span className="text-gray-500">{r.month}/{r.year}</span>
@@ -1141,7 +1141,7 @@ function _StudentGradesSection_removed() {
                                 ))}
                               </div>
                               {g.progressScore > 0 && (
-                                <p className="text-[11px] text-gray-500 mt-2">Overall progress: <span className="font-semibold text-gray-700 dark:text-gray-300">{g.progressScore}%</span></p>
+                                <p className="text-[11px] text-gray-500 mt-2">Overall progress: <span className="font-medium text-gray-700 dark:text-gray-300">{g.progressScore}%</span></p>
                               )}
                             </div>
                           </motion.div>
@@ -1164,6 +1164,8 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({})
+  // Drill-down navigation: null = main view, or { type, ...params }
+  const [drillView, setDrillView] = useState(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -1223,6 +1225,13 @@ export default function AdminDashboard() {
   if (!session || !allowed.includes(session.user.role)) return null
 
   /* ---- Cards ---- */
+  const overviewCards = [
+    { name: 'Total Students', value: stats.totalStudents || 0, icon: GraduationCap, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800' },
+    { name: 'Total Guides', value: stats.totalFaculty || 0, icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-200 dark:border-indigo-800' },
+    { name: 'Total Projects', value: stats.totalProjects || 0, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800' },
+    { name: 'Pending Approvals', value: stats.pendingRegistrations || 0, icon: UserCheck, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800' },
+  ]
+
   const projectCards = [
     { name: 'In Progress', value: stats.inProgressProjects || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800' },
     { name: 'Completed', value: stats.completedProjects || 0, icon: CheckCircle, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-900/20', border: 'border-teal-200 dark:border-teal-800' },
@@ -1230,40 +1239,231 @@ export default function AdminDashboard() {
     { name: 'Reports Pending', value: stats.reportsPendingCount || 0, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800' },
   ]
 
+  /* ---- Drill-down views ---- */
+  if (drillView) {
+    if (drillView.type === 'registration') {
+      return (
+        <div className="space-y-6">
+          <RegistrationDrillDown
+            stats={stats}
+            onBack={() => setDrillView(null)}
+            onDrillDeeper={(params) => setDrillView(params)}
+          />
+        </div>
+      )
+    }
+    if (drillView.type === 'projectAssignment') {
+      return (
+        <div className="space-y-6">
+          <ProjectAssignmentDrillDown
+            stats={stats}
+            onBack={() => setDrillView(null)}
+            onDrillDeeper={(params) => setDrillView(params)}
+          />
+        </div>
+      )
+    }
+    if (drillView.type === 'onboardingBreakdown') {
+      return (
+        <div className="space-y-6">
+          <OnboardingBreakdownView
+            filterValue={drillView.filterValue}
+            title={drillView.title}
+            onBack={() => setDrillView({ type: 'registration' })}
+          />
+        </div>
+      )
+    }
+    if (drillView.type === 'projectAssignmentBreakdown') {
+      return (
+        <div className="space-y-6">
+          <ProjectAssignmentBreakdownView
+            filterValue={drillView.filterValue}
+            title={drillView.title}
+            onBack={() => setDrillView({ type: 'projectAssignment' })}
+          />
+        </div>
+      )
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{getRoleTitle()}</h1>
-        <p className="text-base text-gray-500 dark:text-gray-400 mt-1">{getRoleDesc()}</p>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{getRoleTitle()}</h1>
+        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">{getRoleDesc()}</p>
       </div>
 
-      {/* Project Overview */}
+      {/* Overview Stats */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" /> Project Overview
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Users className="w-5 h-5" /> Overview
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          {overviewCards.map((stat, i) => (
+            <motion.div
+              key={stat.name}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className={`bg-white dark:bg-gray-800 rounded p-3 sm:p-5 border ${stat.border} transition-shadow`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.name}</p>
+                  <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                </div>
+                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded ${stat.bg} flex items-center justify-center`}>
+                  <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Project Status */}
+      <div>
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" /> Project Status
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
           {projectCards.map((stat, i) => (
             <motion.div
               key={stat.name}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.2 + i * 0.05 }}
-              className={`bg-white dark:bg-gray-800 rounded-xl p-5 border ${stat.border} transition-shadow`}
+              className={`bg-white dark:bg-gray-800 rounded p-3 sm:p-5 border ${stat.border} transition-shadow`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.name}</p>
-                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.name}</p>
+                  <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
                 </div>
-                <div className={`w-11 h-11 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded ${stat.bg} flex items-center justify-center`}>
+                  <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Charts Row: Registration + Project Assignment */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Registration Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+          onClick={() => setDrillView({ type: 'registration' })}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Student Registration</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">Click to view details</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </div>
+          <DonutChart
+            data={[
+              { name: 'Onboarded', value: stats.onboardedStudents || 0 },
+              { name: 'Pending Onboarding', value: stats.notOnboardedStudents || 0 },
+            ]}
+            centerLabel="students"
+          />
+        </motion.div>
+
+        {/* Project Assignment */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+          onClick={() => setDrillView({ type: 'projectAssignment' })}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Guide Assignment</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">Click to view details</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </div>
+          <DonutChart
+            data={[
+              { name: 'Guide Assigned', value: stats.assignedGroups || 0 },
+              { name: 'Not Assigned', value: stats.unassignedGroups || 0 },
+            ]}
+            centerLabel="groups"
+          />
+        </motion.div>
+      </div>
+
+      {/* Charts Row: Department Distribution + Domain Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Department-wise Students */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
+        >
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <GraduationCap className="w-4 h-4 text-blue-500" /> Students by Department
+          </h3>
+          <BarChart data={stats.departmentDistribution || []} colorClass="bg-blue-500" />
+        </motion.div>
+
+        {/* Domain Distribution */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
+        >
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Tag className="w-4 h-4 text-purple-500" /> Projects by Domain
+          </h3>
+          <DonutChart data={stats.domainDistribution || []} />
+        </motion.div>
+      </div>
+
+      {/* Charts Row: Semester Distribution + Guide Allocation */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Semester Distribution */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
+        >
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-teal-500" /> Students by Semester
+          </h3>
+          <BarChart data={stats.semesterDistribution || []} colorClass="bg-teal-500" />
+        </motion.div>
+
+        {/* Guide Allocation */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+          className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
+        >
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-indigo-500" /> Guide Workload
+          </h3>
+          <BarChart
+            data={(stats.guideAllocation || []).slice(0, 10).map(g => ({
+              name: g.guideName || 'Unknown',
+              value: g.projectCount
+            }))}
+            colorClass="bg-indigo-500"
+          />
+        </motion.div>
       </div>
 
       {/* All Projects Section */}

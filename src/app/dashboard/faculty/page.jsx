@@ -117,7 +117,7 @@ export default function FacultyDirectoryPage(){
             } catch (err) { console.error(err); toast.error('Export failed') }
           }} className='px-3 py-2 rounded bg-green-600 text-white'>Download</button>
         </div>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder='Search name/email' className='px-3 py-2 border rounded text-sm flex-1 min-w-[240px] bg-white dark:bg-gray-800' />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder='Search name/email' className='px-3 py-2 border rounded text-sm flex-1 min-w-0 w-full sm:min-w-[240px] sm:w-auto bg-white dark:bg-gray-800' />
         <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white font-semibold'>Submit</button>
       </form>
       {loading ? (
@@ -136,7 +136,7 @@ export default function FacultyDirectoryPage(){
               <div className='col-span-full text-sm text-gray-500'>No results found.</div>
             ) : (
               results.map(f => (
-                <motion.div key={f._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className='p-4 rounded-lg border bg-white dark:bg-gray-800 space-y-2'>
+                <motion.div key={f._id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className='p-4 rounded border bg-white dark:bg-gray-800 space-y-2'>
                   <div className='flex items-center justify-between'>
                     <h3 className='font-semibold text-sm'>{f.academicInfo?.name || f.email.split('@')[0]}</h3>
                     <span className='text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-100'>{f.role}</span>

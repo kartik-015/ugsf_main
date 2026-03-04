@@ -37,7 +37,7 @@ export default function ProjectsPage(){
   const [projects, setProjects] = useState([])
   const [mine, setMine] = useState([])
   const [guides, setGuides] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [submitted, setSubmitted] = useState(false)
 
   // Filters (exclusive chip style like students/guides pages)
@@ -494,14 +494,14 @@ export default function ProjectsPage(){
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className='inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition'
+            className='inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition'
           >
             Previous
           </button>
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className='relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition'
+            className='relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition'
           >
             Next
           </button>
@@ -515,7 +515,7 @@ export default function ProjectsPage(){
             <select
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              className='px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition'
+              className='px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition'
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -524,7 +524,7 @@ export default function ProjectsPage(){
             </select>
           </div>
           <div>
-            <nav className='inline-flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm' aria-label='Pagination'>
+            <nav className='inline-flex rounded overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm' aria-label='Pagination'>
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
@@ -674,8 +674,8 @@ export default function ProjectsPage(){
     <div className='space-y-6'>
       {/* Page Title */}
       <div className='mb-2'>
-        <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>Projects</h1>
-        <p className='text-gray-600 dark:text-gray-300 mt-1'>{isAdmin ? 'Manage & monitor all project groups' : isHod ? 'Review & approve department projects' : 'Browse & manage your projects'}</p>
+        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>Projects</h1>
+        <p className='text-sm text-gray-600 dark:text-gray-300 mt-1'>{isAdmin ? 'Manage & monitor all project groups' : isHod ? 'Review & approve department projects' : 'Browse & manage your projects'}</p>
       </div>
 
       {/* Student View Controls */}
@@ -684,7 +684,7 @@ export default function ProjectsPage(){
           <div className='flex flex-wrap gap-3'>
             <button 
               onClick={openCreateModal} 
-              className='inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98]'
+              className='inline-flex items-center gap-2 px-6 py-3 rounded bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-sm transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98]'
             >
               <Plus className='w-4 h-4' />
               Create Group Project
@@ -702,7 +702,7 @@ export default function ProjectsPage(){
             className='w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
           >
             <div className='flex items-center gap-3'>
-              <div className='p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'>
+              <div className='p-2 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'>
                 <Filter className='w-4 h-4' />
               </div>
               <span className='font-semibold text-sm'>Filters & Options</span>
@@ -746,7 +746,7 @@ export default function ProjectsPage(){
               {!isGuide && (
                 <div className='w-full'>
                   <p className='text-xs font-semibold uppercase tracking-wider mb-2 text-gray-500 dark:text-gray-400'>Guide</p>
-                  <select value={guide} onChange={e=>setGuide(e.target.value)} className='w-full px-3 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all text-gray-700 dark:text-gray-300'>
+                  <select value={guide} onChange={e=>setGuide(e.target.value)} className='w-full px-3 py-2.5 border rounded text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all text-gray-700 dark:text-gray-300'>
                     <option value=''>All</option>
                     {availableGuides.filter(g=> !department || g.department===department).map(g=> <option key={g._id} value={g._id}>{g.academicInfo?.name || g.email}</option>)}
                   </select>
@@ -754,25 +754,25 @@ export default function ProjectsPage(){
               )}
               <div className='w-full'>
                 <p className='text-xs font-semibold uppercase tracking-wider mb-2 text-gray-500 dark:text-gray-400'>Domain</p>
-                <select value={domain} onChange={e=>setDomain(e.target.value)} className='w-full px-3 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all text-gray-700 dark:text-gray-300'>
+                <select value={domain} onChange={e=>setDomain(e.target.value)} className='w-full px-3 py-2.5 border rounded text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all text-gray-700 dark:text-gray-300'>
                   <option value=''>All Domains</option>
                   {PROJECT_DOMAINS.map(d=> <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div className='w-full'>
                 <p className='text-xs font-semibold uppercase tracking-wider mb-2 text-gray-500 dark:text-gray-400'>Search</p>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder='Search by title...' className='w-full px-3 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all'/>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder='Search by title...' className='w-full px-3 py-2.5 border rounded text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all'/>
               </div>
             </div>
           </div>
         <div className='px-6 pb-5'>
         <FieldSelector fields={FIELD_OPTIONS} visible={visibleFields} toggle={toggleField} />
         <div className='flex items-center gap-3 pt-4'>
-          <button type='submit' className='inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm hover:shadow'>
+          <button type='submit' className='inline-flex items-center gap-2 px-5 py-2.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm hover:shadow'>
             <Search className='w-3.5 h-3.5' />
             Apply
           </button>
-          <button type='button' onClick={resetFilters} className='inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium'>
+          <button type='button' onClick={resetFilters} className='inline-flex items-center gap-2 px-4 py-2.5 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium'>
             <XIcon className='w-3.5 h-3.5' />
             Reset
           </button>
@@ -780,7 +780,7 @@ export default function ProjectsPage(){
             <button 
               type='button' 
               onClick={exportToCSV} 
-              className='inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors text-sm font-medium shadow-sm'
+              className='inline-flex items-center gap-2 px-4 py-2.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors text-sm font-medium shadow-sm'
             >
               <Download className='w-3.5 h-3.5' />
               Export CSV
@@ -807,14 +807,19 @@ export default function ProjectsPage(){
         </div>
       ) : isStudent ? (
         <div className='grid gap-6'>
-          {mine.length === 0 ? (
+          {loading ? (
+            <div className='flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500'>
+              <div className='w-10 h-10 border border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4' />
+              <p className='text-sm text-gray-500 dark:text-gray-400'>Loading your projects...</p>
+            </div>
+          ) : mine.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500'>
               <div className='p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4'>
                 <FolderKanban className='w-8 h-8' />
               </div>
               <p className='font-semibold text-lg text-gray-600 dark:text-gray-300'>No projects yet</p>
               <p className='text-sm mt-1'>Create a project group or get added by a teammate.</p>
-              <button onClick={openCreateModal} className='mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition'>
+              <button onClick={openCreateModal} className='mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition'>
                 <Plus className='w-4 h-4' /> Create Project
               </button>
             </div>
@@ -826,7 +831,7 @@ export default function ProjectsPage(){
                   initial={{ opacity: 0, y: 16 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   transition={{ delay: i * 0.04 }}
-                  className='glass-card rounded-2xl p-5 flex flex-col group relative overflow-hidden'
+                  className='glass-card rounded p-5 flex flex-col group relative overflow-hidden'
                 >
                   {/* Accent top bar */}
                   <div className={`absolute top-0 left-0 right-0 h-1 ${
@@ -867,17 +872,17 @@ export default function ProjectsPage(){
                   </div>
                   
                   <div className='grid grid-cols-2 gap-2 text-[11px] mt-3'>
-                    <div className='flex items-center gap-1.5 text-gray-600 dark:text-gray-400'>
-                      <Globe className='w-3 h-3 text-purple-500' /> {p.domain || '—'}
+                    <div className='flex items-center gap-1 text-gray-600 dark:text-gray-400 min-w-0'>
+                      <Globe className='w-3 h-3 text-purple-500 flex-shrink-0' /> <span className='truncate'>{p.domain || '—'}</span>
                     </div>
-                    <div className='flex items-center gap-1.5 text-gray-600 dark:text-gray-400'>
-                      <Building2 className='w-3 h-3 text-blue-500' /> {p.department}
+                    <div className='flex items-center gap-1 text-gray-600 dark:text-gray-400 min-w-0'>
+                      <Building2 className='w-3 h-3 text-blue-500 flex-shrink-0' /> <span className='truncate'>{p.department}</span>
                     </div>
-                    <div className='flex items-center gap-1.5 text-gray-600 dark:text-gray-400'>
-                      <Calendar className='w-3 h-3 text-green-500' /> Sem {p.semester}
+                    <div className='flex items-center gap-1 text-gray-600 dark:text-gray-400'>
+                      <Calendar className='w-3 h-3 text-green-500 flex-shrink-0' /> Sem {p.semester}
                     </div>
-                    <div className='flex items-center gap-1.5 text-gray-600 dark:text-gray-400'>
-                      <Users className='w-3 h-3 text-indigo-500' /> {p.members?.length || 0} members
+                    <div className='flex items-center gap-1 text-gray-600 dark:text-gray-400'>
+                      <Users className='w-3 h-3 text-indigo-500 flex-shrink-0' /> {p.members?.length || 0} members
                     </div>
                   </div>
                   
@@ -887,7 +892,7 @@ export default function ProjectsPage(){
                   
                   <button 
                     onClick={() => setSelected(p)} 
-                    className='w-full mt-4 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2'
+                    className='w-full mt-4 px-4 py-2.5 rounded bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold hover:shadow-sm transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2'
                   >
                     <Eye className='w-3.5 h-3.5' /> View Details
                   </button>
@@ -921,14 +926,14 @@ export default function ProjectsPage(){
               </div>
               <p className='font-semibold text-lg text-gray-600 dark:text-gray-300'>No matching projects</p>
               <p className='text-sm mt-1'>Try adjusting your filters or search terms.</p>
-              <button onClick={resetFilters} className='mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition'>
+              <button onClick={resetFilters} className='mt-4 inline-flex items-center gap-2 px-4 py-2 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition'>
                 <XIcon className='w-3.5 h-3.5' /> Clear Filters
               </button>
             </div>
           ) : (
             <>
               {/* Results summary bar */}
-              <div className='flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-3'>
+              <div className='flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 px-5 py-3'>
                 <div className='text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-2'>
                   <Table2 className='w-4 h-4 text-indigo-500' />
                   <span>{sortedFiltered.length} project{sortedFiltered.length !== 1 ? 's' : ''}</span>
@@ -939,22 +944,22 @@ export default function ProjectsPage(){
                   )}
                 </div>
                 <div className='flex gap-2 text-xs'>
-                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg font-medium border border-green-200 dark:border-green-800'>
+                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded font-medium border border-green-200 dark:border-green-800'>
                     <CheckCircle2 className='w-3 h-3' /> {sortedFiltered.filter(p => p.hodApproval === 'approved').length}
                   </span>
-                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg font-medium border border-amber-200 dark:border-amber-800'>
+                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium border border-amber-200 dark:border-amber-800'>
                     <Clock className='w-3 h-3' /> {sortedFiltered.filter(p => p.hodApproval === 'pending' || !p.hodApproval).length}
                   </span>
-                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg font-medium border border-red-200 dark:border-red-800'>
+                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded font-medium border border-red-200 dark:border-red-800'>
                     <XCircle className='w-3 h-3' /> {sortedFiltered.filter(p => p.hodApproval === 'rejected').length}
                   </span>
                 </div>
               </div>
               
               {/* Enhanced table */}
-              <div className='card p-0 overflow-hidden shadow-lg rounded-xl border border-gray-200 dark:border-gray-700'>
+              <div className='card p-0 overflow-hidden shadow-sm rounded border border-gray-200 dark:border-gray-700'>
                 <div className='overflow-x-auto max-h-[calc(100vh-280px)]'>
-                  <table className='w-full table-fixed'>
+                  <table className='w-full min-w-[700px]'>
                     <thead className='bg-gray-50 dark:bg-gray-800/80 sticky top-0 z-10'>
                       <tr>
                         <th className='px-3 py-3 text-left text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 w-[22%]'>
@@ -1048,7 +1053,7 @@ export default function ProjectsPage(){
                           
                           {visibleFields.includes('domain') && (
                             <td className='px-2 py-3'>
-                              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 truncate max-w-full' title={p.domain || '—'}>
+                              <span className='inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 truncate max-w-full' title={p.domain || '—'}>
                                 {p.domain ? (p.domain.length > 15 ? p.domain.split(/[+,&]/)[0].trim() : p.domain) : '—'}
                               </span>
                             </td>
@@ -1106,7 +1111,7 @@ export default function ProjectsPage(){
                                   {p.hodApproval !== 'approved' && (
                                     <button 
                                       onClick={() => approveProject(p._id, true)} 
-                                      className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
+                                      className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
                                       title='Approve Project'
                                     >
                                       <CheckCircle2 className='w-3 h-3' />
@@ -1116,7 +1121,7 @@ export default function ProjectsPage(){
                                   {p.hodApproval !== 'rejected' && (
                                     <button 
                                       onClick={() => approveProject(p._id, false)} 
-                                      className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
+                                      className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
                                       title='Reject Project'
                                     >
                                       <XCircle className='w-3 h-3' />
@@ -1133,20 +1138,20 @@ export default function ProjectsPage(){
                                     !p.internalGuide ? (
                                       <button 
                                         onClick={() => setSelected(p)} 
-                                        className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
+                                        className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
                                         title='Assign Guide'
                                       >
                                         <UserPlus className='w-3 h-3' />
                                         Assign
                                       </button>
                                     ) : (
-                                      <span className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' title='Guide Assigned'>
+                                      <span className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' title='Guide Assigned'>
                                         <CheckCircle2 className='w-3 h-3' />
                                         Assigned
                                       </span>
                                     )
                                   ) : (
-                                    <span className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' title='Awaiting HOD'>
+                                    <span className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' title='Awaiting HOD'>
                                       <Clock className='w-3 h-3' />
                                       Awaiting
                                     </span>
@@ -1177,7 +1182,7 @@ export default function ProjectsPage(){
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className='w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden'
+            className='w-full max-w-2xl bg-white dark:bg-gray-900 rounded shadow-sm overflow-hidden'
             onClick={e => e.stopPropagation()}
           >
             {/* Create Modal Header */}
@@ -1187,7 +1192,7 @@ export default function ProjectsPage(){
                   <h2 className='font-bold text-lg flex items-center gap-2'><Plus className='w-5 h-5' /> Create Project Group</h2>
                   <p className='text-white/70 text-xs mt-0.5'>You will be the leader. Add teammates now or later.</p>
                 </div>
-                <button onClick={closeCreateModal} className='p-1.5 rounded-lg hover:bg-white/20 transition'>
+                <button onClick={closeCreateModal} className='p-1.5 rounded hover:bg-white/20 transition'>
                   <XIcon className='w-5 h-5' />
                 </button>
               </div>
@@ -1195,7 +1200,7 @@ export default function ProjectsPage(){
             
             <div className='p-6 max-h-[70vh] overflow-y-auto'>
               {/* Team Leader (auto-fetched) */}
-              <div className='mb-5 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl'>
+              <div className='mb-5 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded'>
                 <div className='text-[11px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-2 flex items-center gap-1.5'>
                   <ShieldCheck className='w-3.5 h-3.5' /> Team Leader (You)
                 </div>
@@ -1217,17 +1222,17 @@ export default function ProjectsPage(){
               <div className='grid md:grid-cols-2 gap-4 text-sm'>
                 <div className='flex flex-col gap-1.5'>
                   <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Project Title</label>
-                  <input className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition' value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder='e.g. UGSF' />
+                  <input className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition' value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder='e.g. UGSF' />
                 </div>
                 <div className='flex flex-col gap-1.5'>
                   <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Domain</label>
-                  <select className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition' value={form.domain} onChange={e=>setForm({...form,domain:e.target.value, customDomain: e.target.value === 'Other' ? form.customDomain : ''})}>
+                  <select className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition' value={form.domain} onChange={e=>setForm({...form,domain:e.target.value, customDomain: e.target.value === 'Other' ? form.customDomain : ''})}>
                     <option value=''>Select Domain</option>
                     {PROJECT_DOMAINS.map(d=> <option key={d} value={d}>{d}</option>)}
                   </select>
                   {form.domain === 'Other' && (
                     <input 
-                      className='mt-1.5 px-3 py-2.5 border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-amber-500 outline-none transition' 
+                      className='mt-1.5 px-3 py-2.5 border border-amber-300 dark:border-amber-700 rounded bg-amber-50 dark:bg-amber-900/20 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-amber-500 outline-none transition' 
                       value={form.customDomain} 
                       onChange={e=>setForm({...form,customDomain:e.target.value})} 
                       placeholder='Enter your domain...' 
@@ -1236,12 +1241,12 @@ export default function ProjectsPage(){
                 </div>
                 <div className='md:col-span-2 flex flex-col gap-1.5'>
                   <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Problem Statement / Description</label>
-                  <textarea className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 min-h-[80px] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none' value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder='Problem statement, objective, impact... (≤200 words)' />
+                  <textarea className='px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 min-h-[80px] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none' value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder='Problem statement, objective, impact... (≤200 words)' />
                   <div className={`text-[10px] font-medium ${descWords>200?'text-red-500':'text-gray-400'}`}>{descWords} / 200 words</div>
                 </div>
 
                 {/* Internal Guide info */}
-                <div className='md:col-span-2 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl'>
+                <div className='md:col-span-2 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded'>
                   <div className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
                     <UserCheck className='w-3.5 h-3.5' />
                     <span className='font-medium'>Internal Guide</span>
@@ -1256,7 +1261,7 @@ export default function ProjectsPage(){
                       <Search className='w-4 h-4' />
                     </div>
                     <input 
-                      className='w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition' 
+                      className='w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition' 
                       value={memberSearch} 
                       onChange={(e) => {
                         const value = e.target.value
@@ -1273,12 +1278,12 @@ export default function ProjectsPage(){
                     />
                     {searchLoading && (
                       <div className='absolute right-3 top-3'>
-                        <div className='w-4 h-4 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin'></div>
+                        <div className='w-4 h-4 border border-gray-300 border-t-indigo-600 rounded-full animate-spin'></div>
                       </div>
                     )}
                     
                     {memberSuggestions.length > 0 && (
-                      <div className='absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto'>
+                      <div className='absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm max-h-60 overflow-y-auto'>
                         {memberSuggestions.map((student) => (
                           <div 
                             key={student.id}
@@ -1305,7 +1310,7 @@ export default function ProjectsPage(){
                       <div className='text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2'>Team Members ({selectedMembers.length})</div>
                       <div className='flex flex-wrap gap-2'>
                         {selectedMembers.map((member) => (
-                          <div key={member.email} className='flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm'>
+                          <div key={member.email} className='flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded text-sm'>
                             <div className='w-6 h-6 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300 text-[10px] font-bold'>
                               {member.name?.charAt(0).toUpperCase() || '?'}
                             </div>
@@ -1329,14 +1334,14 @@ export default function ProjectsPage(){
                 </div>
               </div>
               <div className='flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-800'>
-                <button type='button' onClick={closeCreateModal} className='px-5 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition'>Cancel</button>
+                <button type='button' onClick={closeCreateModal} className='px-5 py-2.5 text-sm rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition'>Cancel</button>
                 <button 
                   type='button' 
                   disabled={!formValid} 
                   onClick={submitProject} 
-                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded text-sm font-semibold transition-all ${
                     formValid 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg active:scale-[0.98]' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-sm active:scale-[0.98]' 
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                   }`}
                 >
@@ -1368,7 +1373,7 @@ function FilterGroup({ title, options, value, onSelect }) {
           return (
             <button 
               key={opt} type='button' onClick={()=>onSelect(opt)} 
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`px-3.5 py-2 rounded text-sm font-medium transition-all duration-200 ${
                 checked 
                   ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-300 dark:ring-indigo-800 scale-[1.02]' 
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -1395,7 +1400,7 @@ function FieldSelector({ fields, visible, toggle }) {
           return (
             <label 
               key={f.key} 
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm cursor-pointer select-none transition-all duration-200 font-medium ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded text-sm cursor-pointer select-none transition-all duration-200 font-medium ${
                 checked 
                   ? 'bg-violet-600 text-white shadow-md ring-2 ring-violet-300 dark:ring-violet-800' 
                   : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -1628,17 +1633,17 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   ]
 
   return (
-    <div className='fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4' onClick={close}>
+    <div className='fixed inset-0 z-50 flex flex-col'>
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
-        animate={{ opacity: 1, scale: 1, y: 0 }} 
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className='w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden'
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+        className='w-full h-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden'
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className='relative bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-6 py-5 text-white'>
+        <div className='relative bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-4 sm:px-6 py-4 sm:py-5 text-white'>
           <div className='absolute inset-0 opacity-10'>
             <div className='absolute top-0 right-0 w-40 h-40 bg-white rounded-full -translate-y-1/2 translate-x-1/3' />
           </div>
@@ -1649,15 +1654,15 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <h3 className='text-lg md:text-xl font-bold truncate'>{project.title}</h3>
                   <span className='text-[10px] px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-sm font-bold tracking-wide flex-shrink-0'>{project.groupId}</span>
                 </div>
-                <div className='flex items-center gap-3 text-white/70 text-[12px]'>
+                <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-white/70 text-[12px]'>
                   <span className='flex items-center gap-1'><Building2 className='w-3 h-3' /> {project.department}</span>
-                  <span className='text-white/30'>|</span>
+                  <span className='text-white/30 hidden sm:inline'>|</span>
                   <span className='flex items-center gap-1'><GraduationCap className='w-3 h-3' /> Sem {project.semester}</span>
-                  <span className='text-white/30'>|</span>
+                  <span className='text-white/30 hidden sm:inline'>|</span>
                   <span className='flex items-center gap-1'><Globe className='w-3 h-3' /> {project.domain || 'No domain'}</span>
                 </div>
               </div>
-              <button onClick={close} className='p-1.5 rounded-lg hover:bg-white/20 transition-colors flex-shrink-0'>
+              <button onClick={close} className='p-1.5 rounded hover:bg-white/20 transition-colors flex-shrink-0'>
                 <XIcon className='w-5 h-5' />
               </button>
             </div>
@@ -1665,8 +1670,8 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
         </div>
         
         {/* Tab Navigation */}
-        <div className='px-6 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700'>
-          <div className='flex gap-1'>
+        <div className='px-2 sm:px-6 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 overflow-x-auto'>
+          <div className='flex gap-0.5 sm:gap-1 min-w-max'>
             {tabs.map(t => {
               const Icon = t.icon
               const isActive = tab === t.key
@@ -1674,7 +1679,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 <button 
                   key={t.key} 
                   onClick={() => setTab(t.key)} 
-                  className={`relative flex items-center gap-1.5 px-4 py-3 text-[12px] font-semibold transition-colors ${
+                  className={`relative flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-3 text-[11px] sm:text-[12px] font-semibold transition-colors whitespace-nowrap ${
                     isActive 
                       ? 'text-indigo-600 dark:text-indigo-400' 
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -1690,7 +1695,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
         </div>
 
         {/* Tab Content */}
-        <div className='p-6 max-h-[65vh] overflow-y-auto'>
+        <div className='p-4 sm:p-6 flex-1 overflow-y-auto'>
           <AnimatePresence mode='wait'>
             <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
           
@@ -1703,8 +1708,8 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   { label: 'Internal Guide', value: project.internalGuide?.academicInfo?.name || project.internalGuide?.email || '—', icon: UserCheck },
                   { label: 'External Guide', value: project.externalGuide?.name || '—', icon: ExternalLink },
                 ].map(item => (
-                  <div key={item.label} className='flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
-                    <div className='p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'>
+                  <div key={item.label} className='flex items-center gap-3 p-3 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
+                    <div className='p-2 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'>
                       <item.icon className='w-4 h-4' />
                     </div>
                     <div>
@@ -1715,13 +1720,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 ))}
               </div>
               {project.description && (
-                <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
+                <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
                   <div className='text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5'>Description</div>
                   <p className='text-sm text-gray-700 dark:text-gray-300 leading-relaxed'>{project.description}</p>
                 </div>
               )}
               {/* Progress visualization */}
-              <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
+              <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
                 <div className='flex items-center justify-between mb-2'>
                   <div className='text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>Progress</div>
                   <div className='text-[10px] text-gray-400'>{gradedReports.length} report{gradedReports.length !== 1 ? 's' : ''} graded</div>
@@ -1743,12 +1748,12 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 <div className='space-y-2'>
                   <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Add Member</h4>
                   <div className='flex gap-2'>
-                    <input value={addingMember} onChange={e=>setAddingMember(e.target.value)} placeholder='student email or id' className='flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition'/>
-                    <button onClick={()=>{addMember(project._id, addingMember); setAddingMember('')}} className='px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition'>Add</button>
+                    <input value={addingMember} onChange={e=>setAddingMember(e.target.value)} placeholder='student email or id' className='flex-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition'/>
+                    <button onClick={()=>{addMember(project._id, addingMember); setAddingMember('')}} className='px-4 py-2 rounded bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition'>Add</button>
                   </div>
                   <div className='grid sm:grid-cols-2 gap-2 text-[11px]'>
                     {project.members.map(m => (
-                      <div key={m.student._id||m.student} className='px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800/50'>
+                      <div key={m.student._id||m.student} className='px-3 py-2 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800/50'>
                         <span className='font-medium'>{m.student?.academicInfo?.name || m.student?.email || m.student}</span>
                         {(isAdmin || isHod || (isLeader && m.role!=='leader')) && (
                           <button onClick={()=>removeMember(project._id, m.student._id||m.student)} className='text-red-500 hover:text-red-700 text-[10px] font-medium'>Remove</button>
@@ -1765,13 +1770,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
             <div className='space-y-4'>
               {loadingDetails && (
                 <div className='space-y-3'>
-                  {[1,2,3].map(i => <div key={i} className='skeleton h-20 rounded-xl' />)}
+                  {[1,2,3].map(i => <div key={i} className='skeleton h-20 rounded' />)}
                 </div>
               )}
               {!loadingDetails && groupDetails && (
                 <div className='grid sm:grid-cols-2 gap-3'>
                   {groupDetails.members.map(m => (
-                    <div key={m.student._id} className='p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:shadow-md transition-shadow'>
+                    <div key={m.student._id} className='p-4 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:shadow-md transition-shadow'>
                       <div className='flex justify-between items-start mb-2'>
                         <div className='flex items-center gap-2'>
                           <div className='w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm'>
@@ -1806,7 +1811,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
           {tab === 'manage' && (canManage || isGuide || isProjectCoordinator) && (
             <div className='space-y-6'>
               {/* HOD Approval Section */}
-              <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
+              <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
                 <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2'>
                   <ShieldCheck className='w-3.5 h-3.5' />
                   {isHod ? 'HOD Approval' : 'Status & Actions'}
@@ -1818,19 +1823,19 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 {isHod && (project.hodApproval !== 'approved') && (
                   <div className='flex flex-wrap gap-2'>
                     {project.hodApproval !== 'approved' && (
-                      <button onClick={()=>approveProject(project._id,true)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium'>
+                      <button onClick={()=>approveProject(project._id,true)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700 transition font-medium'>
                         <CheckCircle2 className='w-3.5 h-3.5' /> Approve
                       </button>
                     )}
                     {project.hodApproval !== 'rejected' && (
-                      <button onClick={()=>approveProject(project._id,false)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium'>
+                      <button onClick={()=>approveProject(project._id,false)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700 transition font-medium'>
                         <XCircle className='w-3.5 h-3.5' /> Reject
                       </button>
                     )}
                   </div>
                 )}
                 {isAdmin && project.hodApproval !== 'approved' && (
-                  <div className='p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2'>
+                  <div className='p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2'>
                     <AlertTriangle className='w-4 h-4 flex-shrink-0' />
                     This project must be approved by HOD before you can assign guides.
                   </div>
@@ -1839,7 +1844,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
               
               {/* Guide Assignment */}
               {(isHod || (isAdmin && project.hodApproval === 'approved')) && (
-                <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
+                <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
                   <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2'>
                     <UserPlus className='w-3.5 h-3.5' /> Assign Guides
                   </h4>
@@ -1847,7 +1852,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Internal Guide</label>
                     {pendingInternalGuide && !changingGuide ? (
                       <div className='space-y-2'>
-                        <div className='flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'>
+                        <div className='flex items-center gap-3 p-3 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'>
                           <div className='w-2 h-2 bg-green-500 rounded-full'></div>
                           <span className='text-sm font-medium text-green-800 dark:text-green-200'>
                             {(() => { const g = availableGuidesModal.find(g => g._id === pendingInternalGuide); return g ? (g.academicInfo?.name || g.email) + (g.role === 'hod' ? ' (HOD)' : '') : project.internalGuide?.academicInfo?.name || project.internalGuide?.email || 'Selected Guide' })()}
@@ -1863,7 +1868,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     ) : (
                       <div className='space-y-2'>
                         <select 
-                          className='w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none transition' 
+                          className='w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none transition' 
                           value={pendingInternalGuide} 
                           onChange={e => { setPendingInternalGuide(e.target.value); if(e.target.value) setChangingGuide(false) }}
                         >
@@ -1889,11 +1894,11 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <div className='grid sm:grid-cols-2 gap-2'>
                     <div>
                       <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Name</label>
-                      <input value={externalGuideName} onChange={e=>setExternalGuideName(e.target.value)} placeholder='Name' className='w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
+                      <input value={externalGuideName} onChange={e=>setExternalGuideName(e.target.value)} placeholder='Name' className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
                     </div>
                     <div>
                       <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Email</label>
-                      <input value={externalGuideEmail} onChange={e=>setExternalGuideEmail(e.target.value)} placeholder='Email' className='w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
+                      <input value={externalGuideEmail} onChange={e=>setExternalGuideEmail(e.target.value)} placeholder='Email' className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
                     </div>
                   </div>
                   {(externalGuideName !== (project.externalGuide?.name || '') || externalGuideEmail !== (project.externalGuide?.email || '')) && (
@@ -1903,7 +1908,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
               )}
               
               {/* Progress */}
-              <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
+              <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
                 <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2'>
                   <TrendingUp className='w-3.5 h-3.5' /> Progress Score
                   <span className='text-[9px] text-gray-400 font-normal normal-case'>(Auto-calculated from graded reports)</span>
@@ -1949,50 +1954,46 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     {[...visibleReports].sort((a,b) => (b.year - a.year) || (b.month - a.month)).map(r => {
                       const statusColors = { draft: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', submitted: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', graded: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 'revision-needed': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
                       return (
-                        <div key={r._id} className='p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:shadow-sm transition-shadow'>
-                          <div className='flex items-center justify-between'>
-                            <div className='flex items-center gap-3'>
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${r.status === 'draft' ? 'bg-gray-100 dark:bg-gray-700' : 'bg-indigo-100 dark:bg-indigo-900/30'}`}>
+                        <div key={r._id} className='p-4 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:shadow-sm transition-shadow'>
+                          <div className='flex flex-wrap items-center gap-3'>
+                            <div className='flex items-center gap-3 flex-1 min-w-0'>
+                              <div className={`w-10 h-10 rounded flex-shrink-0 flex items-center justify-center ${r.status === 'draft' ? 'bg-gray-100 dark:bg-gray-700' : 'bg-indigo-100 dark:bg-indigo-900/30'}`}>
                                 <FileText className={`w-5 h-5 ${r.status === 'draft' ? 'text-gray-500' : 'text-indigo-600 dark:text-indigo-400'}`} />
                               </div>
-                              <div>
-                                <p className='font-semibold text-sm text-gray-900 dark:text-white'>{r.title}</p>
-                                <p className='text-[11px] text-gray-500'>
-                                  {monthNamesShort[r.month]} {r.year}
-                                  {r.turnedIn ? ` • Turned in ${new Date(r.turnedInAt || r.submittedAt).toLocaleDateString()}` : ` • Draft uploaded ${new Date(r.submittedAt).toLocaleDateString()}`}
-                                  {r.replacedAt && !r.turnedIn && ` • Replaced ${new Date(r.replacedAt).toLocaleDateString()}`}
-                                </p>
+                              <div className='min-w-0'>
+                                <p className='font-semibold text-sm text-gray-900 dark:text-white truncate'>{r.title}</p>
+                                <p className='text-[11px] text-gray-500'>{monthNamesShort[r.month]} {r.year}{r.turnedIn ? ` • Turned in ${new Date(r.turnedInAt || r.submittedAt).toLocaleDateString()}` : ` • Draft ${new Date(r.submittedAt).toLocaleDateString()}`}</p>
                               </div>
                             </div>
-                            <div className='flex items-center gap-2'>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${statusColors[r.status] || ''}`}>
+                            <div className='flex flex-wrap items-center gap-2'>
+                              <span className={`text-[10px] px-2 py-0.5 rounded font-semibold uppercase ${statusColors[r.status] || ''}`}>
                                 {r.status === 'graded' ? (isMember ? 'Graded' : `${r.score}/10`) : r.status === 'draft' ? 'Draft' : r.status}
                               </span>
                               {/* Student: Turn In button for drafts */}
                               {isMember && r.status === 'draft' && !r.turnedIn && (
                                 <button onClick={() => turnInReport(r._id)} disabled={turningIn}
-                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition disabled:opacity-50'>
-                                  {turningIn ? <div className='w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin' /> : <Send className='w-3 h-3' />} Turn In
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition disabled:opacity-50'>
+                                  {turningIn ? <div className='w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin' /> : <Send className='w-3 h-3' />} Turn In
                                 </button>
                               )}
                               {/* Guide: Grade button for turned-in reports */}
                               {(isGuide && r.turnedIn && r.status === 'submitted') && (
                                 <button onClick={() => { setGradingReport(r); setGradeScore(r.score || 0); setGradeFeedback(r.feedback || ''); setCriteriaScores({}); setPdfLoadError(false) }}
-                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition'>
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition'>
                                   <Star className='w-3 h-3' /> Grade
                                 </button>
                               )}
                               {/* Guide: Re-grade button for already graded */}
                               {(isGuide && r.status === 'graded') && (
                                 <button onClick={() => { setGradingReport(r); setGradeScore(r.score || 0); setGradeFeedback(r.feedback || ''); setCriteriaScores({}); setPdfLoadError(false) }}
-                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-800/30 transition'>
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-800/30 transition'>
                                   <Star className='w-3 h-3' /> Re-grade
                                 </button>
                               )}
                               {/* View PDF — anyone can view turned-in reports; students can view own drafts */}
                               {r.pdfUrl && (r.turnedIn || isMember) && (
                                 <button onClick={() => { setGradingReport(r); setPdfLoadError(false); setCriteriaScores({}) }}
-                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition'>
+                                  className='inline-flex items-center gap-1 px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition'>
                                   <Eye className='w-3 h-3' /> View PDF
                                 </button>
                               )}
@@ -2000,13 +2001,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                           </div>
                           {/* Grade display — hidden from students */}
                           {r.status === 'graded' && r.score !== undefined && !isMember && (
-                            <div className='mt-3 p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center gap-2'>
+                            <div className='mt-3 p-2.5 rounded bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center gap-2'>
                               <Star className='w-3 h-3 flex-shrink-0' />
                               <span><span className='font-semibold'>Grade: {r.score}/10</span>{r.grade ? ` (${r.grade})` : ''}</span>
                             </div>
                           )}
                           {r.feedback && !isMember && (
-                            <div className='mt-2 p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[11px] text-green-700 dark:text-green-300 flex items-start gap-1.5'>
+                            <div className='mt-2 p-2.5 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[11px] text-green-700 dark:text-green-300 flex items-start gap-1.5'>
                               <MessageSquare className='w-3 h-3 mt-0.5 flex-shrink-0' />
                               <div><span className='font-semibold'>Feedback:</span> {r.feedback}</div>
                             </div>
@@ -2026,7 +2027,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
               {/* Overall Grade Summary — hidden from students */}
               {!isMember && gradedReports.length > 0 && (
-                <div className='p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
+                <div className='p-4 rounded bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
                   <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3'>Overall Progress</h4>
                   <div className='flex items-center gap-4'>
                     <div className='flex-1'>
@@ -2050,13 +2051,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
                   {/* Status messages */}
                   {isTurnedIn && (
-                    <div className='p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[12px] text-green-700 dark:text-green-300 flex items-center gap-2'>
+                    <div className='p-3 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[12px] text-green-700 dark:text-green-300 flex items-center gap-2'>
                       <CheckCircle2 className='w-4 h-4 flex-shrink-0' />
                       Report for {monthNames[currentMonth]} {currentYear} has been turned in. {currentMonthReport?.status === 'graded' ? 'Graded by guide.' : 'Awaiting grade from guide.'}
                     </div>
                   )}
                   {alreadySubmittedThisMonth && !isTurnedIn && (
-                    <div className='p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-center gap-2'>
+                    <div className='p-3 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-center gap-2'>
                       <AlertTriangle className='w-4 h-4 flex-shrink-0' />
                       Draft uploaded for {monthNames[currentMonth]} {currentYear}. You can replace the file or turn it in.
                     </div>
@@ -2064,25 +2065,25 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
                   {/* Upload/Replace button */}
                   {canSubmitReport && (
-                    <button onClick={()=>setAddingReport(a=>!a)} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${addingReport ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                    <button onClick={()=>setAddingReport(a=>!a)} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium transition ${addingReport ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
                       {addingReport ? <><XIcon className='w-3 h-3' /> Cancel</> : currentMonthReport && !isTurnedIn ? <><Upload className='w-3 h-3' /> Replace Report for {monthNamesShort[currentMonth]} {currentYear}</> : <><Plus className='w-3 h-3' /> Submit Report for {monthNamesShort[currentMonth]} {currentYear}</>}
                     </button>
                   )}
                   {addingReport && canSubmitReport && (
-                    <div className='p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 space-y-3'>
-                      <div className='p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[12px] text-indigo-700 dark:text-indigo-300 font-medium'>
+                    <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 space-y-3'>
+                      <div className='p-2.5 rounded bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-[12px] text-indigo-700 dark:text-indigo-300 font-medium'>
                         {currentMonthReport && !isTurnedIn ? `Replacing report for: ${monthNames[currentMonth]} ${currentYear}` : `Submitting for: ${monthNames[currentMonth]} ${currentYear}`}
                       </div>
                       <div>
                         <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Report Title</label>
                         <input value={reportTitle} onChange={e => setReportTitle(e.target.value)} placeholder='e.g. Monthly Progress Report - February'
-                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
+                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
                       </div>
                       <div>
                         <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Upload PDF <span className='text-gray-400'>(only .pdf files, max 10MB)</span></label>
                         <div 
                           onClick={() => fileInputRef.current?.click()}
-                          className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${reportFile ? 'border-green-400 bg-green-50 dark:bg-green-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10'}`}
+                          className={`relative border border-dashed rounded p-6 text-center cursor-pointer transition-all ${reportFile ? 'border-green-400 bg-green-50 dark:bg-green-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10'}`}
                         >
                           <input ref={fileInputRef} type='file' accept='.pdf,application/pdf' className='hidden'
                             onChange={e => { const f = e.target.files[0]; if (f) { if (f.type !== 'application/pdf') { toast.error('Only PDF files are allowed'); e.target.value = ''; return } setReportFile(f) } }} />
@@ -2102,9 +2103,9 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                         </div>
                       </div>
                       <button onClick={addReport} disabled={uploading || !reportFile || !reportTitle.trim()}
-                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed'>
+                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed'>
                         {uploading ? (
-                          <><div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' /> Uploading...</>
+                          <><div className='w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin' /> Uploading...</>
                         ) : (
                           <><Upload className='w-4 h-4' /> {currentMonthReport && !isTurnedIn ? 'Replace File' : 'Upload Report'}</>
                         )}
@@ -2123,12 +2124,12 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   {(() => {
                     const turnedInThisMonth = (project.monthlyReports||[]).find(r => r.month===currentMonth && r.year===currentYear && r.turnedIn)
                     return turnedInThisMonth ? (
-                    <div className='p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[12px] text-green-700 dark:text-green-300 flex items-center gap-2'>
+                    <div className='p-3 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[12px] text-green-700 dark:text-green-300 flex items-center gap-2'>
                       <CheckCircle2 className='w-4 h-4 flex-shrink-0' />
                       <span>Report for {monthNames[currentMonth]} turned in on {new Date(turnedInThisMonth.turnedInAt || turnedInThisMonth.submittedAt).toLocaleDateString()}</span>
                     </div>
                   ) : (
-                    <div className='p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-center gap-2'>
+                    <div className='p-3 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-center gap-2'>
                       <AlertTriangle className='w-4 h-4 flex-shrink-0' />
                       <span>Not yet turned in for {monthNames[currentMonth]} {currentYear}</span>
                     </div>
@@ -2167,13 +2168,13 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                         return (
                           <>
                           <a href={pdfApiUrl} target='_blank' rel='noopener noreferrer'
-                            className='p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition' title='Open in new tab'>
+                            className='p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition' title='Open in new tab'>
                             <ExternalLink className='w-4 h-4' />
                           </a>
                           </>
                         )
                       })()}
-                      <button onClick={() => { setGradingReport(null); setPdfLoadError(false) }} className='p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition'>
+                      <button onClick={() => { setGradingReport(null); setPdfLoadError(false) }} className='p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition'>
                         <XIcon className='w-5 h-5' />
                       </button>
                     </div>
@@ -2233,10 +2234,10 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
                   <div className='flex-1 p-5 space-y-5'>
                     {/* Report Info */}
-                    <div className='p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-1.5'>
+                    <div className='p-3 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-1.5'>
                       <div className='flex items-center justify-between'>
                         <span className='text-[11px] text-gray-500'>Status</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-semibold uppercase ${
                           gradingReport.status === 'graded' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
                           gradingReport.status === 'submitted' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
                           'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
@@ -2256,7 +2257,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
                     {/* Existing Feedback Display (for HOD/admin only, not students) */}
                     {gradingReport.feedback && !isGuide && !isMember && (
-                      <div className='p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'>
+                      <div className='p-3 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'>
                         <p className='text-[11px] font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-1.5 flex items-center gap-1.5'>
                           <MessageSquare className='w-3 h-3' /> Guide Feedback
                         </p>
@@ -2269,7 +2270,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       <div>
                         <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Rubric</label>
                         <select value={selectedRubric?._id || ''} onChange={e => { const r = rubrics.find(r => r._id === e.target.value); setSelectedRubric(r || null); setCriteriaScores({}) }}
-                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none'>
+                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none'>
                           <option value=''>Select rubric...</option>
                           {rubrics.map(r => <option key={r._id} value={r._id}>{r.title}</option>)}
                         </select>
@@ -2293,7 +2294,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                             const score = criteriaScores[c._id] ?? ''
                             const filled = score !== '' && Number(score) > 0
                             return (
-                            <div key={c._id || i} className='p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
+                            <div key={c._id || i} className='p-3 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
                               <div className='flex items-center justify-between mb-1'>
                                 <span className='text-[12px] font-semibold text-gray-800 dark:text-gray-200 flex-1 pr-2'>{i+1}. {c.name}</span>
                                 {isGuide ? (
@@ -2309,7 +2310,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                                       onBlur={e => {
                                         if (e.target.value === '') setCriteriaScores(prev => ({ ...prev, [c._id]: 0 }))
                                       }}
-                                      className={`w-16 px-2 py-1.5 border-2 rounded-lg text-sm text-center font-bold bg-white dark:bg-gray-800 outline-none transition-colors ${
+                                      className={`w-16 px-2 py-1.5 border rounded text-sm text-center font-bold bg-white dark:bg-gray-800 outline-none transition-colors ${
                                         filled
                                           ? 'border-indigo-500 text-indigo-700 dark:text-indigo-300 focus:ring-2 focus:ring-indigo-500'
                                           : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400'
@@ -2339,7 +2340,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
                     {/* No rubrics message — guides only */}
                     {!isMember && rubrics.length === 0 && (
-                      <div className='p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-start gap-2'>
+                      <div className='p-4 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[12px] text-amber-700 dark:text-amber-300 flex items-start gap-2'>
                         <AlertTriangle className='w-4 h-4 mt-0.5 flex-shrink-0' />
                         <div>{isGuide ? 'No rubrics defined for this department. You can still grade manually below. Ask your HOD to create rubrics from Settings.' : 'No rubrics have been defined for this department yet.'}</div>
                       </div>
@@ -2347,7 +2348,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
 
                     {/* Total Score Display (for all) */}
                     {isGuide && (
-                      <div className='p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
+                      <div className='p-4 rounded bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800'>
                         <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>
                           Total Score (out of 10)
                           {selectedRubric?.criteria?.length > 0 && <span className='ml-1.5 text-[10px] text-indigo-400 normal-case font-normal'>auto-calculated from criteria</span>}
@@ -2366,10 +2367,10 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                           /* Manual mode: slider + input when no rubric */
                           <div className='flex items-center gap-3'>
                             <input type='range' min='0' max='10' step='1' value={gradeScore} onChange={e => setGradeScore(Number(e.target.value))}
-                              className='flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600' />
+                              className='flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded appearance-none cursor-pointer accent-indigo-600' />
                             <input type='number' min='0' max='10' step='1' value={gradeScore}
                               onChange={e => setGradeScore(Math.max(0, Math.min(10, Math.round(Number(e.target.value)))))}
-                              className='w-16 px-2 py-1.5 border-2 border-indigo-400 rounded-lg text-center text-xl font-black text-indigo-700 dark:text-indigo-300 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
+                              className='w-16 px-2 py-1.5 border border-indigo-400 rounded text-center text-xl font-black text-indigo-700 dark:text-indigo-300 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none' />
                             <span className='text-sm text-gray-400 font-medium'>/10</span>
                           </div>
                         )}
@@ -2381,7 +2382,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       <div>
                         <label className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2 block'>Feedback</label>
                         <textarea value={gradeFeedback} onChange={e => setGradeFeedback(e.target.value)} rows={3} placeholder='Write your feedback for the student...'
-                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none' />
+                          className='w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none' />
                       </div>
                     )}
                   </div>
@@ -2390,9 +2391,9 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   {isGuide && (
                     <div className='px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
                       <button onClick={submitGrade} disabled={grading || gradeScore === 0}
-                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50'>
+                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50'>
                         {grading ? (
-                          <><div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' /> Saving...</>
+                          <><div className='w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin' /> Saving...</>
                         ) : (
                           <><CheckCircle2 className='w-4 h-4' /> {gradingReport.status === 'graded' ? 'Update Grade' : 'Submit Grade'}</>
                         )}
@@ -2404,7 +2405,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   {!isGuide && (
                     <div className='px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'>
                       <button onClick={() => { setGradingReport(null); setPdfLoadError(false) }}
-                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-600 text-white text-sm font-semibold hover:bg-gray-700 transition'>
+                        className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-gray-600 text-white text-sm font-semibold hover:bg-gray-700 transition'>
                         <XIcon className='w-4 h-4' /> Close
                       </button>
                     </div>
@@ -2423,7 +2424,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
         <div className='px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3'>
           <button 
             onClick={close} 
-            className='inline-flex items-center gap-2 px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition'
+            className='inline-flex items-center gap-2 px-5 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition'
           >
             <XIcon className='w-4 h-4' /> Close
           </button>
@@ -2431,10 +2432,10 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
             <button 
               onClick={saveManageChanges} 
               disabled={saving || !hasGuideChanges}
-              className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition ${hasGuideChanges ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
+              className={`inline-flex items-center gap-2 px-5 py-2 rounded text-sm font-semibold transition ${hasGuideChanges ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
             >
               {saving ? (
-                <><div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' /> Saving...</>
+                <><div className='w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin' /> Saving...</>
               ) : (
                 <><CheckCircle2 className='w-4 h-4' /> Save</>
               )}
@@ -2449,7 +2450,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }} 
             animate={{ opacity: 1, scale: 1 }} 
-            className='w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden'
+            className='w-full max-w-md bg-white dark:bg-gray-900 rounded shadow-sm overflow-hidden'
             onClick={e => e.stopPropagation()}
           >
             <div className='bg-gradient-to-r from-indigo-500 to-purple-600 p-5 text-white'>
@@ -2465,7 +2466,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                     }`}>{memberView.role}</span>
                   </div>
                 </div>
-                <button onClick={()=>setMemberView(null)} className='p-1.5 rounded-lg hover:bg-white/20 transition'>
+                <button onClick={()=>setMemberView(null)} className='p-1.5 rounded hover:bg-white/20 transition'>
                   <XIcon className='w-4 h-4' />
                 </button>
               </div>

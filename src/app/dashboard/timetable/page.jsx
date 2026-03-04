@@ -116,7 +116,7 @@ export default function TimetablePage() {
         <div className="flex justify-between items-center mb-6">
           <div className="relative">
             <motion.h1 
-              className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
@@ -124,7 +124,7 @@ export default function TimetablePage() {
               Class Timetable
             </motion.h1>
             <motion.p 
-              className="text-gray-600 dark:text-gray-300 mt-2 text-lg"
+              className="text-gray-600 dark:text-gray-300 mt-2 text-sm sm:text-lg"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
@@ -148,7 +148,7 @@ export default function TimetablePage() {
 
         {/* Enhanced Day Selector */}
         <motion.div 
-          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-6 mb-6 border border-white/20 shadow-xl"
+          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded p-6 mb-6 border border-white/20 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -177,9 +177,9 @@ export default function TimetablePage() {
               <motion.button
                 key={day.value}
                 onClick={() => setSelectedDay(day.value)}
-                className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`px-3 py-2 sm:px-6 sm:py-3 rounded text-xs sm:text-sm font-semibold transition-all duration-300 ${
                   selectedDay === day.value
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm'
                     : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-white/20'
                 }`}
                 initial={{ opacity: 0, y: 20 }}
@@ -196,7 +196,7 @@ export default function TimetablePage() {
 
         {/* Enhanced Timetable */}
         <motion.div 
-          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-6 border border-white/20 shadow-xl"
+          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded p-6 border border-white/20 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -238,14 +238,14 @@ export default function TimetablePage() {
                     scale: 1.02,
                     y: -5
                   }}
-                  className={`backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl transition-all duration-300 ${
+                  className={`backdrop-blur-lg rounded p-6 border border-white/20 shadow-sm transition-all duration-300 ${
                     classItem 
                       ? 'bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 border-blue-200 dark:border-blue-700' 
                       : 'bg-white/60 dark:bg-gray-800/60'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                       <motion.div 
                         className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
                         whileHover={{ scale: 1.1 }}
@@ -259,8 +259,8 @@ export default function TimetablePage() {
                     </div>
                     
                     {classItem ? (
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+                        <div className="sm:text-right">
                           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                             {classItem.subject?.name}
                           </h3>
@@ -295,7 +295,7 @@ export default function TimetablePage() {
 
         {/* Enhanced Weekly Overview */}
         <motion.div 
-          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-6 border border-white/20 shadow-xl"
+          className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded p-6 border border-white/20 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
@@ -327,7 +327,7 @@ export default function TimetablePage() {
               return (
                 <motion.div 
                   key={day.value} 
-                  className="backdrop-blur-lg bg-white/60 dark:bg-gray-700/60 rounded-xl p-4 border border-white/20 hover:bg-white/80 dark:hover:bg-gray-700/80 transition-all duration-300"
+                  className="backdrop-blur-lg bg-white/60 dark:bg-gray-700/60 rounded p-4 border border-white/20 hover:bg-white/80 dark:hover:bg-gray-700/80 transition-all duration-300"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.9 + index * 0.1 }}
@@ -342,7 +342,7 @@ export default function TimetablePage() {
                       dayClasses.map((classItem, classIndex) => (
                         <motion.div 
                           key={classIndex} 
-                          className="text-sm bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-700"
+                          className="text-sm bg-blue-50 dark:bg-blue-900/30 p-3 rounded border border-blue-200 dark:border-blue-700"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 1 + index * 0.1 + classIndex * 0.05 }}
@@ -356,7 +356,7 @@ export default function TimetablePage() {
                         </motion.div>
                       ))
                     ) : (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 p-3 rounded">
                         No classes
                       </div>
                     )}

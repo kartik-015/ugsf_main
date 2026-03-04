@@ -121,7 +121,7 @@ function StudentDashboard({ stats, activities, session, router }) {
       {/* Welcome Banner */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden"
+        className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded p-6 text-white relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-20 w-24 h-24 bg-white/5 rounded-full translate-y-1/2" />
@@ -148,7 +148,7 @@ function StudentDashboard({ stats, activities, session, router }) {
         /* No project state */
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center"
+          className="bg-white dark:bg-gray-800 rounded p-8 border border-gray-200 dark:border-gray-700 text-center"
         >
           <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-gray-400" />
@@ -159,7 +159,7 @@ function StudentDashboard({ stats, activities, session, router }) {
           </p>
           <button
             onClick={() => router.push('/dashboard/projects')}
-            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
           >
             <Briefcase className="w-4 h-4" /> Go to Projects
           </button>
@@ -169,7 +169,7 @@ function StudentDashboard({ stats, activities, session, router }) {
           {/* Progress & Reports */}
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+            className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-5"
           >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -196,15 +196,15 @@ function StudentDashboard({ stats, activities, session, router }) {
 
               {/* Report Stats */}
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="text-center p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                <div className="text-center p-2.5 rounded bg-blue-50 dark:bg-blue-900/20">
                   <p className="text-xl font-bold text-blue-600">{s.totalReports || 0}</p>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">Total</p>
                 </div>
-                <div className="text-center p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20">
+                <div className="text-center p-2.5 rounded bg-green-50 dark:bg-green-900/20">
                   <p className="text-xl font-bold text-green-600">{s.gradedCount || 0}</p>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">Graded</p>
                 </div>
-                <div className="text-center p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                <div className="text-center p-2.5 rounded bg-amber-50 dark:bg-amber-900/20">
                   <p className="text-xl font-bold text-amber-600">{s.submittedCount || 0}</p>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">Pending</p>
                 </div>
@@ -248,14 +248,14 @@ function StudentDashboard({ stats, activities, session, router }) {
           {s.upcomingDeadlines && s.upcomingDeadlines.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+              className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-5"
             >
               <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2 mb-3">
                 <Clock className="w-4 h-4 text-orange-500" /> Upcoming Deadlines
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {s.upcomingDeadlines.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-xs border border-orange-100 dark:border-orange-800/30">
+                  <div key={i} className="flex items-center justify-between p-3 rounded bg-orange-50 dark:bg-orange-900/20 text-xs border border-orange-100 dark:border-orange-800/30">
                     <span className="font-medium text-gray-700 dark:text-gray-200">{d.title}</span>
                     <span className="text-orange-600 dark:text-orange-400 font-semibold">
                       {new Date(d.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -295,7 +295,7 @@ function GuideDashboard({ stats, activities, session, router }) {
       {/* Welcome Banner */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-800 rounded p-5 border border-gray-200 dark:border-gray-700"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -316,14 +316,14 @@ function GuideDashboard({ stats, activities, session, router }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
-            className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700"
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.title}</p>
                 <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
               </div>
-              <div className={`w-9 h-9 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+              <div className={`w-9 h-9 rounded ${stat.bgColor} flex items-center justify-center`}>
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
             </div>
@@ -337,7 +337,7 @@ function GuideDashboard({ stats, activities, session, router }) {
         {/* Domain-wise Projects */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+          className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-5"
         >
           <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2 mb-4">
             <Globe className="w-4 h-4 text-purple-500" /> Domain-wise Projects
@@ -371,7 +371,7 @@ function GuideDashboard({ stats, activities, session, router }) {
         {/* Semester-wise Groups */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+          className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-5"
         >
           <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2 mb-4">
             <Layers className="w-4 h-4 text-blue-500" /> Semester-wise Groups
@@ -410,7 +410,7 @@ function GuideDashboard({ stats, activities, session, router }) {
         {/* Project Status Distribution */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+          className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-5"
         >
           <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2 mb-4">
             <Target className="w-4 h-4 text-indigo-500" /> Project Status
@@ -433,21 +433,21 @@ function GuideDashboard({ stats, activities, session, router }) {
         {/* Reports Overview */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+          className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-5"
         >
           <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2 mb-4">
             <BarChart3 className="w-4 h-4 text-teal-500" /> Reports Overview
           </h3>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+            <div className="text-center p-3 rounded bg-blue-50 dark:bg-blue-900/20">
               <p className="text-xl font-bold text-blue-600">{stats.totalReports || 0}</p>
               <p className="text-[10px] text-gray-500 font-medium mt-0.5">Total</p>
             </div>
-            <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+            <div className="text-center p-3 rounded bg-green-50 dark:bg-green-900/20">
               <p className="text-xl font-bold text-green-600">{stats.gradedReports || 0}</p>
               <p className="text-[10px] text-gray-500 font-medium mt-0.5">Graded</p>
             </div>
-            <div className="text-center p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+            <div className="text-center p-3 rounded bg-amber-50 dark:bg-amber-900/20">
               <p className="text-xl font-bold text-amber-600">{stats.reportsToGrade || 0}</p>
               <p className="text-[10px] text-gray-500 font-medium mt-0.5">Pending</p>
             </div>
@@ -477,7 +477,7 @@ function GuideDashboard({ stats, activities, session, router }) {
       {(stats.projectSummaries || []).length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+          className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden"
         >
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -518,7 +518,7 @@ function GuideDashboard({ stats, activities, session, router }) {
                       <span className="ml-1 text-gray-500">{p.progress}%</span>
                     </td>
                     <td className="px-4 py-2.5 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold capitalize ${
                         p.status === 'approved' || p.status === 'completed' ? 'bg-green-50 dark:bg-green-900/20 text-green-600' :
                         p.status === 'in-progress' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' :
                         p.status === 'submitted' || p.status === 'under-review' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' :

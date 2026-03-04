@@ -15,31 +15,22 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-background to-secondary-50 dark:from-background dark:via-card dark:to-background relative overflow-hidden">
-      <div className="container mx-auto px-4 py-10 max-w-md">
-        <motion.h1
-          className="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >EvalProX</motion.h1>
-        <p className="text-center text-sm text-muted-foreground mb-6">SGP Evaluation Portal</p>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="backdrop-blur-sm bg-card/95 dark:bg-card/95 rounded-2xl p-8 border-2 border-border shadow-2xl"
-        >
+    <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
+      <div className="w-full max-w-md mx-auto px-4 py-6 sm:py-10">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-white">EvalProX</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">SGP Evaluation Portal</p>
+        </div>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-5 sm:p-8 shadow-sm">
           <LoginForm />
-          <div className="mt-8 border-t-2 border-border pt-6 text-center">
-            <p className="text-sm font-medium text-muted-foreground mb-4">New user?</p>
-            <motion.button
+          <div className="mt-6 sm:mt-8 border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 text-center">
+            <p className="text-sm text-gray-500 mb-3">New user?</p>
+            <button
               onClick={() => router.push('/register?role=student')}
-              className="w-full p-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 border-primary-600"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-            >Sign Up</motion.button>
+              className="w-full py-2.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            >Sign Up</button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

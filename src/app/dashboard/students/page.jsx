@@ -155,10 +155,10 @@ export default function StudentsPage() {
     <div className='space-y-6'>
       <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.4}}>
         <div className='mb-6'>
-          <h1 className='text-3xl font-bold'>Students</h1>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Students</h1>
           <p className='text-gray-600 dark:text-gray-300 mt-1'>{session?.user?.role==='admin' ? 'Manage all students' : 'View students'}</p>
         </div>
-        <form onSubmit={submitHandler} className='card p-6 mb-6 space-y-6'>
+        <form onSubmit={submitHandler} className='bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-5 mb-6 space-y-5'>
           <div className='space-y-6'>
             {/* Row 1: Department */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -180,7 +180,7 @@ export default function StudentsPage() {
                 />
                 {/* Dynamic dropdown */}
                 {showSearchDropdown && searchResults.length > 0 && (
-                  <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto'>
+                  <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-md max-h-60 overflow-y-auto'>
                     {searchResults.map((s, i) => (
                       <div key={s._id || i} className='px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0'
                         onClick={() => {
@@ -188,7 +188,7 @@ export default function StudentsPage() {
                           setShowSearchDropdown(false)
                         }}
                       >
-                        <div className='w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-bold text-blue-700'>
+                        <div className='w-8 h-8 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-bold text-blue-700'>
                           {(s.academicInfo?.name || s.email || '?')[0].toUpperCase()}
                         </div>
                         <div>
@@ -204,9 +204,9 @@ export default function StudentsPage() {
           </div>
           <FieldSelector fields={FIELD_OPTIONS} visible={visibleFields} toggle={toggleField} />
           <div className='flex items-center gap-2 flex-wrap'>
-            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white font-semibold'>Submit</button>
-            <button type='button' onClick={reset} className='px-3 py-2 rounded border'>Reset</button>
-            <button type='button' onClick={exportExcel} className='ml-3 px-4 py-2 rounded bg-green-600 text-white font-semibold flex items-center gap-2'>
+            <button type='submit' className='px-4 py-2 rounded bg-blue-600 text-white font-medium text-sm'>Submit</button>
+            <button type='button' onClick={reset} className='px-3 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm'>Reset</button>
+            <button type='button' onClick={exportExcel} className='ml-3 px-4 py-2 rounded bg-green-600 text-white font-medium text-sm flex items-center gap-2'>
               <Download className='h-4 w-4' /> Download
             </button>
 
@@ -214,7 +214,7 @@ export default function StudentsPage() {
           </div>
           {/* Ungrouped students info */}
           {submitted && Object.keys(projectMap).length > 0 && (
-            <div className='flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800'>
+            <div className='flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-3 py-2 border border-amber-200 dark:border-amber-800'>
               <Users className='w-3 h-3 flex-shrink-0' />
               <span><strong>{students.filter(s => !projectMap[String(s._id)]).length}</strong> student{students.filter(s => !projectMap[String(s._id)]).length !== 1 ? 's' : ''} not yet part of any group</span>
             </div>
@@ -224,15 +224,15 @@ export default function StudentsPage() {
 
 
         {!submitted ? (<div className='text-center py-16'><p className='text-gray-500'>Use the filters above and click Submit.</p></div>) : (
-          <div className='bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden'>
+          <div className='bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded overflow-hidden'>
             {students.length === 0 ? (
               <div className='text-center py-12'>
                 <Users className='mx-auto h-12 w-12 text-gray-400'/>
                 <h3 className='mt-2 text-sm font-medium'>No students found</h3>
               </div>
             ) : (
-              <div className='overflow-hidden'>
-                <table className='w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700'>
+              <div className='overflow-x-auto'>
+                <table className='w-full min-w-[600px] divide-y divide-gray-200 dark:divide-gray-700'>
                   <thead className='bg-gray-50 dark:bg-gray-700'>
                     <tr>
                       <th className='px-3 py-3 text-left text-[11px] font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[14%]'>Name</th>
@@ -266,7 +266,7 @@ export default function StudentsPage() {
                             {s.interests?.length > 0 ? (
                               <div className='flex flex-wrap gap-1'>
                                 {s.interests.slice(0, 2).map((int, i) => (
-                                  <span key={i} className='inline-flex px-1.5 py-0.5 rounded-full text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 truncate max-w-[80px]'>{int}</span>
+                                  <span key={i} className='inline-flex px-1.5 py-0.5 rounded text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 truncate max-w-[80px]'>{int}</span>
                                 ))}
                                 {s.interests.length > 2 && <span className='text-[10px] text-gray-400'>+{s.interests.length - 2}</span>}
                               </div>
@@ -278,7 +278,7 @@ export default function StudentsPage() {
                             const score = gradeMap[String(s._id)]
                             if (score === null || score === undefined) return <span className='text-gray-400 text-xs'>—</span>
                             const color = score >= 8 ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : score >= 6 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : score >= 4 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
-                            return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${color}`}>{score}</span>
+                            return <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${color}`}>{score}</span>
                           })()}
                         </td>
                       </motion.tr>
@@ -303,7 +303,7 @@ function FilterGroup({ title, options, value, onSelect }) {
         {options.map(opt => {
           const checked = value === opt
           return (
-            <button key={opt} type='button' onClick={()=>onSelect(opt)} className={`px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all duration-200 ${checked ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'}`}>{opt}</button>
+            <button key={opt} type='button' onClick={()=>onSelect(opt)} className={`px-3 py-2 rounded border text-sm font-medium transition-colors ${checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-700'}`}>{opt}</button>
           )
         })}
       </div>
@@ -313,13 +313,13 @@ function FilterGroup({ title, options, value, onSelect }) {
 
 function FieldSelector({ fields, visible, toggle }) {
   return (
-    <div className='border-t pt-6'>
+    <div className='border-t border-gray-200 dark:border-gray-700 pt-5'>
       <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Visible Info Fields</p>
-      <div className='flex flex-wrap gap-3'>
+      <div className='flex flex-wrap gap-2'>
         {fields.map(f => {
           const checked = visible.includes(f.key)
           return (
-            <label key={f.key} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm cursor-pointer select-none transition-all duration-200 font-semibold ${checked ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'}`}>
+            <label key={f.key} className={`flex items-center gap-2 px-3 py-2 rounded border text-sm cursor-pointer select-none transition-colors font-medium ${checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700'}`}>
               <input type='checkbox' className='hidden' checked={checked} onChange={()=>toggle(f.key)} />
               {f.label}
             </label>

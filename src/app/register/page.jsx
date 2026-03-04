@@ -292,7 +292,7 @@ function RegisterContent() {
               EvalProX Registration
             </motion.span>
             <motion.h1
-              className="text-4xl font-bold text-gray-900 dark:text-white mb-4 mt-4"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4 mt-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -313,7 +313,7 @@ function RegisterContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 border border-white/20 shadow-xl"
+            className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded p-8 border border-white/20 shadow-sm"
           >
             {!roleChosen ? (
               <div className="space-y-6">
@@ -321,7 +321,7 @@ function RegisterContent() {
                 <motion.button
                   type="button"
                   onClick={() => handleRoleClick('student')}
-                  className="w-full p-6 rounded-xl text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all duration-300"
+                  className="w-full p-6 rounded text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all duration-300"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -364,7 +364,7 @@ function RegisterContent() {
                             type="email"
                             value={formData.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                            className="w-full pl-10 pr-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                             placeholder={formData.role === 'guide' ? 'kartikguleria.dit@charusat.ac.in' : '23dit015@charusat.edu.in'}
                           />
                         </div>
@@ -381,7 +381,7 @@ function RegisterContent() {
                         type="button"
                         onClick={handleNextStep}
                         disabled={!emailValid}
-                        className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -409,7 +409,7 @@ function RegisterContent() {
                               type="text"
                               value={formData.name}
                               onChange={(e) => handleInputChange('name', e.target.value)}
-                              className={`w-full pl-10 pr-4 py-3 rounded-xl border ${formData.name && !validateNameRuntime(formData.name) ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                              className={`w-full pl-10 pr-4 py-3 rounded border ${formData.name && !validateNameRuntime(formData.name) ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                               placeholder="Enter your full name"
                             />
                           </div>
@@ -446,7 +446,7 @@ function RegisterContent() {
                           <select
                             value={formData.batch}
                             onChange={(e) => handleInputChange('batch', e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           >
                             <option value="">Select Batch</option>
                             {batches.map(b => <option key={b} value={b}>{b}</option>)}
@@ -483,7 +483,7 @@ function RegisterContent() {
                         )}
 
                         {/* Default password info */}
-                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-sm text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded text-sm text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                           <p className="font-semibold">Default Password: depstar@123</p>
                           <p className="text-xs mt-1">You can change this after your first login.</p>
                         </div>
@@ -492,7 +492,7 @@ function RegisterContent() {
                           <motion.button
                             type="button"
                             onClick={() => setStep(1)}
-                            className="px-4 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-1"
+                            className="px-4 py-3 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-1"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                           >
@@ -501,13 +501,13 @@ function RegisterContent() {
                           <motion.button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 py-3 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                           >
                             {isLoading ? (
                               <>
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <div className="w-5 h-5 border border-white border-t-transparent rounded-full animate-spin" />
                                 Sending OTP...
                               </>
                             ) : (
@@ -552,7 +552,7 @@ function RegisterContent() {
                             onChange={(e) => handleOtpChange(idx, e.target.value)}
                             onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                             onPaste={idx === 0 ? handleOtpPaste : undefined}
-                            className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
+                            className="w-12 h-14 text-center text-2xl font-bold rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
                           />
                         ))}
                       </div>
@@ -562,13 +562,13 @@ function RegisterContent() {
                         type="button"
                         onClick={handleVerifyOTP}
                         disabled={isVerifying || otpDigits.join('').length !== 6}
-                        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
                         {isVerifying ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <div className="w-5 h-5 border border-white border-t-transparent rounded-full animate-spin" />
                             Verifying...
                           </>
                         ) : (
@@ -593,7 +593,7 @@ function RegisterContent() {
                         </button>
                       </div>
 
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-sm text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded text-sm text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         <p className="text-xs">Check your spam/junk folder if you don&apos;t see the email. The OTP expires in 10 minutes.</p>
                       </div>
                     </motion.div>

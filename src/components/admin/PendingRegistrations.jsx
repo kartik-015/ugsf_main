@@ -85,7 +85,7 @@ export default function PendingRegistrations({ onUpdate }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-4 hover:shadow-sm transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -134,7 +134,7 @@ export default function PendingRegistrations({ onUpdate }) {
                   <button
                     onClick={() => handleApproval(user._id, 'approve')}
                     disabled={processing === user._id}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CheckCircle className="h-4 w-4" />
                     Approve
@@ -142,7 +142,7 @@ export default function PendingRegistrations({ onUpdate }) {
                   <button
                     onClick={() => handleApproval(user._id, 'reject')}
                     disabled={processing === user._id}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <XCircle className="h-4 w-4" />
                     Reject

@@ -104,8 +104,8 @@ export default function SettingsPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/user/password', {
-        method: 'PUT',
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -123,8 +123,8 @@ export default function SettingsPage() {
           confirmPassword: ''
         })
       } else {
-        const error = await response.json()
-        toast.error(error.message || 'Failed to change password')
+        const data = await response.json()
+        toast.error(data.error || 'Failed to change password')
       }
     } catch (error) {
       toast.error('Error changing password')
@@ -151,7 +151,7 @@ export default function SettingsPage() {
       >
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
               Settings
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-2">
@@ -162,7 +162,7 @@ export default function SettingsPage() {
 
         {/* Mobile Tab Navigation */}
         <div className="lg:hidden mb-6">
-          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -188,7 +188,7 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded transition-colors duration-200 ${
                     activeTab === tab.id
                       ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -208,7 +208,7 @@ export default function SettingsPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded shadow-sm border border-gray-200 dark:border-gray-700"
             >
               {/* Profile Tab */}
               {activeTab === 'profile' && (
@@ -229,7 +229,7 @@ export default function SettingsPage() {
                             type="text"
                             value={profileData.name}
                             onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter your full name"
                           />
                         </div>
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                             type="email"
                             value={profileData.email}
                             disabled
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                           />
                         </div>
                       </div>
@@ -260,7 +260,7 @@ export default function SettingsPage() {
                             type="tel"
                             value={profileData.phone}
                             onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter your phone number"
                           />
                         </div>
@@ -274,7 +274,7 @@ export default function SettingsPage() {
                           type="text"
                           value={profileData.department}
                           disabled
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                           value={profileData.address}
                           onChange={(e) => setProfileData({...profileData, address: e.target.value})}
                           rows={3}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Enter your address"
                         />
                       </div>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                        className="flex items-center px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                       >
                         <Save className="w-4 h-4 mr-2" />
                         {loading ? 'Saving...' : 'Save Changes'}
@@ -328,7 +328,7 @@ export default function SettingsPage() {
                             type={showPassword ? 'text' : 'password'}
                             value={passwordData.currentPassword}
                             onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                            className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter current password"
                           />
                           <button
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                           type={showPassword ? 'text' : 'password'}
                           value={passwordData.newPassword}
                           onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Enter new password"
                         />
                       </div>
@@ -362,7 +362,7 @@ export default function SettingsPage() {
                           type={showPassword ? 'text' : 'password'}
                           value={passwordData.confirmPassword}
                           onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="Confirm new password"
                         />
                       </div>
@@ -372,7 +372,7 @@ export default function SettingsPage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                        className="flex items-center px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                       >
                         <Key className="w-4 h-4 mr-2" />
                         {loading ? 'Changing...' : 'Change Password'}
@@ -391,7 +391,7 @@ export default function SettingsPage() {
                   
                   <div className="space-y-4">
                     {Object.entries(notifications).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                      <div key={key} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded">
                         <div>
                           <h3 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
                             {key.replace(/([A-Z])/g, ' $1').trim()}
@@ -426,7 +426,7 @@ export default function SettingsPage() {
                   </h2>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                           Dark Mode

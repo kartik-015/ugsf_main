@@ -227,7 +227,7 @@ export default function OnboardingPage() {
           className="relative"
         >
           <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border border-white border-t-transparent rounded-full animate-spin" />
           </div>
         </motion.div>
       </div>
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
             </motion.div>
             
             <motion.h1 
-              className="text-4xl font-bold text-gray-900 dark:text-white mb-4"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -308,7 +308,7 @@ export default function OnboardingPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded-2xl p-8 border border-white/20 shadow-xl"
+            className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 rounded p-8 border border-white/20 shadow-sm"
           >
             {step === 1 && (
               <div className="space-y-6">
@@ -341,7 +341,7 @@ export default function OnboardingPage() {
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-xl border ${formData.name && !validateNameRuntime(formData.name)?'border-red-500':'border-gray-300 dark:border-gray-600'} dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
+                      className={`w-full px-4 py-3 rounded border ${formData.name && !validateNameRuntime(formData.name)?'border-red-500':'border-gray-300 dark:border-gray-600'} dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
                       placeholder="Enter your full name"
                     />
                     {formData.name && !validateNameRuntime(formData.name) && (
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
                       type="tel"
                       value={formData.phoneNumber}
                       onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-xl border ${formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) ? 'border-red-500':'border-gray-300 dark:border-gray-600'} dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
+                      className={`w-full px-4 py-3 rounded border ${formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) ? 'border-red-500':'border-gray-300 dark:border-gray-600'} dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
                       placeholder="+919876543210"
                     />
                     {formData.phoneNumber && !validatePhoneRuntime(formData.phoneNumber) && (
@@ -373,7 +373,7 @@ export default function OnboardingPage() {
                       value={formData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="Enter your address"
                     />
                   </div>
@@ -413,7 +413,7 @@ export default function OnboardingPage() {
                         <select
                           value={formData.university}
                           onChange={(e) => handleInputChange('university', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         >
                           <option value="">Select University</option>
                           {universities.map(u=> <option key={u} value={u}>{u}</option>)}
@@ -423,7 +423,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Institute *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
                           <span>{formData.institute||'-'}</span>
                           <span className="text-[10px] uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2 py-0.5 rounded">Derived</span>
                         </div>
@@ -432,7 +432,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Department *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
                           <span>{formData.department||'-'}</span>
                           <span className="text-[10px] uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded">Derived</span>
                         </div>
@@ -441,7 +441,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Admission Year *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
                           <span>{formData.admissionYear}</span>
                           <span className="text-[10px] uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded">Derived</span>
                         </div>
@@ -450,7 +450,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Semester *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
                           <span>Semester {formData.semester} ({getAcademicYear(formData.admissionYear)})</span>
                           <span className="text-[10px] uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2 py-0.5 rounded">Auto</span>
                         </div>
@@ -460,7 +460,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Roll Number *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
                           <span>{formData.rollNumber}</span>
                           <span className="text-[10px] uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 px-2 py-0.5 rounded">Auto</span>
                         </div>
@@ -472,7 +472,7 @@ export default function OnboardingPage() {
                           <select
                             value={formData.batch}
                             onChange={(e) => handleInputChange('batch', e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-gray-100"
+                            className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-gray-100"
                           >
                             <option value="" className="text-gray-900 bg-white">Select Batch</option>
                             {batches.map((b) => (
@@ -487,7 +487,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           University *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 text-sm flex items-center justify-between">
                           <span>CHARUSAT</span>
                           <span className="text-[10px] uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2 py-0.5 rounded">Fixed</span>
                         </div>
@@ -496,7 +496,7 @@ export default function OnboardingPage() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Institute *
                         </label>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 backdrop-blur-sm text-gray-700 dark:text-gray-300">
+                        <div className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 backdrop-blur-sm text-gray-700 dark:text-gray-300">
                           DEPSTAR
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Institute is fixed to DEPSTAR for this portal</p>
@@ -508,7 +508,7 @@ export default function OnboardingPage() {
                         <select
                           value={formData.department}
                           onChange={(e) => handleInputChange('department', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                         >
                           <option value="">Select Department</option>
                           {departments.map((dept) => (
@@ -526,7 +526,7 @@ export default function OnboardingPage() {
                           type="text"
                           value={formData.specialization}
                           onChange={(e) => handleInputChange('specialization', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                           placeholder="e.g. AI/ML, Structural Engineering"
                         />
                       </div>
@@ -538,7 +538,7 @@ export default function OnboardingPage() {
                           type="text"
                           value={formData.education}
                           onChange={(e) => handleInputChange('education', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                           placeholder="e.g. PhD in Computer Science"
                         />
                       </div>
@@ -580,7 +580,7 @@ export default function OnboardingPage() {
                         key={interest}
                         type="button"
                         onClick={() => handleInterestToggle(interest)}
-                        className={`p-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                        className={`p-3 rounded text-sm font-medium transition-all duration-300 ${
                           formData.interests.includes(interest)
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-gray-200 dark:border-gray-600'
@@ -602,7 +602,7 @@ export default function OnboardingPage() {
                     value={formData.experience}
                     onChange={(e) => handleInputChange('experience', e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     placeholder={role === 'student' ? 'Tell us about your goals or any additional information...' : 'Briefly describe your teaching/research experience, achievements, etc.'}
                   />
                 </div>
@@ -614,7 +614,7 @@ export default function OnboardingPage() {
               <motion.button
                 onClick={prevStep}
                 disabled={step === 1}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                className={`px-6 py-3 rounded font-semibold transition-all duration-300 ${
                   step === 1
                     ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     : 'bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-white/20'
@@ -628,7 +628,7 @@ export default function OnboardingPage() {
               {step < 3 ? (
                 <motion.button
                   onClick={nextStep}
-                  className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-all duration-300"
+                  className="px-6 py-3 rounded bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-all duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -637,7 +637,7 @@ export default function OnboardingPage() {
               ) : (
                 <motion.button
                   onClick={handleSubmit}
-                  className="px-6 py-3 rounded-xl bg-green-600 text-white font-semibold shadow-sm hover:bg-green-700 transition-all duration-300"
+                  className="px-6 py-3 rounded bg-green-600 text-white font-semibold shadow-sm hover:bg-green-700 transition-all duration-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

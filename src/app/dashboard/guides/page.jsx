@@ -228,7 +228,7 @@ export default function GuidesPage(){
     <div className='space-y-6'>
       <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.4}}>
         <div className='mb-6'>
-          <h1 className='text-3xl font-bold'>Guides Directory</h1>
+          <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Guides Directory</h1>
           <p className='text-gray-600 dark:text-gray-300 mt-1'>Academic staff listing</p>
         </div>
         <form onSubmit={submit} className='card p-6 mb-6 space-y-6'>
@@ -245,11 +245,11 @@ export default function GuidesPage(){
               <p className='text-sm font-bold tracking-wider mb-3 text-gray-600 dark:text-gray-300'>Search Guides</p>
               <div className='relative'>
                 <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5'/>
-                <input value={search} onChange={e=>handleSearchInput(e.target.value)} placeholder='Start typing name or email...' className='w-full pl-10 px-4 py-2.5 border rounded-lg text-sm bg-white dark:bg-gray-800 h-11 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all duration-200'
+                <input value={search} onChange={e=>handleSearchInput(e.target.value)} placeholder='Start typing name or email...' className='w-full pl-10 px-4 py-2.5 border rounded text-sm bg-white dark:bg-gray-800 h-11 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all duration-200'
                   onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
                 />
                 {showSearchDropdown && searchResults.length > 0 && (
-                  <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto'>
+                  <div className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm max-h-60 overflow-y-auto'>
                     {searchResults.slice(0,10).map((g, i) => (
                       <div key={g._id || i} className='px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0'
                         onClick={() => { setSearch(g.email || g.academicInfo?.name || ''); setShowSearchDropdown(false) }}
@@ -291,7 +291,7 @@ export default function GuidesPage(){
               <h3 className='text-lg font-semibold flex items-center gap-2'><Upload className='h-5 w-5' /> Import Guides from Excel</h3>
               <button onClick={() => setShowImport(false)} className='text-gray-400 hover:text-gray-600'>✕</button>
             </div>
-            <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+            <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4'>
               <div className='flex items-start gap-3'>
                 <AlertCircle className='h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
                 <div className='text-sm text-blue-800 dark:text-blue-200'>
@@ -307,20 +307,20 @@ export default function GuidesPage(){
               </div>
             </div>
             <div>
-              <button onClick={handleDownloadTemplate} className='flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors'>
+              <button onClick={handleDownloadTemplate} className='flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold transition-colors'>
                 <FileSpreadsheet className='h-4 w-4' /> Download Template
               </button>
             </div>
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Select Excel File</label>
-              <input type='file' accept='.xlsx,.xls' onChange={handleFileChange} className='block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none p-2' />
+              <input type='file' accept='.xlsx,.xls' onChange={handleFileChange} className='block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none p-2' />
               {importFile && <p className='mt-2 text-sm text-green-600 dark:text-green-400'>Selected: {importFile.name}</p>}
             </div>
             <div className='flex gap-3'>
-              <button onClick={() => handleImport(false)} disabled={!importFile || uploading} className='flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+              <button onClick={() => handleImport(false)} disabled={!importFile || uploading} className='flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
                 {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import & Show Credentials</>)}
               </button>
-              <button onClick={() => handleImport(true)} disabled={!importFile || uploading} className='flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+              <button onClick={() => handleImport(true)} disabled={!importFile || uploading} className='flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
                 {uploading ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Importing...</>) : (<><Upload className='h-4 w-4' /> Import & Send Emails</>)}
               </button>
             </div>
@@ -330,7 +330,7 @@ export default function GuidesPage(){
         {/* Credentials Modal */}
         {showCredentials && importedCredentials.length > 0 && (
           <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col'>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white dark:bg-gray-800 rounded shadow-sm w-full max-w-2xl max-h-[80vh] flex flex-col'>
               <div className='flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'>
                 <div>
                   <h3 className='text-xl font-bold text-gray-900 dark:text-white'>Import Complete — {importedCredentials.length} Guide(s) Created</h3>
@@ -340,10 +340,10 @@ export default function GuidesPage(){
               </div>
               <div className='overflow-y-auto flex-1 p-6 space-y-3'>
                 {importedCredentials.map((cred, idx) => (
-                  <div key={idx} className='rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/50'>
+                  <div key={idx} className='rounded border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/50'>
                     <div className='flex items-center justify-between mb-2'>
                       <span className='font-semibold text-gray-900 dark:text-gray-100'>{cred.name}</span>
-                      <span className='text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded-full'>{cred.department}</span>
+                      <span className='text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded'>{cred.department}</span>
                     </div>
                     <div className='space-y-1 text-sm'>
                       <div className='flex items-center justify-between gap-2'>
@@ -365,10 +365,10 @@ export default function GuidesPage(){
                 ))}
               </div>
               <div className='p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3'>
-                <button onClick={handleSendEmailsNow} disabled={sendingEmails} className='flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50'>
+                <button onClick={handleSendEmailsNow} disabled={sendingEmails} className='flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold transition-colors disabled:opacity-50'>
                   {sendingEmails ? (<><div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> Sending...</>) : 'Send Credentials via Email'}
                 </button>
-                <button onClick={() => setShowCredentials(false)} className='px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold'>
+                <button onClick={() => setShowCredentials(false)} className='px-6 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold'>
                   Close
                 </button>
               </div>
@@ -382,14 +382,14 @@ export default function GuidesPage(){
         ) : loading ? (
           <div className='text-center py-8 text-gray-500'>Loading...</div>
         ) : (
-          <div className='bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden'>
+          <div className='bg-white dark:bg-gray-800 rounded shadow overflow-hidden'>
             {results.length === 0 ? (
               <div className='text-center py-12'>
                 <h3 className='mt-2 text-sm font-medium'>No guides found</h3>
               </div>
             ) : (
               <div className='overflow-x-auto'>
-                <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+                <table className='min-w-full min-w-[500px] divide-y divide-gray-200 dark:divide-gray-700'>
                   <thead className='bg-gray-50 dark:bg-gray-700'>
                     <tr>
                       <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>Name</th>
@@ -407,11 +407,11 @@ export default function GuidesPage(){
                         {visibleFields.includes('status') && (
                           <td className='px-6 py-4 whitespace-nowrap text-sm'>
                             {guideProjectMap[String(f._id)] ? (
-                              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' title={guideProjectMap[String(f._id)].join(', ')}>
+                              <span className='inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' title={guideProjectMap[String(f._id)].join(', ')}>
                                 Assigned ({guideProjectMap[String(f._id)].length} group{guideProjectMap[String(f._id)].length !== 1 ? 's' : ''})
                               </span>
                             ) : (
-                              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'>
+                              <span className='inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'>
                                 Not Assigned
                               </span>
                             )}
@@ -443,7 +443,7 @@ function FilterGroup({ title, options, value, onSelect }) {
         {options.map(opt => {
           const checked = value === opt
           return (
-            <button key={opt} type='button' onClick={()=>onSelect(opt)} className={`px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all duration-200 ${checked ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+            <button key={opt} type='button' onClick={()=>onSelect(opt)} className={`px-4 py-2.5 rounded border text-sm font-semibold transition-all duration-200 ${checked ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
               {formatOptionText(opt)}
             </button>
           )
@@ -461,7 +461,7 @@ function FieldSelector({ fields, visible, toggle }) {
         {fields.map(f => {
           const checked = visible.includes(f.key)
           return (
-            <label key={f.key} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm cursor-pointer select-none transition-all duration-200 font-semibold ${checked ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+            <label key={f.key} className={`flex items-center gap-2 px-4 py-2.5 rounded border text-sm cursor-pointer select-none transition-all duration-200 font-semibold ${checked ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
               <input type='checkbox' className='hidden' checked={checked} onChange={()=>toggle(f.key)} />
               {f.label}
             </label>

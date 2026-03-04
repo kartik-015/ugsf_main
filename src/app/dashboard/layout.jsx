@@ -206,33 +206,32 @@ export default function DashboardLayout({ children }) {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 z-50 w-64 bg-card shadow-2xl lg:hidden border-r-2 border-border"
+            className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 shadow-lg lg:hidden border-r border-gray-200 dark:border-gray-800"
           >
-            <div className="flex items-center justify-between p-4 border-b-2 border-border bg-primary/5">
-              <h1 className="text-xl font-bold text-foreground">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-blue-50 dark:bg-gray-800">
+              <h1 className="text-xl font-bold text-blue-900 dark:text-white">
                 EvalProX
               </h1>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="p-2 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <nav className="mt-4 px-4 space-y-2">
+            <nav className="mt-2 px-3 space-y-0.5">
               {filteredNavigation.map((item) => {
                 const isActive = pathname === item.href
                 return (
                   <motion.a
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 border-2 ${
+                    className={`flex items-center px-3 py-2.5 text-sm font-medium rounded transition-colors duration-150 ${
                       isActive
-                        ? 'bg-primary text-primary-foreground border-primary-600 shadow-md'
-                        : 'text-foreground border-transparent hover:bg-muted hover:border-border'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-800 hover:text-blue-700 dark:hover:text-blue-400'
                     }`}
-                    whileHover={{ x: 4 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <item.icon className="w-5 h-5 mr-3" />
                     {item.name}
@@ -246,26 +245,25 @@ export default function DashboardLayout({ children }) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-card border-r-2 border-border shadow-xl">
-          <div className="flex items-center h-16 px-6 border-b-2 border-border bg-primary/5">
-            <h1 className="text-xl font-bold text-foreground">
+        <div className="flex flex-col flex-grow bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
+          <div className="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-800">
+            <h1 className="text-xl font-bold text-blue-900 dark:text-white">
               EvalProX
             </h1>
           </div>
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-3 py-4 space-y-0.5">
             {filteredNavigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <motion.a
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 border-2 ${
+                  className={`flex items-center px-3 py-2.5 text-sm font-medium rounded transition-colors duration-150 ${
                     isActive
-                      ? 'bg-primary text-primary-foreground border-primary-600 shadow-md'
-                      : 'text-foreground border-transparent hover:bg-muted hover:border-border'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-800 hover:text-blue-700 dark:hover:text-blue-400'
                   }`}
-                  whileHover={{ x: 4 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <item.icon className="w-5 h-5 mr-3" />
                   {item.name}
@@ -279,7 +277,7 @@ export default function DashboardLayout({ children }) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top navigation */}
-        <div className="sticky top-0 z-30 bg-card border-b-2 border-border shadow-md">
+        <div className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
             {/* Mobile menu button */}
             <button
@@ -289,31 +287,31 @@ export default function DashboardLayout({ children }) {
               <Menu className="w-6 h-6" />
             </button>
 
-            {/* Search bar */}
-            <div className="flex-1 max-w-lg mx-4">
-              <div className="relative">
+            {/* Search bar - hidden on very small screens, shown on sm+ */}
+            <div className="hidden sm:flex flex-1 max-w-lg mx-4">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2 border-2 border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
+                  className="w-full pl-11 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                 />
               </div>
             </div>
 
             {/* User menu */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 ml-auto">
               {/* Notifications */}
               <div className="relative" ref={notifRef}>
                 <button 
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  className="relative p-2 text-gray-500 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                 >
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center border-2 border-card animate-pulse">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}
@@ -327,9 +325,9 @@ export default function DashboardLayout({ children }) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-96 max-h-[70vh] bg-card border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+                      className="absolute right-0 mt-2 w-80 sm:w-96 max-h-[70vh] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 overflow-hidden notif-dropdown"
                     >
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-gray-800">
                         <h3 className="font-bold text-foreground">Notifications</h3>
                         <div className="flex items-center gap-2">
                           {unreadCount > 0 && (
@@ -374,8 +372,8 @@ export default function DashboardLayout({ children }) {
 
               {/* User dropdown */}
               <div className="relative">
-                <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted transition-colors duration-200 border-2 border-transparent hover:border-border">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-primary-600">
+                <button className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-150">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div className="hidden sm:block text-left">
@@ -392,7 +390,7 @@ export default function DashboardLayout({ children }) {
               {/* Sign out button */}
               <button
                 onClick={handleSignOut}
-                className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors duration-200 border-2 border-transparent hover:border-destructive"
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors duration-150"
                 title="Sign out"
               >
                 <LogOut className="w-5 h-5" />
@@ -402,7 +400,7 @@ export default function DashboardLayout({ children }) {
         </div>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8 bg-background min-h-screen">
+        <main className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950 min-h-screen">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
