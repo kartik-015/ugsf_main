@@ -76,11 +76,7 @@ export default function DashboardLayout({ children }) {
       return
     }
 
-    // Students go directly to projects page, not dashboard
-    if (session.user.role === 'student' && pathname === '/dashboard') {
-      router.replace('/dashboard/projects')
-      return
-    }
+    // Students stay on their dashboard (StudentDashboard) page
   }, [session, status, router, pathname])
 
   // Separate effect for redirects to avoid issues
@@ -188,8 +184,8 @@ export default function DashboardLayout({ children }) {
     return null
   }
 
-  // Don't render layout during admin or student redirect
-  if (pathname === '/dashboard' && ['admin','mainadmin','principal','hod','project_coordinator','student'].includes(session.user.role)) {
+  // Don't render layout during admin redirect
+  if (pathname === '/dashboard' && ['admin','mainadmin','principal','hod','project_coordinator'].includes(session.user.role)) {
     return null
   }
 

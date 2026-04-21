@@ -77,8 +77,8 @@ export default function LoginForm() {
                     window.location.href = '/dashboard'
                     break
                   case 'student':
-                    // Students go to projects
-                    window.location.href = '/dashboard/projects'
+                    // Students go to dashboard
+                    window.location.href = '/dashboard'
                     break
                   default:
                     window.location.href = '/dashboard'
