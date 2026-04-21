@@ -12,6 +12,7 @@
     "setup": "node setup.js",
     "add-test-data": "node scripts/add-test-data.js",
     "prune": "node scripts/pruneExceptAdmin.js",
+    "fix:guide-spelling": "npx tsx scripts/fixGuideSpelling.js",
     "test": "jest --passWithNoTests"
   },
   "jest": {
