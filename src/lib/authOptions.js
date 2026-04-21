@@ -2,6 +2,12 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 
+const EMAIL_ALIASES = {
+  'hod.itds@charusat.ac.in': ['hodit@charusat.ac.in'],
+  'hod.csds@charusat.ac.in': ['hodcse@charusat.ac.in'],
+  'hod.ceoe@charusat.ac.in': ['hodce@charusat.ac.in'],
+}
+
 export const authOptions = {
   providers: [
     CredentialsProvider({
@@ -17,10 +23,13 @@ export const authOptions = {
 
         await dbConnect()
 
-        const user = await User.findOne({ email: credentials.email.toLowerCase() })
+        const normalizedEmail = credentials.email.trim().toLowerCase()
+        const emailCandidates = [normalizedEmail, ...(EMAIL_ALIASES[normalizedEmail] || [])]
+
+        const user = await User.findOne({ email: { $in: emailCandidates } })
 
         if (!user) {
-          throw new Error('User not found')
+          throw new Error('No account found for this email. Check the spelling or use your assigned college email.')
         }
 
         // isRegistered check only applies to students and guides (admins/hods/pcs are seeded)
