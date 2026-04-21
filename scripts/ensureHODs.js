@@ -10,25 +10,33 @@ async function ensureHODs() {
 
   // HODs that should exist
   const hodData = [
-    { email: 'hodcse@charusat.ac.in', department: 'CSE', name: 'HOD CSE' },
-    { email: 'hodce@charusat.ac.in', department: 'CE', name: 'HOD CE' },
-    { email: 'hodit@charusat.ac.in', department: 'IT', name: 'HOD IT' },
+    { email: 'hod.csds@charusat.ac.in', department: 'CSE', name: 'Amit Nayak' },
+    { email: 'hod.ceds@charusat.ac.in', department: 'CE', name: 'Chirag Patel' },
+    { email: 'hod.itds@charusat.ac.in', department: 'IT', name: 'Dweepna Garg' },
   ]
 
   for (const hod of hodData) {
     let user = await User.findOne({ email: hod.email })
     if (user) {
-      // Update name and institute
+      // Normalize canonical HOD account
       user.academicInfo = { ...(user.academicInfo || {}), name: hod.name }
       user.institute = 'DEPSTAR'
       user.department = hod.department
+      user.role = 'hod'
+      user.password = 'depstar@123'
+      user.mustChangePassword = true
+      user.isOnboarded = true
+      user.isEmailVerified = true
+      user.isApproved = true
+      user.approvalStatus = 'approved'
+      user.isActive = true
       await user.save()
       console.log(`Updated: ${hod.email} -> "${hod.name}" (${hod.department}, DEPSTAR)`)
     } else {
       // Create the HOD
       user = new User({
         email: hod.email,
-        password: 'charusat@123',
+        password: 'depstar@123',
         role: 'hod',
         department: hod.department,
         institute: 'DEPSTAR',
@@ -38,6 +46,7 @@ async function ensureHODs() {
         isApproved: true,
         approvalStatus: 'approved',
         isActive: true,
+        mustChangePassword: true,
       })
       await user.save()
       console.log(`Created: ${hod.email} -> "${hod.name}" (${hod.department}, DEPSTAR)`)

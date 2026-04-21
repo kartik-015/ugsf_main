@@ -1191,10 +1191,13 @@ export default function AdminDashboard() {
 
   const getRoleTitle = () => {
     const role = session?.user?.role
+    const dept = session?.user?.department
     return {
       admin: 'Administration Dashboard',
       mainadmin: 'Administration Dashboard',
       principal: 'Principal Dashboard',
+      hod: `HOD Dashboard${dept ? ` - ${dept}` : ''}`,
+      project_coordinator: `Project Coordinator Dashboard${dept ? ` - ${dept}` : ''}`,
     }[role] || 'Dashboard'
   }
 

@@ -27,8 +27,8 @@ const ChatWithAdmin = dynamic(() => import('@/components/chat/ChatWithAdmin'), {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin','mainadmin','principal','hod','project_coordinator','guide'] },
-  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal'] },
-  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal'] },
+  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
+  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
   { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal','project_coordinator'] },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin','mainadmin','principal','guide','student','hod','project_coordinator'] },
 ]
@@ -87,13 +87,9 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     if (status === 'loading' || !session) return
     const role = session.user.role
-    // Admin and principal go to /dashboard/admin
-    if (pathname === '/dashboard' && (role === 'admin' || role === 'mainadmin' || role === 'principal')) {
+    // Admin, principal, HOD, and project coordinator go to /dashboard/admin
+    if (pathname === '/dashboard' && (role === 'admin' || role === 'mainadmin' || role === 'principal' || role === 'hod' || role === 'project_coordinator')) {
       router.replace('/dashboard/admin')
-    }
-    // HOD and Project Coordinator go to /dashboard/projects
-    if (pathname === '/dashboard' && (role === 'hod' || role === 'project_coordinator')) {
-      router.replace('/dashboard/projects')
     }
   }, [session, status, router, pathname])
 
@@ -162,9 +158,20 @@ export default function DashboardLayout({ children }) {
     }
   }
 
-  const filteredNavigation = navigation.filter(item => 
-    !item.roles || item.roles.includes(session?.user?.role)
-  )
+  const role = session?.user?.role
+  const adminLikeRoles = ['admin', 'mainadmin', 'principal', 'hod', 'project_coordinator']
+  const dashboardHref = adminLikeRoles.includes(role) ? '/dashboard/admin' : '/dashboard'
+
+  const filteredNavigation = navigation
+    .filter(item => !item.roles || item.roles.includes(role))
+    .map((item) => item.name === 'Dashboard' ? { ...item, href: dashboardHref } : item)
+
+  const isItemActive = (itemHref) => {
+    if (itemHref === '/dashboard/admin') {
+      return pathname === '/dashboard/admin' || pathname === '/dashboard'
+    }
+    return pathname === itemHref
+  }
 
   if (status === 'loading') {
     return (
@@ -226,7 +233,7 @@ export default function DashboardLayout({ children }) {
             </div>
             <nav className="mt-2 px-3 space-y-0.5">
               {filteredNavigation.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = isItemActive(item.href)
                 return (
                   <motion.a
                     key={item.name}
@@ -258,7 +265,7 @@ export default function DashboardLayout({ children }) {
           </div>
           <nav className="flex-1 px-3 py-4 space-y-0.5">
             {filteredNavigation.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = isItemActive(item.href)
               return (
                 <motion.a
                   key={item.name}

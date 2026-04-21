@@ -154,7 +154,7 @@ async function main() {
             <h3>Testing Flow:</h3>
             <ol>
               <li>Login → Your project shows as "Pending" HOD approval</li>
-              <li>HOD (hodit@charusat.ac.in) will approve your project</li>
+              <li>HOD (hod.itds@charusat.ac.in) will approve your project</li>
               <li>Admin/HOD assigns a guide (Kartik Guleria) to your group</li>
               <li>You can see your guide, submit reports, view grades</li>
               <li>Guide can grade reports, chat with your group</li>
@@ -217,7 +217,7 @@ async function main() {
             </div>
             <h3>What happens next:</h3>
             <ol>
-              <li>The HOD IT (hodit@charusat.ac.in) will assign you to the test project group</li>
+              <li>The HOD IT (hod.itds@charusat.ac.in) will assign you to the test project group</li>
               <li>Login to see your assigned groups</li>
               <li>You can chat with the group, set deadlines, grade reports</li>
               <li>All activity is visible to Admin, Principal, HOD, and Project Coordinator</li>
@@ -250,36 +250,36 @@ async function main() {
   console.log('║                                                                             ║')
   console.log('║  🔴 ADMIN / MAIN ADMIN                                                     ║')
   console.log('║     Email:    admin@charusat.edu.in                                         ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log('║  🟣 PRINCIPAL                                                               ║')
   console.log('║     Email:    principal@charusat.ac.in                                      ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log('║  🟠 HOD IT                                                                  ║')
-  console.log('║     Email:    hodit@charusat.ac.in                                          ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Email:    hod.itds@charusat.ac.in                                        ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║     (This HOD will approve the dummy group & assign the guide)              ║')
   console.log('║                                                                             ║')
   console.log('║  🟠 HOD CSE                                                                 ║')
-  console.log('║     Email:    hodcse@charusat.ac.in                                         ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Email:    hod.csds@charusat.ac.in                                        ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log('║  🟠 HOD CE                                                                  ║')
-  console.log('║     Email:    hodce@charusat.ac.in                                          ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Email:    hod.ceds@charusat.ac.in                                        ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log('║  🔵 PROJECT COORDINATOR IT                                                  ║')
   console.log('║     Email:    pcit@charusat.ac.in                                           ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log('║  🔵 PROJECT COORDINATOR CSE                                                 ║')
   console.log('║     Email:    pccse@charusat.ac.in                                          ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log('║  🔵 PROJECT COORDINATOR CE                                                  ║')
   console.log('║     Email:    pcce@charusat.ac.in                                           ║')
-  console.log('║     Password: charusat@123                                                  ║')
+  console.log('║     Password: depstar@123                                                   ║')
   console.log('║                                                                             ║')
   console.log(`║  🟢 GUIDE (Kartik Guleria)                                                  ║`)
   console.log(`║     Email:    kartik.guleria@gmail.com                                      ║`)
@@ -298,7 +298,7 @@ async function main() {
   console.log('║                         TESTING WORKFLOW                                    ║')
   console.log('╠══════════════════════════════════════════════════════════════════════════════╣')
   console.log('║                                                                             ║')
-  console.log('║  1. Login as HOD IT (hodit@charusat.ac.in)                                  ║')
+  console.log('║  1. Login as HOD IT (hod.itds@charusat.ac.in)                                ║')
   console.log('║     → Go to Projects → Find "EvalProX Demo – Test Project"                 ║')
   console.log('║     → Click Approve                                                        ║')
   console.log('║                                                                             ║')

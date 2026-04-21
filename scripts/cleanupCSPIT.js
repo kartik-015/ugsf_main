@@ -14,7 +14,7 @@ async function cleanup() {
   allHods.forEach(h => console.log(h._id.toString(), '|', h.email, '|', h.department, '|', h.academicInfo?.name))
 
   // 2. The 3 seed HODs to keep
-  const keepEmails = ['hodit@charusat.ac.in', 'hodcse@charusat.ac.in', 'hodce@charusat.ac.in']
+  const keepEmails = ['hod.itds@charusat.ac.in', 'hod.csds@charusat.ac.in', 'hod.ceds@charusat.ac.in']
 
   // 3. Delete duplicate HODs (imported from real data)
   const dupes = await User.find({ role: 'hod', email: { $nin: keepEmails } })
@@ -26,9 +26,9 @@ async function cleanup() {
 
   // 4. Update the 3 kept HODs with proper DEPSTAR names
   const hodUpdates = {
-    'hodit@charusat.ac.in': 'HOD IT',
-    'hodcse@charusat.ac.in': 'HOD CSE',
-    'hodce@charusat.ac.in': 'HOD CE',
+    'hod.itds@charusat.ac.in': 'HOD IT',
+    'hod.csds@charusat.ac.in': 'HOD CSE',
+    'hod.ceds@charusat.ac.in': 'HOD CE',
   }
 
   for (const [email, name] of Object.entries(hodUpdates)) {

@@ -132,6 +132,17 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  passwordChangeOTP: String,
+  passwordChangeOTPExpires: Date,
+  passwordChangeOTPResendCount: {
+    type: Number,
+    default: 0,
+  },
+  passwordChangeOTPLastSent: Date,
+  passwordChangeOTPAttemptCount: {
+    type: Number,
+    default: 0,
+  },
   // Password reset fields
   resetPasswordToken: String,
   resetPasswordExpires: Date,

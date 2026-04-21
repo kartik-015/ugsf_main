@@ -40,13 +40,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'loading') return
     const role = session?.user?.role
-    // Admin and principal go to admin page
-    if (role === 'admin' || role === 'mainadmin' || role === 'principal') {
+    // Admin, principal, HOD, and project coordinator go to admin page
+    if (role === 'admin' || role === 'mainadmin' || role === 'principal' || role === 'hod' || role === 'project_coordinator') {
       router.replace('/dashboard/admin')
-    }
-    // HOD and Project Coordinator go to projects page
-    if (role === 'hod' || role === 'project_coordinator') {
-      router.replace('/dashboard/projects')
     }
   }, [session, status, router])
 

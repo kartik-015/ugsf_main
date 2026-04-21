@@ -4,23 +4,31 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react'
+import { Lock, Eye, EyeOff, ShieldCheck, ArrowRight, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { passwordStrength } from '@/lib/clientValidation'
 
 export default function ChangePasswordPage() {
   const { data: session, status, update } = useSession()
   const router = useRouter()
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showCurrent, setShowCurrent] = useState(false)
+  const [otp, setOtp] = useState('')
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [wantsToChange, setWantsToChange] = useState(null) // null = not decided, true = change, false = skip
+  const [wantsToChange, setWantsToChange] = useState(null)
+  const [otpSent, setOtpSent] = useState(false)
 
   const pwdStrength = passwordStrength(newPassword)
+
+  const dashboardPath = (() => {
+    const role = session?.user?.role
+    if (role === 'student') return '/dashboard/projects'
+    if (role === 'guide') return '/dashboard'
+    if (['admin', 'mainadmin', 'principal', 'hod', 'project_coordinator'].includes(role)) return '/dashboard/admin'
+    return '/dashboard'
+  })()
 
   if (status === 'loading') {
     return (
@@ -35,27 +43,48 @@ export default function ChangePasswordPage() {
     return null
   }
 
-  // If user doesn't need to change password, redirect
   if (!session.user.mustChangePassword) {
-    router.push('/dashboard/projects')
+    router.push(dashboardPath)
     return null
   }
 
+  const requestOtp = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send-otp' }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setOtpSent(true)
+        setWantsToChange(true)
+        toast.success(data.message || 'OTP sent to your email')
+      } else {
+        toast.error(data.error || 'Failed to send OTP')
+      }
+    } catch {
+      toast.error('Failed to send OTP')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSkip = async () => {
-    // Mark mustChangePassword as false on the server so user isn't prompted again
     try {
       await fetch('/api/auth/change-password', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
       })
-      await update() // Refresh session token
+      await update()
     } catch {}
-    router.push('/dashboard/projects')
+    router.push(dashboardPath)
   }
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
-    
+
     if (newPassword !== confirmPassword) {
       toast.error('Passwords do not match')
       return
@@ -71,24 +100,28 @@ export default function ChangePasswordPage() {
       return
     }
 
+    if (!otp.trim()) {
+      toast.error('Enter the OTP sent to your email')
+      return
+    }
+
     setIsLoading(true)
     try {
       const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify({ action: 'verify-otp', otp, newPassword }),
       })
 
       const data = await res.json()
       if (res.ok) {
         toast.success('Password changed successfully!')
-        // Trigger session update to clear mustChangePassword
         await update()
-        router.push('/dashboard/projects')
+        router.push(dashboardPath)
       } else {
         toast.error(data.error || 'Failed to change password')
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred')
     } finally {
       setIsLoading(false)
@@ -103,7 +136,6 @@ export default function ChangePasswordPage() {
         className="w-full max-w-md"
       >
         {wantsToChange === null ? (
-          /* Initial prompt: Do you want to change password? */
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -127,12 +159,13 @@ export default function ChangePasswordPage() {
 
             <div className="space-y-3">
               <motion.button
-                onClick={() => setWantsToChange(true)}
+                onClick={requestOtp}
                 className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-all duration-200 flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                disabled={isLoading}
               >
-                <Lock className="w-5 h-5" />
+                <Mail className="w-5 h-5" />
                 Yes, Change Password
               </motion.button>
               <motion.button
@@ -151,7 +184,6 @@ export default function ChangePasswordPage() {
             </p>
           </motion.div>
         ) : (
-          /* Change password form */
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -162,37 +194,36 @@ export default function ChangePasswordPage() {
                 Change Your Password
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Enter your current password (depstar@123) and choose a new one
+                {otpSent ? 'Check your email for the OTP, then set a new password.' : 'Enter the OTP sent to your email and choose a new password.'}
               </p>
             </div>
 
             <form onSubmit={handleChangePassword} className="space-y-5">
-              {/* Current Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Current Password
+                  Email OTP
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type={showCurrent ? 'text' : 'password'}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full pl-10 pr-12 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter current password"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter OTP sent to your email"
                     required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={requestOtp}
+                  disabled={isLoading}
+                  className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Resend OTP
+                </button>
               </div>
 
-              {/* New Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   New Password
@@ -215,14 +246,13 @@ export default function ChangePasswordPage() {
                     {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded ${pwdStrength.score >= 3 ? 'bg-green-100 text-green-700' : pwdStrength.score >= 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                    {pwdStrength.label}
-                  </span>
-                </div>
+                {newPassword && (
+                  <p className={`text-xs mt-1 ${pwdStrength.score >= 3 ? 'text-green-600' : pwdStrength.score >= 2 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    Strength: {pwdStrength.label}
+                  </p>
+                )}
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Confirm New Password
@@ -245,28 +275,24 @@ export default function ChangePasswordPage() {
                     {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
-                )}
               </div>
 
               <motion.button
                 type="submit"
-                disabled={isLoading || pwdStrength.score < 2}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                disabled={isLoading}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isLoading ? 'Changing Password...' : 'Change Password'}
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Update Password
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </motion.button>
-
-              <button
-                type="button"
-                onClick={() => setWantsToChange(null)}
-                className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                Go back
-              </button>
             </form>
           </motion.div>
         )}

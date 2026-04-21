@@ -528,10 +528,10 @@ async function main() {
   
   // Print admin credentials reminder
   console.log('\n📌 Existing Admin Credentials (unchanged):')
-  console.log('  Admin: admin@charusat.edu.in / charusat@123')
-  console.log('  HOD IT: hodit@charusat.ac.in / charusat@123')
-  console.log('  PC IT: pcit@charusat.ac.in / charusat@123')
-  console.log('  Principal: principal@charusat.ac.in / charusat@123')
+  console.log('  Admin: admin@charusat.edu.in / depstar@123')
+  console.log('  HOD IT: hod.itds@charusat.ac.in / depstar@123')
+  console.log('  PC IT: pcit@charusat.ac.in / depstar@123')
+  console.log('  Principal: principal@charusat.ac.in / depstar@123')
   
   // Print all credentials to a file for reference
   const credentialLines = ['=== STUDENT CREDENTIALS (Team-shared passwords) ===']
