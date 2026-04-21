@@ -1170,7 +1170,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (status === 'loading') return
     if (!session) { router.push('/'); return }
-    const allowed = ['admin', 'mainadmin', 'principal', 'hod', 'project_coordinator']
+    // Only admin and mainadmin can access admin dashboard
+    const allowed = ['admin', 'mainadmin']
     if (!allowed.includes(session.user.role)) { router.push('/dashboard'); return }
   }, [session, status, router])
 
@@ -1190,13 +1191,9 @@ export default function AdminDashboard() {
 
   const getRoleTitle = () => {
     const role = session?.user?.role
-    const dept = session?.user?.department
     return {
       admin: 'Administration Dashboard',
       mainadmin: 'Administration Dashboard',
-      principal: 'Principal Dashboard',
-      hod: `HOD Dashboard${dept ? ` — ${dept}` : ''}`,
-      project_coordinator: `Project Coordinator Dashboard${dept ? ` — ${dept}` : ''}`,
     }[role] || 'Dashboard'
   }
 

@@ -40,8 +40,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'loading') return
     const role = session?.user?.role
-    if (role === 'admin' || role === 'principal' || role === 'hod' || role === 'project_coordinator') {
+    // Only admin and mainadmin go to admin page
+    if (role === 'admin' || role === 'mainadmin') {
       router.replace('/dashboard/admin')
+    }
+    // HOD, Principal, Project Coordinator go to projects page
+    if (role === 'hod' || role === 'principal' || role === 'project_coordinator') {
+      router.replace('/dashboard/projects')
     }
   }, [session, status, router])
 
@@ -67,7 +72,7 @@ export default function DashboardPage() {
   }, [status, fetchDashboardData])
 
   // Don't render anything for admin-like roles during redirect
-  if (session?.user?.role === 'admin' || session?.user?.role === 'principal' || session?.user?.role === 'hod' || session?.user?.role === 'project_coordinator') {
+  if (session?.user?.role === 'admin' || session?.user?.role === 'mainadmin' || session?.user?.role === 'hod' || session?.user?.role === 'principal' || session?.user?.role === 'project_coordinator') {
     return null
   }
 

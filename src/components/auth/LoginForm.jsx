@@ -63,15 +63,23 @@ export default function LoginForm() {
                 switch (u.role) {
                   case 'admin':
                   case 'mainadmin':
+                    // Only admin goes to admin dashboard
+                    window.location.href = '/dashboard/admin'
+                    break
                   case 'hod':
                   case 'project_coordinator':
                   case 'principal':
+                    // HODs, PCs, Principal go to their admin dashboard
                     window.location.href = '/dashboard/admin'
                     break
+                  case 'guide':
+                    // Guides go to guide dashboard
+                    window.location.href = '/dashboard'
+                    break
                   case 'student':
+                    // Students go to projects
                     window.location.href = '/dashboard/projects'
                     break
-                  case 'guide':
                   default:
                     window.location.href = '/dashboard'
                     break

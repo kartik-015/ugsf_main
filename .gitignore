@@ -23,11 +23,55 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local env files
-.env*.local
+.env
+.env.local
+.env.*.local
 
 # Vercel
 .vercel
 
 # TypeScript
 *.tsbuildinfo
-next-env.d.ts 
+next-env.d.ts
+
+# Documentation - Keep locally but don't push
+*.md
+docs/**
+AUTHENTICATION_SETUP_GUIDE.md
+DEPLOYMENT_GUIDE.md
+CHANGES_SUMMARY.md
+QUICK_REFERENCE.md
+COMPLETION_SUMMARY.md
+
+# Scripts - Keep seed scripts locally but not in git
+scripts/**
+!scripts/seed.js
+
+# Real Data - Never commit
+real\ data/**
+real_data/**
+
+# Credentials
+credentials_generated.txt
+*.bak
+backup/**
+
+# Office files
+*.docx
+*.xlsx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary
+*.tmp
+*.temp
+/tmp/
+
+# Development config
+jest.config.js
+jest.babel.config.cjs

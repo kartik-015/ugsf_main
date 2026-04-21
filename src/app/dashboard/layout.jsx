@@ -27,8 +27,8 @@ const ChatWithAdmin = dynamic(() => import('@/components/chat/ChatWithAdmin'), {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin','mainadmin','principal','hod','project_coordinator','guide'] },
-  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
-  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal','hod','project_coordinator'] },
+  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin'] },
+  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin'] },
   { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal','project_coordinator'] },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin','mainadmin','principal','guide','student','hod','project_coordinator'] },
 ]
@@ -83,12 +83,17 @@ export default function DashboardLayout({ children }) {
     }
   }, [session, status, router, pathname])
 
-  // Separate effect for admin redirect to avoid issues
+  // Separate effect for redirects to avoid issues
   useEffect(() => {
     if (status === 'loading' || !session) return
     const role = session.user.role
-    if (pathname === '/dashboard' && (role === 'admin' || role === 'principal' || role === 'hod' || role === 'project_coordinator')) {
+    // Only admin and mainadmin go to /dashboard/admin
+    if (pathname === '/dashboard' && (role === 'admin' || role === 'mainadmin')) {
       router.replace('/dashboard/admin')
+    }
+    // HOD, Principal, Project Coordinator go to /dashboard/projects
+    if (pathname === '/dashboard' && (role === 'hod' || role === 'principal' || role === 'project_coordinator')) {
+      router.replace('/dashboard/projects')
     }
   }, [session, status, router, pathname])
 

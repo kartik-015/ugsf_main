@@ -1,0 +1,74 @@
+# Vercel Deployment Configuration
+# Prevents uploading unnecessary files and optimizes build
+
+# Documentation files - NO UPLOAD
+*.md
+*.MD
+docs/**
+AUTHENTICATION_SETUP_GUIDE.md
+DEPLOYMENT_GUIDE.md
+CHANGES_SUMMARY.md
+QUICK_REFERENCE.md
+COMPLETION_SUMMARY.md
+
+# Scripts - NO UPLOAD (except necessary node scripts)
+scripts/**
+!scripts/seed.js
+!scripts/loader.mjs
+
+# Real Data - NO UPLOAD
+real\ data/**
+
+# Logs
+*.log
+logs/**
+
+# Environment files - NEVER UPLOAD
+.env
+.env.local
+.env.*.local
+
+# Node modules - builds from dependencies
+node_modules/**
+
+# Build artifacts
+.next/**
+.vercel/**
+out/**
+dist/**
+
+# Git
+.git/**
+.gitignore
+
+# Testing
+.jest/**
+coverage/**
+*.test.js
+*.spec.js
+
+# IDE
+.vscode/**
+.idea/**
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.temp
+/tmp/**
+
+# Development only
+.eslintrc.json
+jest.config.js
+jest.babel.config.cjs
+
+# Credentials and backups
+credentials_generated.txt
+*.bak
+backup/**

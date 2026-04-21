@@ -2,8 +2,8 @@
 // Name: letters, spaces and limited punctuation, 2-100 chars
 export const NAME_REGEX = /^[A-Za-z][A-Za-z\s'.-]{0,98}[A-Za-z]$/
 
-// Guide email: fullnamewithoutspaces.dept@charusat.ac.in
-// e.g. kartikguleria.dit@charusat.ac.in (IT), radhikapatel.dcs@charusat.ac.in (CSE), sachinpatel.dce@charusat.ac.in (CE)
+// Guide email: namewithoutsapces.deptcode@charusat.ac.in
+// e.g. akashpatel.dit@charusat.ac.in (IT), radhikapatel.dcs@charusat.ac.in (CSE), sachinpatel.dce@charusat.ac.in (CE)
 export const GUIDE_EMAIL_REGEX = /^([a-zA-Z]+)\.([a-zA-Z]+)@charusat\.ac\.in$/i
 const GUIDE_DEPT_MAP = { dit: 'IT', dcs: 'CSE', dce: 'CE' }
 

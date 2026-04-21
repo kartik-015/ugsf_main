@@ -71,6 +71,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
+  // Check if user must change password first
+  const mustChangePassword = token.mustChangePassword
+  const isChangePasswordRoute = pathname === '/change-password'
+  if (mustChangePassword && !isChangePasswordRoute) {
+    return NextResponse.redirect(new URL('/change-password', req.url))
+  }
+
   const isOnboarded = token.isOnboarded
   // Cookie-based fast path (covers immediate post-onboarding before JWT refresh)
   let cookieOnboardedMatches = false
