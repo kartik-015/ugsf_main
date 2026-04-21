@@ -1170,8 +1170,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (status === 'loading') return
     if (!session) { router.push('/'); return }
-    // Only admin and mainadmin can access admin dashboard
-    const allowed = ['admin', 'mainadmin']
+    // Admin, mainadmin, and principal can access the dashboard in read-only mode
+    const allowed = ['admin', 'mainadmin', 'principal']
     if (!allowed.includes(session.user.role)) { router.push('/dashboard'); return }
   }, [session, status, router])
 
@@ -1194,6 +1194,7 @@ export default function AdminDashboard() {
     return {
       admin: 'Administration Dashboard',
       mainadmin: 'Administration Dashboard',
+      principal: 'Principal Dashboard',
     }[role] || 'Dashboard'
   }
 

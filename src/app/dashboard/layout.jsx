@@ -27,8 +27,8 @@ const ChatWithAdmin = dynamic(() => import('@/components/chat/ChatWithAdmin'), {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin','mainadmin','principal','hod','project_coordinator','guide'] },
-  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin'] },
-  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin'] },
+  { name: 'Students', href: '/dashboard/students', icon: Users, roles: ['admin','mainadmin','principal'] },
+  { name: 'Guides', href: '/dashboard/guides', icon: User, roles: ['admin','mainadmin','principal'] },
   { name: 'Projects', href: '/dashboard/projects', icon: Calendar, roles: ['student','guide','hod','admin','mainadmin','principal','project_coordinator'] },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['admin','mainadmin','principal','guide','student','hod','project_coordinator'] },
 ]
@@ -87,12 +87,12 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     if (status === 'loading' || !session) return
     const role = session.user.role
-    // Only admin and mainadmin go to /dashboard/admin
-    if (pathname === '/dashboard' && (role === 'admin' || role === 'mainadmin')) {
+    // Admin and principal go to /dashboard/admin
+    if (pathname === '/dashboard' && (role === 'admin' || role === 'mainadmin' || role === 'principal')) {
       router.replace('/dashboard/admin')
     }
-    // HOD, Principal, Project Coordinator go to /dashboard/projects
-    if (pathname === '/dashboard' && (role === 'hod' || role === 'principal' || role === 'project_coordinator')) {
+    // HOD and Project Coordinator go to /dashboard/projects
+    if (pathname === '/dashboard' && (role === 'hod' || role === 'project_coordinator')) {
       router.replace('/dashboard/projects')
     }
   }, [session, status, router, pathname])
@@ -182,7 +182,7 @@ export default function DashboardLayout({ children }) {
   }
 
   // Don't render layout during admin or student redirect
-  if (pathname === '/dashboard' && ['admin','principal','hod','project_coordinator','student'].includes(session.user.role)) {
+  if (pathname === '/dashboard' && ['admin','mainadmin','principal','hod','project_coordinator','student'].includes(session.user.role)) {
     return null
   }
 

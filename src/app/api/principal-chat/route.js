@@ -58,20 +58,7 @@ export async function POST(request){
     if(!page || !message) return NextResponse.json({ error: 'Missing page or message' }, { status: 400 })
     const role = session.user.role
     if(role === ROLES.PRINCIPAL){
-      // principal can only send to an admin (pick a primary admin or mainadmin). If toUserId provided ensure admin.
-      let adminUser = null
-      if(toUserId){
-        adminUser = await User.findById(toUserId)
-        if(!adminUser || ![ROLES.ADMIN, ROLES.MAIN_ADMIN].includes(adminUser.role)) return NextResponse.json({ error: 'Invalid target' }, { status: 400 })
-      } else {
-        adminUser = await User.findOne({ role: ROLES.MAIN_ADMIN }) || await User.findOne({ role: ROLES.ADMIN })
-        if(!adminUser) return NextResponse.json({ error: 'No admin available' }, { status: 500 })
-      }
-      const doc = await PrincipalChat.create({ from: session.user.id, to: adminUser._id, roleFrom: 'principal', page, pageTitle, message })
-      if(global.io){
-        global.io.to(`user-${adminUser._id}`).emit('principal:message', { page, message: doc.message, from: session.user.id, id: doc._id, at: doc.createdAt })
-      }
-      return NextResponse.json({ ok: true, message: doc })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     // Admin replying to principal -> require toUserId (principal's id)
     if([ROLES.ADMIN, ROLES.MAIN_ADMIN].includes(role)){

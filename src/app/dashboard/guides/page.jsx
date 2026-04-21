@@ -8,7 +8,8 @@ import toast from 'react-hot-toast'
 
 export default function GuidesPage(){
   const { data: session } = useSession()
-  const isAdmin = ['admin','mainadmin','principal','hod','project_coordinator'].includes(session?.user?.role)
+  const canViewGuides = ['admin','mainadmin','principal','hod','project_coordinator'].includes(session?.user?.role)
+  const canManageGuides = ['admin','mainadmin','hod','project_coordinator'].includes(session?.user?.role)
 
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
@@ -222,7 +223,7 @@ export default function GuidesPage(){
   const submit = e => { e.preventDefault(); fetchGuides() }
   const reset = () => { setDept(''); setRole(''); setSearch(''); setResults([]); setSubmitted(false) }
 
-  if(!session || !isAdmin) return null
+  if(!session || !canViewGuides) return null
 
   return (
     <div className='space-y-6'>
@@ -275,7 +276,7 @@ export default function GuidesPage(){
             <button type='button' onClick={exportGuides} className='ml-3 px-4 py-2 rounded bg-green-600 text-white font-semibold flex items-center gap-2'>
               <Download className='h-4 w-4' /> Export Data
             </button>
-            {session?.user?.role === 'admin' && (
+            {canManageGuides && session?.user?.role === 'admin' && (
               <button type='button' onClick={() => setShowImport(!showImport)} className='px-4 py-2 rounded bg-purple-600 text-white font-semibold flex items-center gap-2'>
                 <Upload className='h-4 w-4' /> Import Guides
               </button>
