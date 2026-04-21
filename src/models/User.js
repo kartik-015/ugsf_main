@@ -1,5 +1,5 @@
 // Add main admin and 4 additional admins
-// Credentials: admin@charusat.edu.in, principal@charusat.ac.in, hodcse@charusat.ac.in, hodce@charusat.ac.in, hodit@charusat.ac.in
+// Credentials: admin@charusat.edu.in, principal@charusat.ac.in, amitnayak.cse@charusat.ac.in, chiragpatel.ce@charusat.ac.in, dweepnagarg.it@charusat.ac.in
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { parseStudentEmail } from '@/lib/validation'

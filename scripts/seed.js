@@ -33,25 +33,25 @@ async function seed() {
         academicInfo: { name: 'Principal', phoneNumber: '1234567891', address: 'Charusat University' },
       },
       {
-        email: 'hodcse@charusat.ac.in',
+        email: 'amitnayak.cse@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
         department: 'CSE',
-        academicInfo: { name: 'HOD CSE', phoneNumber: '1234567892', address: 'Charusat University' },
+        academicInfo: { name: 'Amit Nayak', phoneNumber: '1234567892', address: 'Charusat University' },
       },
       {
-        email: 'hodce@charusat.ac.in',
+        email: 'chiragpatel.ce@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
         department: 'CE',
-        academicInfo: { name: 'HOD CE', phoneNumber: '1234567893', address: 'Charusat University' },
+        academicInfo: { name: 'Chirag Patel', phoneNumber: '1234567893', address: 'Charusat University' },
       },
       {
-        email: 'hodit@charusat.ac.in',
+        email: 'dweepnagarg.it@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
         department: 'IT',
-        academicInfo: { name: 'HOD IT', phoneNumber: '1234567894', address: 'Charusat University' },
+        academicInfo: { name: 'Dweepna Garg', phoneNumber: '1234567894', address: 'Charusat University' },
       },
       {
         email: 'pccse@charusat.ac.in',
@@ -93,9 +93,9 @@ async function seed() {
     console.log('\nLogin Credentials:')
     console.log('Admin: admin@charusat.edu.in / charusat@123')
     console.log('Principal: principal@charusat.ac.in / charusat@123')
-    console.log('HOD CSE: hodcse@charusat.ac.in / charusat@123')
-    console.log('HOD CE: hodce@charusat.ac.in / charusat@123')
-    console.log('HOD IT: hodit@charusat.ac.in / charusat@123')
+    console.log('HOD CSE: amitnayak.cse@charusat.ac.in / charusat@123')
+    console.log('HOD CE: chiragpatel.ce@charusat.ac.in / charusat@123')
+    console.log('HOD IT: dweepnagarg.it@charusat.ac.in / charusat@123')
     console.log('PC CSE: pccse@charusat.ac.in / charusat@123')
     console.log('PC CE: pcce@charusat.ac.in / charusat@123')
     console.log('PC IT: pcit@charusat.ac.in / charusat@123')

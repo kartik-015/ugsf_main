@@ -3,9 +3,12 @@ import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 
 const EMAIL_ALIASES = {
-  'hod.itds@charusat.ac.in': ['hodit@charusat.ac.in'],
-  'hod.csds@charusat.ac.in': ['hodcse@charusat.ac.in'],
-  'hod.ceoe@charusat.ac.in': ['hodce@charusat.ac.in'],
+  'hod.itds@charusat.ac.in': ['dweepnagarg.it@charusat.ac.in', 'hodit@charusat.ac.in'],
+  'hod.csds@charusat.ac.in': ['amitnayak.cse@charusat.ac.in', 'hodcse@charusat.ac.in'],
+  'hod.ceoe@charusat.ac.in': ['chiragpatel.ce@charusat.ac.in', 'hodce@charusat.ac.in'],
+  'hodit@charusat.ac.in': ['dweepnagarg.it@charusat.ac.in'],
+  'hodcse@charusat.ac.in': ['amitnayak.cse@charusat.ac.in'],
+  'hodce@charusat.ac.in': ['chiragpatel.ce@charusat.ac.in'],
 }
 
 export const authOptions = {
