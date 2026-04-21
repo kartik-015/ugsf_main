@@ -33,21 +33,21 @@ async function seed() {
         academicInfo: { name: 'Principal', phoneNumber: '1234567891', address: 'Charusat University' },
       },
       {
-        email: 'amitnayak.cse@charusat.ac.in',
+        email: 'hod.csds@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
         department: 'CSE',
         academicInfo: { name: 'Amit Nayak', phoneNumber: '1234567892', address: 'Charusat University' },
       },
       {
-        email: 'chiragpatel.ce@charusat.ac.in',
+        email: 'hod.ceds@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
         department: 'CE',
         academicInfo: { name: 'Chirag Patel', phoneNumber: '1234567893', address: 'Charusat University' },
       },
       {
-        email: 'dweepnagarg.it@charusat.ac.in',
+        email: 'hod.itds@charusat.ac.in',
         password: 'charusat@123',
         role: 'hod',
         department: 'IT',
@@ -93,9 +93,9 @@ async function seed() {
     console.log('\nLogin Credentials:')
     console.log('Admin: admin@charusat.edu.in / charusat@123')
     console.log('Principal: principal@charusat.ac.in / charusat@123')
-    console.log('HOD CSE: amitnayak.cse@charusat.ac.in / charusat@123')
-    console.log('HOD CE: chiragpatel.ce@charusat.ac.in / charusat@123')
-    console.log('HOD IT: dweepnagarg.it@charusat.ac.in / charusat@123')
+    console.log('HOD CSE: hod.csds@charusat.ac.in / charusat@123')
+    console.log('HOD CE: hod.ceds@charusat.ac.in / charusat@123')
+    console.log('HOD IT: hod.itds@charusat.ac.in / charusat@123')
     console.log('PC CSE: pccse@charusat.ac.in / charusat@123')
     console.log('PC CE: pcce@charusat.ac.in / charusat@123')
     console.log('PC IT: pcit@charusat.ac.in / charusat@123')
