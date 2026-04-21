@@ -433,7 +433,10 @@ export default function GuidesPage(){
 function FilterGroup({ title, options, value, onSelect }) {
   const formatTitle = (text) => text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
   const formatOptionText = (text) => {
-    if (title === 'ROLE') return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
+    if (title === 'ROLE') {
+      // Replace underscores with spaces and capitalize each word
+      return text.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
+    }
     return text
   }
   return (
