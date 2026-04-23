@@ -124,7 +124,14 @@ export async function GET(request) {
       // Students can only see projects where they are a member
       filter = { 'members.student': session.user.id }
     } else if (role === 'guide') {
-      filter = { $or: [{ internalGuide: session.user.id }, { 'externalGuide.user': session.user.id }] }
+      const guideEmail = String(session.user.email || '').toLowerCase()
+      filter = {
+        $or: [
+          { internalGuide: session.user.id },
+          { 'externalGuide.user': session.user.id },
+          ...(guideEmail ? [{ 'externalGuide.email': guideEmail }] : []),
+        ],
+      }
     } else if (role === 'hod' || role === 'project_coordinator') {
       // HOD/PC can see projects containing their department students.
       // Cross-department teams become visible only after leader-department HOD approval.

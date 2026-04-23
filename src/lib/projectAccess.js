@@ -32,6 +32,7 @@ export function canViewProject(project, sessionUser) {
 
   const role = sessionUser.role
   const userId = String(sessionUser.id || '')
+  const userEmail = String(sessionUser.email || '').toLowerCase()
 
   if ([ROLES.ADMIN, ROLES.MAIN_ADMIN, ROLES.PRINCIPAL].includes(role)) {
     return true
@@ -44,7 +45,8 @@ export function canViewProject(project, sessionUser) {
   if (role === ROLES.GUIDE) {
     const isInternalGuide = String(project.internalGuide?._id || project.internalGuide || '') === userId
     const isExternalGuideUser = String(project.externalGuide?.user?._id || project.externalGuide?.user || '') === userId
-    return isInternalGuide || isExternalGuideUser
+    const isExternalGuideEmail = userEmail && String(project.externalGuide?.email || '').toLowerCase() === userEmail
+    return isInternalGuide || isExternalGuideUser || isExternalGuideEmail
   }
 
   if ([ROLES.HOD, ROLES.PROJECT_COORDINATOR].includes(role)) {

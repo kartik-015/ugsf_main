@@ -2,8 +2,12 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 
-const EMAIL_ALIASES = {}
+const EMAIL_ALIASES = {
+  'kartiktest.dit@charusat.edu.in': ['kartiktest.dit@charusat.ac.in'],
+  'kartiktest.dit@charusat.ac.in': ['kartiktest.dit@charusat.edu.in'],
+}
 const KARTIK_TEST_GUIDE_EMAIL = 'kartiktest.dit@charusat.ac.in'
+const KARTIK_EXTERNAL_GUIDE_EMAIL = 'kartikguleriagame@gmail.com'
 
 export const authOptions = {
   providers: [
@@ -25,8 +29,7 @@ export const authOptions = {
 
         let user = await User.findOne({ email: { $in: emailCandidates } })
 
-        // Production-safe bootstrap for requested internal test guide.
-        // If this account is missing in DB (e.g., on live), create it with default credentials.
+        // Production-safe bootstrap for requested test guide accounts.
         if (!user && normalizedEmail === KARTIK_TEST_GUIDE_EMAIL) {
           await User.create({
             email: KARTIK_TEST_GUIDE_EMAIL,
@@ -43,6 +46,23 @@ export const authOptions = {
             isActive: true,
           })
           user = await User.findOne({ email: KARTIK_TEST_GUIDE_EMAIL })
+        }
+        if (!user && normalizedEmail === KARTIK_EXTERNAL_GUIDE_EMAIL) {
+          await User.create({
+            email: KARTIK_EXTERNAL_GUIDE_EMAIL,
+            password: 'depstar@123',
+            role: 'guide',
+            department: 'IT',
+            institute: 'DEPSTAR',
+            academicInfo: { name: 'Kartik Test Two' },
+            isOnboarded: true,
+            isRegistered: true,
+            isEmailVerified: true,
+            isApproved: true,
+            approvalStatus: 'approved',
+            isActive: true,
+          })
+          user = await User.findOne({ email: KARTIK_EXTERNAL_GUIDE_EMAIL })
         }
 
         if (!user) {
