@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema({
     default: 'student',
     index: true,
   },
+  guideType: {
+    type: String,
+    enum: ['internal', 'external'],
+    required: false,
+  },
   counselorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

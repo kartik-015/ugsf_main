@@ -395,6 +395,7 @@ export async function PATCH(request) {
           email: extEmail,
           password: 'depstar@123',
           role: 'guide',
+          guideType: 'external',
           department: project.department,
           academicInfo: { name: extName || extEmail.split('@')[0] },
           isApproved: true,

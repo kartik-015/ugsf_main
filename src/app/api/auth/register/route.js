@@ -181,6 +181,7 @@ export async function POST(request) {
         email: email.toLowerCase(),
         password: DEFAULT_PASSWORD,
         role,
+        guideType: role === ROLES.GUIDE ? 'internal' : undefined,
         department: department || undefined,
         admissionYear: admissionYear || undefined,
         institute: institute || undefined,

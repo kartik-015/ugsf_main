@@ -133,6 +133,7 @@ export async function POST(request) {
               email,
               password: hashedPassword,
               role: 'guide',
+              guideType: 'internal',
               department,
               university: 'CHARUSAT',
               institute: 'DEPSTAR',

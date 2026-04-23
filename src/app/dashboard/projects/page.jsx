@@ -54,6 +54,7 @@ export default function ProjectsPage(){
   const [projects, setProjects] = useState([])
   const [mine, setMine] = useState([])
   const [guides, setGuides] = useState([])
+  const [externalGuides, setExternalGuides] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitted, setSubmitted] = useState(false)
 
@@ -140,10 +141,22 @@ export default function ProjectsPage(){
   },[isStudent, isAdmin, session?.user?.id, session?.user?.role, session?.user?.email])
 
   const loadGuides = useCallback(async ()=>{
-    if(!isHod) return
+    if(!isHod && !isAdmin) return
     const res = await fetch('/api/guides')
-    if(res.ok){ const data = await res.json(); setGuides(data.guides||data.faculty||[]) }
-  },[isHod])
+    if(res.ok){
+      const data = await res.json()
+      setGuides(data.guides||data.faculty||[])
+    }
+    if (isAdmin) {
+      const externalRes = await fetch('/api/guides?guideType=external')
+      if (externalRes.ok) {
+        const externalData = await externalRes.json()
+        setExternalGuides(externalData.guides || [])
+      }
+    } else {
+      setExternalGuides([])
+    }
+  },[isHod, isAdmin])
 
   useEffect(()=>{ loadProjects(); loadGuides() },[loadProjects, loadGuides])
 
@@ -1550,6 +1563,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
         return hodDepartment ? g.department === hodDepartment : true
       })
     : guides
+  const availableExternalGuidesModal = externalGuides
 
   const updateProgress = async () => {
     if(!canProgress) return
@@ -1893,7 +1907,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2'>
                     <UserPlus className='w-3.5 h-3.5' /> Assign Guides
                   </h4>
-                  <div>
+                  <div className='space-y-3'>
                     <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Internal Guide</label>
                     {pendingInternalGuide && !changingGuide ? (
                       <div className='space-y-2'>
@@ -1936,14 +1950,36 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                       <p className='text-[10px] text-amber-600 dark:text-amber-400 mt-1'>⚠ Unsaved — click Save to apply</p>
                     )}
                   </div>
-                  <div className='grid sm:grid-cols-2 gap-2'>
-                    <div>
-                      <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Name</label>
-                      <input value={externalGuideName} onChange={e=>setExternalGuideName(e.target.value)} placeholder='Name' className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
-                    </div>
-                    <div>
-                      <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Email</label>
-                      <input value={externalGuideEmail} onChange={e=>setExternalGuideEmail(e.target.value)} placeholder='Email' className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
+                  <div className='pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3'>
+                    <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Guide</label>
+                    {isAdmin && availableExternalGuidesModal.length > 0 && (
+                      <div>
+                        <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Guide List (Admin Only)</label>
+                        <select
+                          value={externalGuideEmail}
+                          onChange={e => {
+                            const selectedGuide = availableExternalGuidesModal.find(g => g.email === e.target.value)
+                            setExternalGuideEmail(selectedGuide?.email || '')
+                            setExternalGuideName(selectedGuide?.academicInfo?.name || selectedGuide?.email?.split('@')[0] || '')
+                          }}
+                          className='w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none transition'
+                        >
+                          <option value=''>Select from external guide list</option>
+                          {availableExternalGuidesModal.map(g => (
+                            <option key={g._id} value={g.email}>{g.academicInfo?.name || g.email}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className='grid sm:grid-cols-2 gap-2'>
+                      <div>
+                        <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Name</label>
+                        <input value={externalGuideName} onChange={e=>setExternalGuideName(e.target.value)} placeholder='Name' className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
+                      </div>
+                      <div>
+                        <label className='text-[11px] text-gray-500 font-medium mb-1 block'>External Email</label>
+                        <input value={externalGuideEmail} onChange={e=>setExternalGuideEmail(e.target.value)} placeholder='Email' className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'/>
+                      </div>
                     </div>
                   </div>
                   {(externalGuideName !== (project.externalGuide?.name || '') || externalGuideEmail !== (project.externalGuide?.email || '')) && (

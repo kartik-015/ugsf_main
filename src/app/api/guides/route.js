@@ -26,6 +26,7 @@ export async function GET(request) {
     const department = searchParams.get('department') || ((session.user.role === ROLES.HOD || session.user.role === ROLES.PROJECT_COORDINATOR) ? session.user.department : null)
     const role = searchParams.get('role')
     const search = searchParams.get('search')
+    const requestedGuideType = searchParams.get('guideType')
 
     const query = {}
     if (role) {
@@ -42,6 +43,32 @@ export async function GET(request) {
       query.$or = [
         { email: { $regex: search, $options: 'i' } },
         { 'academicInfo.name': { $regex: search, $options: 'i' } }
+      ]
+    }
+
+    // Internal guides are default; external guides are admin-only.
+    if (requestedGuideType === 'external') {
+      if (![ROLES.ADMIN, ROLES.MAIN_ADMIN].includes(session.user.role)) {
+        return NextResponse.json({ message: 'Access denied' }, { status: 403 })
+      }
+      query.role = ROLES.GUIDE
+      query.guideType = 'external'
+    } else {
+      query.$and = [
+        ...(query.$and || []),
+        {
+          $or: [
+            { role: ROLES.PROJECT_COORDINATOR },
+            { guideType: 'internal' },
+            {
+              $and: [
+                { role: ROLES.GUIDE },
+                { guideType: { $exists: false } },
+                { email: { $regex: '@charusat\\.ac\\.in$', $options: 'i' } },
+              ],
+            },
+          ],
+        },
       ]
     }
 
