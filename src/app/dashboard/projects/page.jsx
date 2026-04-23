@@ -1825,10 +1825,33 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
                 </div>
               )}
               <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
-                <div className='flex items-center gap-2'>
-                  <Link2 className='w-4 h-4 text-indigo-500' />
-                  <div className='text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>Live Project Link</div>
+                <div className='flex items-center justify-between gap-3'>
+                  <div className='flex items-center gap-2'>
+                    <Link2 className='w-4 h-4 text-indigo-500' />
+                    <div className='text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>Live Project Link</div>
+                  </div>
+                  {isLeader && (
+                    <button
+                      type='button'
+                      onClick={() => setLiveProjectEnabled(prev => !prev)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${liveProjectEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                      title='Toggle live project link'
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${liveProjectEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  )}
                 </div>
+                {isLeader && liveProjectEnabled && (
+                  <div>
+                    <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Live Project URL</label>
+                    <input
+                      value={liveProjectUrl}
+                      onChange={e => setLiveProjectUrl(e.target.value)}
+                      placeholder='https://your-live-project-url'
+                      className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'
+                    />
+                  </div>
+                )}
                 {project.liveProject?.enabled && project.liveProject?.url ? (
                   <div className='space-y-2'>
                     <a
@@ -1844,6 +1867,19 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
                   </div>
                 ) : (
                   <p className='text-sm text-gray-500 dark:text-gray-400'>Live project link is not enabled yet.</p>
+                )}
+                {isLeader && hasLiveProjectChanges && (
+                  <div className='flex items-center justify-between gap-3'>
+                    <p className='text-[10px] text-amber-600 dark:text-amber-400'>⚠ Unsaved — click Save Live Link</p>
+                    <button
+                      type='button'
+                      onClick={saveLiveProjectChanges}
+                      disabled={savingLiveProject}
+                      className='inline-flex items-center gap-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50'
+                    >
+                      {savingLiveProject ? 'Saving...' : 'Save Live Link'}
+                    </button>
+                  </div>
                 )}
               </div>
               {/* Progress visualization */}
@@ -1882,48 +1918,6 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-              {isLeader && (
-                <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
-                  <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Student Live Project Access</h4>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm font-medium text-gray-800 dark:text-gray-200'>Enable live project link</p>
-                      <p className='text-[11px] text-gray-500 dark:text-gray-400'>Visible to internal/external guide, HOD and project coordinator.</p>
-                    </div>
-                    <button
-                      type='button'
-                      onClick={() => setLiveProjectEnabled(prev => !prev)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${liveProjectEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${liveProjectEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                  </div>
-                  {liveProjectEnabled && (
-                    <div>
-                      <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Live Project URL</label>
-                      <input
-                        value={liveProjectUrl}
-                        onChange={e => setLiveProjectUrl(e.target.value)}
-                        placeholder='https://your-live-project-url'
-                        className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'
-                      />
-                    </div>
-                  )}
-                  {hasLiveProjectChanges && (
-                    <div className='flex items-center justify-between gap-3'>
-                      <p className='text-[10px] text-amber-600 dark:text-amber-400'>⚠ Unsaved — click Save Live Link</p>
-                      <button
-                        type='button'
-                        onClick={saveLiveProjectChanges}
-                        disabled={savingLiveProject}
-                        className='inline-flex items-center gap-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50'
-                      >
-                        {savingLiveProject ? 'Saving...' : 'Save Live Link'}
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
