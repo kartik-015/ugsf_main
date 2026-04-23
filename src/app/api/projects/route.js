@@ -129,10 +129,11 @@ export async function GET(request) {
       // HOD/PC can see any project that includes a student from their department
       departmentScopedStudentIds = await getDepartmentStudentIds(session.user.department)
       filter = departmentScopedStudentIds.length ? { $and: [{ 'members.student': { $in: departmentScopedStudentIds } }] } : { _id: null }
-    } else if (role === 'admin') {
-      // Admin sees all projects (not restricted to HOD-approved only)
+    } else if (role === 'admin' || role === 'principal') {
+      // Admin/Principal should only see projects approved by HOD
+      filter.hodApproval = 'approved'
       if (qDept) filter.department = qDept.toUpperCase()
-    } else if (role === 'mainadmin' || role === 'principal') {
+    } else if (role === 'mainadmin') {
       if (qDept) filter.department = qDept.toUpperCase()
     }
 

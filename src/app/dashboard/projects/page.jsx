@@ -18,6 +18,23 @@ import {
   Calendar, UserCheck, ShieldCheck, CircleDot, Briefcase, Award, Upload, Star
 } from 'lucide-react'
 
+function getProjectReportStatus(project, referenceDate = new Date()) {
+  if (!project) return 'pending'
+  if (project.hodApproval === 'rejected') return 'rejected'
+  if (project.hodApproval !== 'approved') return 'pending'
+
+  const currentMonth = referenceDate.getMonth() + 1
+  const currentYear = referenceDate.getFullYear()
+  const monthlyReports = Array.isArray(project.monthlyReports) ? project.monthlyReports : []
+  const currentMonthReports = monthlyReports.filter(
+    report => Number(report?.month) === currentMonth && Number(report?.year) === currentYear
+  )
+
+  if (currentMonthReports.some(report => report?.status === 'graded')) return 'graded'
+  if (currentMonthReports.some(report => report?.turnedIn || report?.status === 'submitted' || report?.status === 'revision-needed')) return 'submitted'
+  return 'pending'
+}
+
 export default function ProjectsPage(){
   const { data: session } = useSession()
   const isStudent = session?.user?.role==='student'
@@ -373,18 +390,8 @@ export default function ProjectsPage(){
       })
     : guides
   
-  // Report-driven status for list/filter:
-  // pending: no turned-in report, submitted: turned-in and awaiting grading, graded: all turned-in reports graded.
-  const getDisplayStatus = (p) => {
-    if (p.hodApproval === 'rejected') return 'rejected'
-    if (p.hodApproval !== 'approved') return 'pending'
-
-    const reports = p.monthlyReports || []
-    const turnedInReports = reports.filter(r => r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded')
-    if (turnedInReports.length === 0) return 'pending'
-    const gradedTurnedIn = turnedInReports.filter(r => r?.status === 'graded').length
-    return gradedTurnedIn === turnedInReports.length ? 'graded' : 'submitted'
-  }
+  // Report status used in admin table/filter for the current month.
+  const getDisplayStatus = (p) => getProjectReportStatus(p)
 
   const filtered = base
     .filter(p => {
@@ -865,7 +872,7 @@ export default function ProjectsPage(){
                       <h3 className='font-bold text-base text-gray-900 dark:text-white truncate'>{p.title}</h3>
                       <div className='flex items-center gap-2 mt-1'>
                         <span className='text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-700/50 text-indigo-700 dark:text-indigo-200 font-semibold'>{p.groupId}</span>
-                        <StatusBadge status={p.hodApproval || 'pending'} reports={p.monthlyReports} />
+                        <StatusBadge project={p} />
                       </div>
                     </div>
                     {/* Progress ring */}
@@ -1125,7 +1132,7 @@ export default function ProjectsPage(){
                           
                           <td className='px-2 py-3 whitespace-nowrap'>
                             <div className='flex flex-col items-center justify-center gap-2' onClick={e => e.stopPropagation()}>
-                              <StatusBadge status={getDisplayStatus(p)} reports={p.monthlyReports} />
+                              <StatusBadge project={p} status={getDisplayStatus(p)} />
 
                               <div className='flex items-center justify-center gap-2 flex-wrap'>
                               {/* HOD Actions */}
@@ -1437,8 +1444,10 @@ function FieldSelector({ fields, visible, toggle }) {
   )
 }
 
-function StatusBadge({ status, reports }) {
-  if (status === 'rejected') {
+function StatusBadge({ project, status, reports }) {
+  const resolvedStatus = project ? getProjectReportStatus(project) : status
+
+  if (resolvedStatus === 'rejected') {
     return (
       <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 badge-animate'>
         <XCircle className='w-2.5 h-2.5' />
@@ -1447,13 +1456,13 @@ function StatusBadge({ status, reports }) {
     )
   }
 
-  if (status === 'pending' || status === 'submitted' || status === 'graded') {
+  if (resolvedStatus === 'pending' || resolvedStatus === 'submitted' || resolvedStatus === 'graded') {
     const config = {
       'pending': { bg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800', icon: Clock, label: 'Pending' },
       'submitted': { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800', icon: Eye, label: 'Submitted' },
       'graded': { bg: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800', icon: CheckCircle2, label: 'Graded' },
     }
-    const c = config[status] || config.pending
+    const c = config[resolvedStatus] || config.pending
     const Icon = c.icon
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${c.bg} badge-animate`}>
@@ -1864,7 +1873,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                 </h4>
                 <div className='flex items-center gap-2'>
                   <span className='text-[11px] text-gray-500'>Current Status:</span>
-                  <StatusBadge status={project.hodApproval || 'pending'} reports={project.monthlyReports} />
+                  <StatusBadge project={project} />
                 </div>
                 {isHod && project.hodApproval === 'pending' && (
                   <div className='flex flex-wrap gap-2'>
