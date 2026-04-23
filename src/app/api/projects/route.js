@@ -124,11 +124,25 @@ export async function GET(request) {
       // Students can only see projects where they are a member
       filter = { 'members.student': session.user.id }
     } else if (role === 'guide') {
-      filter = { internalGuide: session.user.id }
+      filter = { $or: [{ internalGuide: session.user.id }, { 'externalGuide.user': session.user.id }] }
     } else if (role === 'hod' || role === 'project_coordinator') {
-      // HOD/PC can see any project that includes a student from their department
+      // HOD/PC can see projects containing their department students.
+      // Cross-department teams become visible only after leader-department HOD approval.
       departmentScopedStudentIds = await getDepartmentStudentIds(session.user.department)
-      filter = departmentScopedStudentIds.length ? { $and: [{ 'members.student': { $in: departmentScopedStudentIds } }] } : { _id: null }
+      const ownDepartment = (session.user.department || '').toUpperCase()
+      filter = departmentScopedStudentIds.length
+        ? {
+            $and: [
+              { 'members.student': { $in: departmentScopedStudentIds } },
+              {
+                $or: [
+                  { department: ownDepartment },
+                  { hodApproval: 'approved' },
+                ],
+              },
+            ],
+          }
+        : { _id: null }
     } else if (role === 'admin' || role === 'principal') {
       // Admin/Principal should only see projects approved by HOD
       filter.hodApproval = 'approved'
@@ -153,6 +167,7 @@ export async function GET(request) {
       .populate('leader', 'academicInfo.name email department admissionYear university institute')
       .populate('members.student', 'academicInfo.name email department admissionYear university institute')
       .populate('internalGuide', 'academicInfo.name email department')
+      .populate('externalGuide.user', 'academicInfo.name email department role')
       .populate('monthlyReports.submittedBy', 'academicInfo.name email')
       .populate('monthlyReports.feedbackBy', 'academicInfo.name email')
       .populate('deadlines.setBy', 'academicInfo.name email')
@@ -356,7 +371,43 @@ export async function PATCH(request) {
     // EXTERNAL GUIDE
     if (body.externalGuide) {
       if (!['admin', 'hod', 'project_coordinator', 'mainadmin'].includes(role)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 })
-      project.externalGuide = body.externalGuide
+      const extEmail = String(body.externalGuide.email || '').trim().toLowerCase()
+      const extName = String(body.externalGuide.name || '').trim()
+      if (!extEmail) {
+        project.externalGuide = undefined
+        await project.save()
+        return NextResponse.json({ ok: true, data: project })
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extEmail)) {
+        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Invalid external guide email' } }, { status: 400 })
+      }
+
+      let guideUser = await User.findOne({ email: extEmail })
+      if (!guideUser) {
+        guideUser = await User.create({
+          email: extEmail,
+          password: 'depstar@123',
+          role: 'guide',
+          department: project.department,
+          academicInfo: { name: extName || extEmail.split('@')[0] },
+          isApproved: true,
+          approvalStatus: 'approved',
+          isEmailVerified: true,
+          isRegistered: true,
+          isOnboarded: true,
+          mustChangePassword: true,
+        })
+      } else if (guideUser.role !== 'guide') {
+        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Email already exists with a non-guide account' } }, { status: 400 })
+      }
+
+      project.externalGuide = {
+        ...(project.externalGuide || {}),
+        ...body.externalGuide,
+        name: extName || guideUser.academicInfo?.name || extEmail.split('@')[0],
+        email: extEmail,
+        user: guideUser._id,
+      }
       await project.save()
       return NextResponse.json({ ok: true, data: project })
     }

@@ -73,6 +73,13 @@ async function seed() {
         role: 'project_coordinator',
         department: 'IT',
         academicInfo: { name: 'Project Coordinator IT', phoneNumber: '1234567897', address: 'Charusat University' },
+      },
+      {
+        email: 'kartiktest.dit@charusat.ac.in',
+        password: 'depstar@123',
+        role: 'guide',
+        department: 'IT',
+        academicInfo: { name: 'Kartik Guleria (Test Guide)', phoneNumber: '1234567898', address: 'Charusat University' },
       }
     ]
     for (const userData of users) {
@@ -80,6 +87,7 @@ async function seed() {
         ...userData,
         institute: 'DEPSTAR',
         isOnboarded: true,
+        isRegistered: true,
         isEmailVerified: true,
         isApproved: true,
         approvalStatus: 'approved',
@@ -99,6 +107,7 @@ async function seed() {
     console.log('PC CSE: pccse@charusat.ac.in / depstar@123')
     console.log('PC CE: pcce@charusat.ac.in / depstar@123')
     console.log('PC IT: pcit@charusat.ac.in / depstar@123')
+    console.log('Guide IT (Test): kartiktest.dit@charusat.ac.in / depstar@123')
 
   } catch (error) {
     console.error('Error seeding database:', error)

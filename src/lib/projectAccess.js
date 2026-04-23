@@ -42,7 +42,9 @@ export function canViewProject(project, sessionUser) {
   }
 
   if (role === ROLES.GUIDE) {
-    return String(project.internalGuide?._id || project.internalGuide || '') === userId
+    const isInternalGuide = String(project.internalGuide?._id || project.internalGuide || '') === userId
+    const isExternalGuideUser = String(project.externalGuide?.user?._id || project.externalGuide?.user || '') === userId
+    return isInternalGuide || isExternalGuideUser
   }
 
   if ([ROLES.HOD, ROLES.PROJECT_COORDINATOR].includes(role)) {

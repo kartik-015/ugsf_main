@@ -14,6 +14,7 @@ export async function GET(_req, { params }) {
       .populate('leader', 'academicInfo.name email department admissionYear')
       .populate('members.student', 'academicInfo.name email department admissionYear')
       .populate('internalGuide', 'academicInfo.name email department')
+      .populate('externalGuide.user', 'academicInfo.name email department role')
     if(!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const canView = canViewProject(project, session.user)
     if(!canView) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

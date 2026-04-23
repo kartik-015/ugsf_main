@@ -330,7 +330,7 @@ export default function ProjectsPage(){
 
   const approveProject = async (projectId, approve) => {
     // For HOD approval workflow
-    if (session?.user?.role === 'hod') {
+    if (session?.user?.role === 'hod' || session?.user?.role === 'project_coordinator') {
       const approval = approve ? 'approved' : 'rejected'
       const res = await fetch('/api/projects',{ method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ projectId, hodApproval: approval }) })
       if(res.ok){ toast.success(`Project ${approval}`); loadProjects() } else { const e=await res.json(); toast.error(e.error?.message||'Error') }
@@ -373,10 +373,14 @@ export default function ProjectsPage(){
   if (isStudent) {
     base = mine // Students always see only their own projects
   } else if (isHod) {
-    // HOD/PC can see projects that include students from their department
+    // HOD/PC can see cross-department projects only after primary-dept approval.
     const hodDepartment = session?.user?.department
     base = projects.filter(p => {
-      return projectMatchesDepartment(p, hodDepartment)
+      const belongsToDept = projectMatchesDepartment(p, hodDepartment)
+      if (!belongsToDept) return false
+      const projectDepartment = String(p.department || '').trim().toUpperCase()
+      const ownDepartment = String(hodDepartment || '').trim().toUpperCase()
+      return projectDepartment === ownDepartment || p.hodApproval === 'approved'
     })
   } else if (!isAdmin) {
     base = projects
@@ -760,10 +764,10 @@ export default function ProjectsPage(){
                   <FilterGroup title='DEPARTMENT' options={departmentsList} value={department} onSelect={v=>toggleExclusive(department,setDepartment,v)} />
                 </div>
               )}
-              <div className='w-full md:-ml-3'>
+              <div className='w-full'>
                 <FilterGroup title='SEMESTER' options={semesters} value={semester} onSelect={v=>toggleExclusive(semester,setSemester,v)} />
               </div>
-              <div className='w-full'>
+              <div className='w-full md:pl-2'>
                 <FilterGroup title='STATUS' options={statuses} value={status} onSelect={v=>toggleExclusive(status,setStatus,v)} />
               </div>
             </div>
@@ -1136,7 +1140,7 @@ export default function ProjectsPage(){
 
                               <div className='flex items-center justify-center gap-2 flex-wrap'>
                               {/* HOD Actions */}
-                              {isHod && p.hodApproval === 'pending' && (
+                              {isHod && p.hodApproval === 'pending' && String(p.department || '').toUpperCase() === String(session?.user?.department || '').toUpperCase() && (
                                 <>
                                   <button 
                                     onClick={() => approveProject(p._id, true)} 
@@ -1865,7 +1869,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <span className='text-[11px] text-gray-500'>Current Status:</span>
                   <StatusBadge project={project} />
                 </div>
-                {isHod && project.hodApproval === 'pending' && (
+                {isHod && project.hodApproval === 'pending' && String(project.department || '').toUpperCase() === String(session?.user?.department || '').toUpperCase() && (
                   <div className='flex flex-wrap gap-2'>
                     <button onClick={()=>approveProject(project._id,true)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700 transition font-medium'>
                       <CheckCircle2 className='w-3.5 h-3.5' /> Approve

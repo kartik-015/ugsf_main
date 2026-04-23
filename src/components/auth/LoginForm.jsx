@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function LoginForm() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   // Force clear on initial mount to avoid browser autofill retained values
@@ -25,18 +24,18 @@ export default function LoginForm() {
     // Keep if user already typed something
   }
 
-  // Accept @charusat.edu.in (students), @charusat.ac.in (guides/HOD), and whitelisted test emails
+  // Allow valid emails so external guides can also sign in.
   const TEST_EMAILS = ['kartik.guleria@gmail.com']
   const validateEmail = (email) => {
     const lower = email.toLowerCase().trim()
     if (TEST_EMAILS.includes(lower)) return true
-    return /^[^@\s]+@charusat\.(edu|ac)\.in$/i.test(lower)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lower)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateEmail(email)) {
-      toast.error('Use your Charusat email (@charusat.edu.in for students, @charusat.ac.in for guide/HOD)')
+      toast.error('Please enter a valid email address')
       return
     }
     setIsLoading(true)
@@ -118,7 +117,7 @@ export default function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onFocus={handleEmailFocus}
-            placeholder="your@charusat.edu.in"
+            placeholder="Enter college email"
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
             required
             autoComplete="one-time-code"
@@ -134,22 +133,15 @@ export default function LoginForm() {
           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             id="login-password"
-            type={showPassword ? 'text' : 'password'}
+            type='password'
             name="login-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full pl-10 pr-12 py-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
             required
             autoComplete="new-password"
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          >
-            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
         </div>
       </div>
 

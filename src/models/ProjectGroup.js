@@ -18,6 +18,10 @@ const projectMemberSchema = new mongoose.Schema({
 }, { _id: false })
 
 const externalGuideSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
   name: String,
   organization: String,
   email: String,
