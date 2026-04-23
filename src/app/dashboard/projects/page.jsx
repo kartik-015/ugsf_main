@@ -754,16 +754,16 @@ export default function ProjectsPage(){
               >
                 <div className='px-6 pb-6 space-y-5 border-t border-gray-100 dark:border-gray-800 pt-4'>
             {/* Row 1: Chip filters */}
-            <div className={`grid gap-4 ${(isGuide || isHod) ? 'grid-cols-1 md:grid-cols-[auto_1fr]' : 'grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.35fr)]'}`}>
+            <div className={`grid gap-5 ${(isGuide || isHod) ? 'grid-cols-1 md:grid-cols-[auto_1fr]' : 'grid-cols-1 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)_minmax(0,1.2fr)]'}`}>
               {!isGuide && !isHod && (
                 <div className='w-full'>
                   <FilterGroup title='DEPARTMENT' options={departmentsList} value={department} onSelect={v=>toggleExclusive(department,setDepartment,v)} />
                 </div>
               )}
-              <div className='w-full'>
+              <div className='w-full md:-ml-3'>
                 <FilterGroup title='SEMESTER' options={semesters} value={semester} onSelect={v=>toggleExclusive(semester,setSemester,v)} />
               </div>
-              <div className='w-full md:-ml-2'>
+              <div className='w-full'>
                 <FilterGroup title='STATUS' options={statuses} value={status} onSelect={v=>toggleExclusive(status,setStatus,v)} />
               </div>
             </div>
@@ -1380,18 +1380,17 @@ export default function ProjectsPage(){
 function FilterGroup({ title, options, value, onSelect }) {
   const formatTitle = (text) => text.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
   const formatOptionText = (text) => title === 'STATUS' ? text.charAt(0).toUpperCase() + text.slice(1).toLowerCase() : text
-  const isStatus = title === 'STATUS'
   
   return (
     <div>
       <p className='text-[11px] font-bold tracking-widest mb-2.5 text-gray-500 dark:text-gray-400 uppercase'>{formatTitle(title)}</p>
-      <div className={`flex flex-wrap ${isStatus ? 'gap-1.5' : 'gap-2'}`}>
+      <div className='flex flex-wrap gap-2'>
         {options.map(opt => {
           const checked = value === opt
           return (
             <button 
               key={opt} type='button' onClick={()=>onSelect(opt)} 
-              className={`${isStatus ? 'px-3 py-1.5 text-xs whitespace-nowrap' : 'px-3.5 py-2 text-sm'} rounded font-medium transition-all duration-200 ${
+              className={`px-3.5 py-2 rounded text-sm font-medium transition-all duration-200 ${
                 checked 
                   ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-300 dark:ring-indigo-800 scale-[1.02]' 
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
