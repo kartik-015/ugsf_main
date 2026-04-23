@@ -344,7 +344,10 @@ export async function PATCH(request) {
 
     // GRADE REPORT
     if (body.gradeReport) {
-      if (role !== 'guide' || String(project.internalGuide) !== String(session.user.id)) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only assigned guide' } }, { status: 403 })
+      const isInternalGuide = String(project.internalGuide) === String(session.user.id)
+      if (role !== 'guide' || !isInternalGuide) {
+        return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only internal guide can grade reports' } }, { status: 403 })
+      }
       const { reportId, grade, score, feedback, reportStatus } = body.gradeReport
       const report = project.monthlyReports.id(reportId)
       if (!report) return NextResponse.json({ ok: false, error: { code: 'NOT_FOUND', message: 'Report not found' } }, { status: 404 })
@@ -363,6 +366,39 @@ export async function PATCH(request) {
       await project.save()
       const memberIds = project.members.map(m => m.student._id || m.student)
       await Notification.createBulk(memberIds, { type: 'report-graded', title: 'Report Graded', message: `Report graded for "${project.title}".${grade ? ' Grade: ' + grade : ''}`, link: '/dashboard/projects', relatedProject: project._id })
+      return NextResponse.json({ ok: true, data: project })
+    }
+
+    // STUDENT LIVE PROJECT LINK TOGGLE/UPDATE (leader only)
+    if (body.liveProject) {
+      if (role !== 'student') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only students can update live project link' } }, { status: 403 })
+      const isLeader = String(project.leader._id || project.leader) === String(session.user.id)
+      if (!isLeader) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only leader can update live project link' } }, { status: 403 })
+
+      const enabled = Boolean(body.liveProject.enabled)
+      const rawUrl = String(body.liveProject.url || '').trim()
+
+      if (enabled) {
+        if (!rawUrl) return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Live project URL is required when enabled' } }, { status: 400 })
+        let parsed
+        try {
+          parsed = new URL(rawUrl)
+        } catch {
+          return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Invalid live project URL' } }, { status: 400 })
+        }
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Live project URL must start with http:// or https://' } }, { status: 400 })
+        }
+      }
+
+      project.liveProject = {
+        ...(project.liveProject || {}),
+        enabled,
+        url: enabled ? rawUrl : '',
+        updatedBy: session.user.id,
+        updatedAt: new Date(),
+      }
+      await project.save()
       return NextResponse.json({ ok: true, data: project })
     }
 

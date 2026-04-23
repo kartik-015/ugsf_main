@@ -14,7 +14,7 @@ import {
   Eye, CheckCircle2, XCircle, Clock, Users, UserPlus, FileText,
   BarChart3, Globe, GraduationCap, Building2, Layers, ArrowUpDown,
   Sparkles, TrendingUp, AlertTriangle, ExternalLink, Send, MessageSquare,
-  X as XIcon, ChevronRight, Sliders, LayoutGrid, Table2, BookOpen,
+  X as XIcon, ChevronRight, Sliders, LayoutGrid, Table2, BookOpen, Link2,
   Calendar, UserCheck, ShieldCheck, CircleDot, Briefcase, Award, Upload, Star
 } from 'lucide-react'
 
@@ -1510,6 +1510,7 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
   const [pendingInternalGuide, setPendingInternalGuide] = useState(project.internalGuide?._id || '')
   const [changingGuide, setChangingGuide] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [savingLiveProject, setSavingLiveProject] = useState(false)
   const [addingReport, setAddingReport] = useState(false)
   const [reportUrl, setReportUrl] = useState('')
   const [feedbackDraft, setFeedbackDraft] = useState('')
@@ -1540,6 +1541,8 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
   const [gradeFeedback, setGradeFeedback] = useState('')
   const [grading, setGrading] = useState(false)
   const [pdfLoadError, setPdfLoadError] = useState(false)
+  const [liveProjectEnabled, setLiveProjectEnabled] = useState(Boolean(project.liveProject?.enabled))
+  const [liveProjectUrl, setLiveProjectUrl] = useState(project.liveProject?.url || '')
   const fileInputRef = useRef(null)
   const canManage = isAdmin || isHod
   const isGuide = session?.user?.role==='guide' && String(project.internalGuide?._id)===String(session.user.id)
@@ -1627,6 +1630,11 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
     const origExtEmail = project.externalGuide?.email || ''
     return pendingInternalGuide !== origInternal || externalGuideName !== origExtName || externalGuideEmail !== origExtEmail
   })()
+  const hasLiveProjectChanges = (() => {
+    const originalEnabled = Boolean(project.liveProject?.enabled)
+    const originalUrl = project.liveProject?.url || ''
+    return liveProjectEnabled !== originalEnabled || liveProjectUrl.trim() !== originalUrl
+  })()
 
   const saveManageChanges = async () => {
     setSaving(true)
@@ -1650,6 +1658,34 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
       await loadProjects()
     } catch { toast.error('Failed to save changes') }
     finally { setSaving(false) }
+  }
+  const saveLiveProjectChanges = async () => {
+    if (!isLeader) return
+    setSavingLiveProject(true)
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: project._id,
+          liveProject: {
+            enabled: liveProjectEnabled,
+            url: liveProjectUrl.trim(),
+          },
+        }),
+      })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        toast.error(e.error?.message || 'Failed to save live project link')
+        return
+      }
+      toast.success('Live project link updated')
+      await loadProjects()
+    } catch {
+      toast.error('Failed to save live project link')
+    } finally {
+      setSavingLiveProject(false)
+    }
   }
 
   useEffect(()=>{
@@ -1788,6 +1824,28 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
                   <p className='text-sm text-gray-700 dark:text-gray-300 leading-relaxed'>{project.description}</p>
                 </div>
               )}
+              <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
+                <div className='flex items-center gap-2'>
+                  <Link2 className='w-4 h-4 text-indigo-500' />
+                  <div className='text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>Live Project Link</div>
+                </div>
+                {project.liveProject?.enabled && project.liveProject?.url ? (
+                  <div className='space-y-2'>
+                    <a
+                      href={project.liveProject.url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='inline-flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline break-all'
+                    >
+                      <ExternalLink className='w-3.5 h-3.5' />
+                      {project.liveProject.url}
+                    </a>
+                    <p className='text-[11px] text-gray-500 dark:text-gray-400'>Open this link to run/test the live project on your machine.</p>
+                  </div>
+                ) : (
+                  <p className='text-sm text-gray-500 dark:text-gray-400'>Live project link is not enabled yet.</p>
+                )}
+              </div>
               {/* Progress visualization */}
               <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800'>
                 <div className='flex items-center justify-between mb-2'>
@@ -1824,6 +1882,48 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, externa
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+              {isLeader && (
+                <div className='p-4 rounded bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3'>
+                  <h4 className='text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400'>Student Live Project Access</h4>
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <p className='text-sm font-medium text-gray-800 dark:text-gray-200'>Enable live project link</p>
+                      <p className='text-[11px] text-gray-500 dark:text-gray-400'>Visible to internal/external guide, HOD and project coordinator.</p>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => setLiveProjectEnabled(prev => !prev)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${liveProjectEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${liveProjectEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                  {liveProjectEnabled && (
+                    <div>
+                      <label className='text-[11px] text-gray-500 font-medium mb-1 block'>Live Project URL</label>
+                      <input
+                        value={liveProjectUrl}
+                        onChange={e => setLiveProjectUrl(e.target.value)}
+                        placeholder='https://your-live-project-url'
+                        className='w-full px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition'
+                      />
+                    </div>
+                  )}
+                  {hasLiveProjectChanges && (
+                    <div className='flex items-center justify-between gap-3'>
+                      <p className='text-[10px] text-amber-600 dark:text-amber-400'>⚠ Unsaved — click Save Live Link</p>
+                      <button
+                        type='button'
+                        onClick={saveLiveProjectChanges}
+                        disabled={savingLiveProject}
+                        className='inline-flex items-center gap-2 px-4 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50'
+                      >
+                        {savingLiveProject ? 'Saving...' : 'Save Live Link'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

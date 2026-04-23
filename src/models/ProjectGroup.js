@@ -28,6 +28,13 @@ const externalGuideSchema = new mongoose.Schema({
   phone: String,
 }, { _id: false })
 
+const liveProjectSchema = new mongoose.Schema({
+  enabled: { type: Boolean, default: false },
+  url: { type: String, default: '' },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  updatedAt: Date,
+}, { _id: false })
+
 const monthlyReportSchema = new mongoose.Schema({
   month: { type: Number, min: 1, max: 12, required: true },
   year: { type: Number, required: true },
@@ -94,6 +101,7 @@ const projectGroupSchema = new mongoose.Schema({
   // Guide assignment
   internalGuide: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   externalGuide: externalGuideSchema,
+  liveProject: liveProjectSchema,
   
   // Guide acceptance workflow
   guideStatus: {
