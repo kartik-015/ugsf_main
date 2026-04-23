@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb'
 import User from '@/models/User'
 
 const EMAIL_ALIASES = {}
+const KARTIK_TEST_GUIDE_EMAIL = 'kartiktest.dit@charusat.ac.in'
 
 export const authOptions = {
   providers: [
@@ -22,7 +23,27 @@ export const authOptions = {
         const normalizedEmail = credentials.email.trim().toLowerCase()
         const emailCandidates = [normalizedEmail, ...(EMAIL_ALIASES[normalizedEmail] || [])]
 
-        const user = await User.findOne({ email: { $in: emailCandidates } })
+        let user = await User.findOne({ email: { $in: emailCandidates } })
+
+        // Production-safe bootstrap for requested internal test guide.
+        // If this account is missing in DB (e.g., on live), create it with default credentials.
+        if (!user && normalizedEmail === KARTIK_TEST_GUIDE_EMAIL) {
+          await User.create({
+            email: KARTIK_TEST_GUIDE_EMAIL,
+            password: 'depstar@123',
+            role: 'guide',
+            department: 'IT',
+            institute: 'DEPSTAR',
+            academicInfo: { name: 'Kartik Guleria (Test Guide)' },
+            isOnboarded: true,
+            isRegistered: true,
+            isEmailVerified: true,
+            isApproved: true,
+            approvalStatus: 'approved',
+            isActive: true,
+          })
+          user = await User.findOne({ email: KARTIK_TEST_GUIDE_EMAIL })
+        }
 
         if (!user) {
           throw new Error('No account found for this email. Check the spelling or use your assigned college email.')
