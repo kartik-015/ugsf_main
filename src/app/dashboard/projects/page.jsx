@@ -1388,7 +1388,7 @@ export default function ProjectsPage(){
       )}
 
       {selectedProject && (
-        <ProjectModal project={selectedProject} close={()=>setSelected(null)} session={session} isAdmin={!!isAdmin} isHod={!!isHod} guides={guides} assignInternal={assignInternal} approveProject={approveProject} addMember={addMember} removeMember={removeMember} loadProjects={loadProjects} />
+        <ProjectModal project={selectedProject} close={()=>setSelected(null)} session={session} isAdmin={!!isAdmin} isHod={!!isHod} guides={guides} externalGuides={externalGuides} assignInternal={assignInternal} approveProject={approveProject} addMember={addMember} removeMember={removeMember} loadProjects={loadProjects} />
       )}
     </div>
   )
@@ -1498,7 +1498,7 @@ function StatusBadge({ project, status, reports }) {
   )
 }
 
-function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignInternal, approveProject, addMember, removeMember, loadProjects }) {
+function ProjectModal({ project, close, session, isAdmin, isHod, guides, externalGuides = [], assignInternal, approveProject, addMember, removeMember, loadProjects }) {
   const [tab, setTab] = useState('overview')
   const [groupDetails, setGroupDetails] = useState(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
