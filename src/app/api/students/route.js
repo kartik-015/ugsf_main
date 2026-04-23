@@ -42,14 +42,8 @@ export async function GET(request) {
 
     // Department filtering logic
     if ((session.user.role === ROLES.HOD || session.user.role === ROLES.PROJECT_COORDINATOR) && session.user.department) {
-      // HOD/Coordinator: if department filter provided, use it; otherwise default to their department
-      if (searchParams.has('department') && department) {
-        query.department = department
-      } else if (!searchParams.has('department')) {
-        // No filter provided, default to their department
-        query.department = session.user.department
-      }
-      // If department filter is present but empty, show all departments
+      // HOD/Coordinator: ALWAYS restricted to their own department
+      query.department = session.user.department
     } else if (session.user.role === ROLES.GUIDE && session.user.department) {
       // Guide: if department filter provided, use it; otherwise default to guide's department
       if (searchParams.has('department') && department) {

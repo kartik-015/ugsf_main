@@ -18,6 +18,15 @@ scripts/**
 
 # Real Data - NO UPLOAD
 real\ data/**
+real data/**
+real_data/**
+
+# Local uploads and generated files - NO UPLOAD
+public/uploads/reports/**
+*.pdf
+*.doc
+*.docx
+*.xlsx
 
 # Logs
 *.log
@@ -72,3 +81,5 @@ jest.babel.config.cjs
 credentials_generated.txt
 *.bak
 backup/**
+*.orig
+*.rej

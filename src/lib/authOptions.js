@@ -75,14 +75,38 @@ export const authOptions = {
         token.approvalStatus = user.approvalStatus
         token.mustChangePassword = user.mustChangePassword || false
       }
+      // Keep role-sensitive session fields in sync with DB changes (e.g., guide promoted to project_coordinator).
+      // This avoids stale JWT role data after admin/HOD role updates.
+      if (!user && token?.sub) {
+        try {
+          await dbConnect()
+          const freshUser = await User.findById(token.sub).select('role department admissionYear academicInfo isOnboarded isApproved approvalStatus mustChangePassword')
+          if (freshUser) {
+            token.role = freshUser.role
+            token.department = freshUser.department
+            token.admissionYear = freshUser.admissionYear
+            token.academicInfo = freshUser.academicInfo
+            token.isOnboarded = freshUser.isOnboarded
+            token.isApproved = freshUser.isApproved
+            token.approvalStatus = freshUser.approvalStatus
+            token.mustChangePassword = freshUser.mustChangePassword || false
+          }
+        } catch {}
+      }
       // On session update (e.g. after password change), refresh from DB
       if (trigger === 'update') {
         try {
           await dbConnect()
-          const freshUser = await User.findById(token.sub).select('mustChangePassword isOnboarded')
+          const freshUser = await User.findById(token.sub).select('role department admissionYear academicInfo isOnboarded isApproved approvalStatus mustChangePassword')
           if (freshUser) {
+            token.role = freshUser.role
+            token.department = freshUser.department
+            token.admissionYear = freshUser.admissionYear
+            token.academicInfo = freshUser.academicInfo
             token.mustChangePassword = freshUser.mustChangePassword || false
             token.isOnboarded = freshUser.isOnboarded
+            token.isApproved = freshUser.isApproved
+            token.approvalStatus = freshUser.approvalStatus
           }
         } catch {}
       }

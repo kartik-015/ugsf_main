@@ -41,19 +41,24 @@ export async function GET(request) {
 
     await dbConnect()
 
-    // Check for drill-down mode
-    const { searchParams } = new URL(request.url)
-    const drillDept = searchParams.get('drillDept')
-    const drillType = searchParams.get('drillType')
-
     // Department-scoped for HOD and Project Coordinator
     const isDeptScoped = (role === 'hod' || role === 'project_coordinator') && department
     const userDeptFilter = isDeptScoped ? { department } : {}
     const projectDeptFilter = isDeptScoped ? { department } : {}
 
+    // Check for drill-down mode
+    const { searchParams } = new URL(request.url)
+    let drillDept = searchParams.get('drillDept')
+    const drillType = searchParams.get('drillType')
+
+    // HOD/PC can ONLY drill into their own department
+    if (isDeptScoped && drillDept && drillDept !== department) {
+      drillDept = department
+    }
+
     // ---- DRILL-DOWN: Department-specific detailed data ----
     if (drillDept && drillType) {
-      const deptFilter = { department: drillDept }
+      const deptFilter = isDeptScoped ? { department } : { department: drillDept }
 
       if (drillType === 'students') {
         const students = await User.find({ role: 'student', ...deptFilter })
@@ -341,6 +346,8 @@ export async function GET(request) {
             const now = new Date()
             return r.month === (now.getMonth() + 1) && r.year === now.getFullYear()
           }) || false,
+          submittedReports: (p.monthlyReports || []).filter(r => r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded').length,
+          gradedReports: (p.monthlyReports || []).filter(r => r?.status === 'graded').length,
           totalReports: p.monthlyReports?.length || 0,
         }))
 

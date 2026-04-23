@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import ProjectGroup from '@/models/ProjectGroup'
-import { ROLES } from '@/lib/roles'
+import { canViewProject } from '@/lib/projectAccess'
 
 export async function GET(_req, { params }) {
   try {
@@ -15,10 +15,7 @@ export async function GET(_req, { params }) {
       .populate('members.student', 'academicInfo.name email department admissionYear')
       .populate('internalGuide', 'academicInfo.name email department')
     if(!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    const uid = session.user.id
-    const role = session.user.role
-    const isMember = project.members.some(m=>String(m.student._id||m.student)===String(uid))
-    const canView = role===ROLES.MAIN_ADMIN || role===ROLES.ADMIN || (role===ROLES.GUIDE && project.internalGuide && String(project.internalGuide._id||project.internalGuide)===String(uid)) || isMember
+    const canView = canViewProject(project, session.user)
     if(!canView) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     return NextResponse.json({ project })
   } catch(e){

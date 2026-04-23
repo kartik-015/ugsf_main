@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import ProjectGroup from '@/models/ProjectGroup'
+import { canViewProject } from '@/lib/projectAccess'
 
 // Helper to get current ISO week range (Mon-Sun)
 function currentWeekRange() {
@@ -64,21 +65,13 @@ export async function GET(request, { params }) {
 
     const { groupId } = params
     const project = await ProjectGroup.findOne({ groupId })
+      .populate('members.student', 'academicInfo.name email department')
       .populate('weeklyReports.submittedBy', 'academicInfo.name email')
       .populate('weeklyReports.reviewedBy', 'academicInfo.name email')
 
     if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const uid = session.user.id
-    const role = session.user.role
-    const memberIds = project.members.map(m => String(m.student))
-
-  if (!memberIds.includes(uid) && !['admin','hod','guide'].includes(role) && String(project.internalGuide) !== uid) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-  // Guide/internalGuide can only view if they are assigned
-  if (role === 'guide' && project.internalGuide && String(project.internalGuide) !== uid && !memberIds.includes(uid)) {
+    if (!canViewProject(project, session.user)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -97,7 +90,7 @@ export async function PATCH(request, { params }) {
     await dbConnect()
 
     const role = session.user.role
-  if (!['guide','admin','hod'].includes(role)) {
+    if (!['guide','admin','hod','project_coordinator'].includes(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -107,9 +100,10 @@ export async function PATCH(request, { params }) {
     if (!reportId || !feedback) return NextResponse.json({ error: 'reportId & feedback required' }, { status: 400 })
 
     const project = await ProjectGroup.findOne({ groupId })
+      .populate('members.student', 'academicInfo.name email department')
     if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  if (role === 'guide' && String(project.internalGuide) !== session.user.id) {
+    if (role === 'guide' && String(project.internalGuide) !== session.user.id) {
       return NextResponse.json({ error: 'Not assigned guide' }, { status: 403 })
     }
 

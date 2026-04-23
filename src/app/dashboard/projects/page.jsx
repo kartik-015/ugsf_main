@@ -78,10 +78,10 @@ export default function ProjectsPage(){
 
   // Static option sets with HOD filtering
   const departmentsList = isHod 
-    ? [session?.user?.academicInfo?.department].filter(Boolean)
+    ? [session?.user?.department].filter(Boolean)
     : ['CSE','CE','IT']
   const semesters = ['1','2','3','4','5','6','7','8']
-  const statuses = ['under-review','submitted']
+  const statuses = ['pending','submitted','graded','rejected']
 
   const loadProjects = useCallback(async ()=>{
     setLoading(true)
@@ -337,18 +337,29 @@ export default function ProjectsPage(){
     if(res.ok){ toast.success('Removed'); loadProjects() } else { const e=await res.json(); toast.error(e.error?.message||'Failed') }
   }
 
+  const projectMatchesDepartment = (project, dept) => {
+    const normalizedDept = String(dept || '').trim().toUpperCase()
+    if (!normalizedDept) return true
+
+    if (String(project.department || '').trim().toUpperCase() === normalizedDept) {
+      return true
+    }
+
+    return (project.members || []).some(member => {
+      const memberDept = member?.student?.department || member?.department || ''
+      return String(memberDept || '').trim().toUpperCase() === normalizedDept
+    })
+  }
+
   // Derived lists with HOD filtering
   let base = projects
   if (isStudent) {
     base = mine // Students always see only their own projects
   } else if (isHod) {
-    // HOD can only see projects from their department and institute
-    const hodDepartment = session?.user?.academicInfo?.department
-    const hodInstitute = session?.user?.academicInfo?.institute
+    // HOD/PC can see projects that include students from their department
+    const hodDepartment = session?.user?.department
     base = projects.filter(p => {
-      const matchesDepartment = hodDepartment ? p.department === hodDepartment : true
-      const matchesInstitute = hodInstitute ? p.leader?.institute === hodInstitute : true
-      return matchesDepartment && matchesInstitute
+      return projectMatchesDepartment(p, hodDepartment)
     })
   } else if (!isAdmin) {
     base = projects
@@ -362,15 +373,24 @@ export default function ProjectsPage(){
       })
     : guides
   
-  // Helper to compute display status from monthly reports
+  // Report-driven status for list/filter:
+  // pending: no turned-in report, submitted: turned-in and awaiting grading, graded: all turned-in reports graded.
   const getDisplayStatus = (p) => {
+    if (p.hodApproval === 'rejected') return 'rejected'
+    if (p.hodApproval !== 'approved') return 'pending'
+
     const reports = p.monthlyReports || []
-    const graded = reports.filter(r => r.status === 'graded').length
-    return reports.length > 0 && graded === reports.length ? 'submitted' : 'under-review'
+    const turnedInReports = reports.filter(r => r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded')
+    if (turnedInReports.length === 0) return 'pending'
+    const gradedTurnedIn = turnedInReports.filter(r => r?.status === 'graded').length
+    return gradedTurnedIn === turnedInReports.length ? 'graded' : 'submitted'
   }
 
   const filtered = base
-    .filter(p => !department || p.department===department)
+    .filter(p => {
+      if (!department) return true
+      return isHod ? projectMatchesDepartment(p, department) : p.department === department
+    })
     .filter(p => !semester || String(p.semester)===semester)
     .filter(p => !status || getDisplayStatus(p)===status)
     .filter(p => !domain || p.domain===domain)
@@ -410,8 +430,8 @@ export default function ProjectsPage(){
         bValue = b.progressScore || 0
         break
       case 'status':
-        aValue = a.hodApproval || 'pending'
-        bValue = b.hodApproval || 'pending'
+        aValue = getDisplayStatus(a)
+        bValue = getDisplayStatus(b)
         break
       case 'members':
         aValue = a.members?.length || 0
@@ -627,7 +647,7 @@ export default function ProjectsPage(){
         // No members — still show the project row
         rows.push([
           p.groupId || '', p.title || '', p.domain || '', p.department || '',
-          p.semester || '', p.hodApproval || 'pending',
+          p.semester || '', getDisplayStatus(p),
           internalGuide, externalGuide,
           '', '', '', '',
           (p.monthlyReports || []).length, gradedReports.length, avgScore, p.progressScore || 0
@@ -638,7 +658,7 @@ export default function ProjectsPage(){
           // Only first row of each group shows group info; rest are blank
           const groupCols = idx === 0
             ? [p.groupId || '', p.title || '', p.domain || '', p.department || '',
-               p.semester || '', p.hodApproval || 'pending',
+              p.semester || '', getDisplayStatus(p),
                internalGuide, externalGuide]
             : ['', '', '', '', '', '', '', '']
           rows.push([
@@ -945,13 +965,13 @@ export default function ProjectsPage(){
                 </div>
                 <div className='flex gap-2 text-xs'>
                   <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded font-medium border border-green-200 dark:border-green-800'>
-                    <CheckCircle2 className='w-3 h-3' /> {sortedFiltered.filter(p => p.hodApproval === 'approved').length}
+                    <CheckCircle2 className='w-3 h-3' /> {sortedFiltered.filter(p => getDisplayStatus(p) === 'graded').length}
+                  </span>
+                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-medium border border-blue-200 dark:border-blue-800'>
+                    <Eye className='w-3 h-3' /> {sortedFiltered.filter(p => getDisplayStatus(p) === 'submitted').length}
                   </span>
                   <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium border border-amber-200 dark:border-amber-800'>
-                    <Clock className='w-3 h-3' /> {sortedFiltered.filter(p => p.hodApproval === 'pending' || !p.hodApproval).length}
-                  </span>
-                  <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded font-medium border border-red-200 dark:border-red-800'>
-                    <XCircle className='w-3 h-3' /> {sortedFiltered.filter(p => p.hodApproval === 'rejected').length}
+                    <Clock className='w-3 h-3' /> {sortedFiltered.filter(p => getDisplayStatus(p) === 'pending').length}
                   </span>
                 </div>
               </div>
@@ -1104,30 +1124,29 @@ export default function ProjectsPage(){
                           )}
                           
                           <td className='px-2 py-3 whitespace-nowrap'>
-                            <div className='flex items-center justify-center gap-2 flex-wrap' onClick={e => e.stopPropagation()}>
+                            <div className='flex flex-col items-center justify-center gap-2' onClick={e => e.stopPropagation()}>
+                              <StatusBadge status={getDisplayStatus(p)} reports={p.monthlyReports} />
+
+                              <div className='flex items-center justify-center gap-2 flex-wrap'>
                               {/* HOD Actions */}
-                              {isHod && (
+                              {isHod && p.hodApproval === 'pending' && (
                                 <>
-                                  {p.hodApproval !== 'approved' && (
-                                    <button 
-                                      onClick={() => approveProject(p._id, true)} 
-                                      className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
-                                      title='Approve Project'
-                                    >
-                                      <CheckCircle2 className='w-3 h-3' />
-                                      Approve
-                                    </button>
-                                  )}
-                                  {p.hodApproval !== 'rejected' && (
-                                    <button 
-                                      onClick={() => approveProject(p._id, false)} 
-                                      className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
-                                      title='Reject Project'
-                                    >
-                                      <XCircle className='w-3 h-3' />
-                                      Reject
-                                    </button>
-                                  )}
+                                  <button 
+                                    onClick={() => approveProject(p._id, true)} 
+                                    className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
+                                    title='Approve Project'
+                                  >
+                                    <CheckCircle2 className='w-3 h-3' />
+                                    Approve
+                                  </button>
+                                  <button 
+                                    onClick={() => approveProject(p._id, false)} 
+                                    className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow active:scale-95'
+                                    title='Reject Project'
+                                  >
+                                    <XCircle className='w-3 h-3' />
+                                    Reject
+                                  </button>
                                 </>
                               )}
                               
@@ -1160,6 +1179,7 @@ export default function ProjectsPage(){
                               )}
                               
                               {/* View Details Button removed - click row to view */}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -1418,16 +1438,41 @@ function FieldSelector({ fields, visible, toggle }) {
 }
 
 function StatusBadge({ status, reports }) {
-  // Compute display status: if all reports graded → 'submitted', else 'under-review'
-  const gradedCount = (reports || []).filter(r => r.status === 'graded').length
-  const totalCount = (reports || []).length
-  const displayStatus = totalCount > 0 && gradedCount === totalCount ? 'submitted' : 'under-review'
+  if (status === 'rejected') {
+    return (
+      <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 badge-animate'>
+        <XCircle className='w-2.5 h-2.5' />
+        Rejected
+      </span>
+    )
+  }
+
+  if (status === 'pending' || status === 'submitted' || status === 'graded') {
+    const config = {
+      'pending': { bg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800', icon: Clock, label: 'Pending' },
+      'submitted': { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800', icon: Eye, label: 'Submitted' },
+      'graded': { bg: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800', icon: CheckCircle2, label: 'Graded' },
+    }
+    const c = config[status] || config.pending
+    const Icon = c.icon
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${c.bg} badge-animate`}>
+        <Icon className='w-2.5 h-2.5' />
+        {c.label}
+      </span>
+    )
+  }
+
+  const turnedInReports = (reports || []).filter(r => r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded')
+  const gradedTurnedIn = turnedInReports.filter(r => r?.status === 'graded').length
+  const displayStatus = turnedInReports.length === 0 ? 'pending' : (gradedTurnedIn === turnedInReports.length ? 'graded' : 'submitted')
 
   const config = {
-    'under-review': { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800', icon: Eye, label: 'Under Review' },
-    'submitted': { bg: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800', icon: CheckCircle2, label: 'Submitted' },
+    'pending': { bg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800', icon: Clock, label: 'Pending' },
+    'submitted': { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800', icon: Eye, label: 'Submitted' },
+    'graded': { bg: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800', icon: CheckCircle2, label: 'Graded' },
   }
-  const c = config[displayStatus] || config['under-review']
+  const c = config[displayStatus] || config['pending']
   const Icon = c.icon
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${c.bg} badge-animate`}>
@@ -1487,8 +1532,9 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
   const canViewProgress = canManage || isGuide || isProjectCoordinator
   const isMember = project.members.some(m=> String(m.student?._id||m.student)===String(session.user.id))
   const isLeader = String(project.leader?._id || project.leader) === String(session.user.id)
-  // Can submit: member, deadline open, and either no report yet OR existing draft (not turned in)
-  const canSubmitReport = isMember && (!alreadySubmittedThisMonth || !isTurnedIn)
+  // Can submit: member, HOD approved, and either no report yet OR existing draft (not turned in)
+  const hodApproved = project.hodApproval === 'approved'
+  const canSubmitReport = isMember && hodApproved && (!alreadySubmittedThisMonth || !isTurnedIn)
 
   // Compute average progress from graded monthly reports
   const gradedReports = (project.monthlyReports || []).filter(r => r.status === 'graded' && r.score !== undefined && r.score !== null)
@@ -1820,18 +1866,14 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                   <span className='text-[11px] text-gray-500'>Current Status:</span>
                   <StatusBadge status={project.hodApproval || 'pending'} reports={project.monthlyReports} />
                 </div>
-                {isHod && (project.hodApproval !== 'approved') && (
+                {isHod && project.hodApproval === 'pending' && (
                   <div className='flex flex-wrap gap-2'>
-                    {project.hodApproval !== 'approved' && (
-                      <button onClick={()=>approveProject(project._id,true)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700 transition font-medium'>
-                        <CheckCircle2 className='w-3.5 h-3.5' /> Approve
-                      </button>
-                    )}
-                    {project.hodApproval !== 'rejected' && (
-                      <button onClick={()=>approveProject(project._id,false)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700 transition font-medium'>
-                        <XCircle className='w-3.5 h-3.5' /> Reject
-                      </button>
-                    )}
+                    <button onClick={()=>approveProject(project._id,true)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700 transition font-medium'>
+                      <CheckCircle2 className='w-3.5 h-3.5' /> Approve
+                    </button>
+                    <button onClick={()=>approveProject(project._id,false)} className='inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700 transition font-medium'>
+                      <XCircle className='w-3.5 h-3.5' /> Reject
+                    </button>
                   </div>
                 )}
                 {isAdmin && project.hodApproval !== 'approved' && (
@@ -1969,8 +2011,8 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
                               <span className={`text-[10px] px-2 py-0.5 rounded font-semibold uppercase ${statusColors[r.status] || ''}`}>
                                 {r.status === 'graded' ? (isMember ? 'Graded' : `${r.score}/10`) : r.status === 'draft' ? 'Draft' : r.status}
                               </span>
-                              {/* Student: Turn In button for drafts */}
-                              {isMember && r.status === 'draft' && !r.turnedIn && (
+                              {/* Student: Turn In button for drafts (only if HOD approved) */}
+                              {isMember && hodApproved && r.status === 'draft' && !r.turnedIn && (
                                 <button onClick={() => turnInReport(r._id)} disabled={turningIn}
                                   className='inline-flex items-center gap-1 px-3 py-1.5 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition disabled:opacity-50'>
                                   {turningIn ? <div className='w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin' /> : <Send className='w-3 h-3' />} Turn In
@@ -2048,6 +2090,20 @@ function ProjectModal({ project, close, session, isAdmin, isHod, guides, assignI
               {/* Student: Submit/Replace Report */}
               {isMember && (
                 <div className='space-y-3 border-t border-gray-200 dark:border-gray-700 pt-5'>
+
+                  {/* HOD Approval Pending Warning */}
+                  {!hodApproved && (
+                    <div className='p-3 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-[12px] text-red-700 dark:text-red-300 flex items-center gap-2'>
+                      <AlertTriangle className='w-4 h-4 flex-shrink-0' />
+                      <div>
+                        {project.hodApproval === 'rejected' ? (
+                          <><span className='font-semibold'>Project Rejected</span> — This project was rejected by your HOD. Report submission is disabled.</>
+                        ) : (
+                          <><span className='font-semibold'>HOD Approval Pending</span> — You cannot submit reports until the HOD of your department approves this project.</>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Status messages */}
                   {isTurnedIn && (

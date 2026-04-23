@@ -64,8 +64,14 @@ export default function OnboardingPage() {
       return
     }
 
-  // Only redirect if user is flagged onboarded (avoid premature redirect for faculty/HOD before completing form)
-  if (session.user.isOnboarded) {
+    // Students collect all info during registration — skip onboarding entirely
+    if (session.user.role === 'student') {
+      router.push('/dashboard')
+      return
+    }
+
+    // Only redirect if user is flagged onboarded (avoid premature redirect for faculty/HOD before completing form)
+    if (session.user.isOnboarded) {
       router.push('/dashboard')
     }
   }, [session, status, router])

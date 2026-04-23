@@ -13,7 +13,7 @@ export async function GET(request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  if (![ROLES.MAIN_ADMIN, ROLES.ADMIN, ROLES.GUIDE].includes(session.user.role)) return NextResponse.json({ message: 'Access denied' }, { status: 403 })
+  if (![ROLES.MAIN_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.HOD, ROLES.PROJECT_COORDINATOR, ROLES.PRINCIPAL].includes(session.user.role)) return NextResponse.json({ message: 'Access denied' }, { status: 403 })
 
     await dbConnect()
 
@@ -27,7 +27,10 @@ export async function GET(request) {
 
     let query = { role: 'student', isActive: true, isRegistered: true, isEmailVerified: true }
 
-  if (session.user.role === 'admin' && session.user.department) {
+  if ((session.user.role === ROLES.HOD || session.user.role === ROLES.PROJECT_COORDINATOR) && session.user.department) {
+      // HOD/PC: ALWAYS restricted to their own department
+      query.department = session.user.department
+  } else if (session.user.role === 'admin' && session.user.department) {
       if (searchParams.has('department')) {
         if (department) query.department = department
       } else {
@@ -124,7 +127,13 @@ export async function POST(request) {
 
     if (!ids.length) return NextResponse.json({ message: 'No ids provided' }, { status: 400 })
 
-    const students = await User.find({ _id: { $in: ids } }).select('-password').sort({ 'academicInfo.name': 1 })
+    // HOD/PC: restrict to their own department's students
+    let studentFilter = { _id: { $in: ids } }
+    if ((session.user.role === 'hod' || session.user.role === 'project_coordinator') && session.user.department) {
+      studentFilter.department = session.user.department
+    }
+
+    const students = await User.find(studentFilter).select('-password').sort({ 'academicInfo.name': 1 })
 
     // Fetch project data including monthly reports with grades
     const projects = await ProjectGroup.find({ 'members.student': { $in: ids } })

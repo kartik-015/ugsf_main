@@ -59,8 +59,8 @@ export default function DashboardLayout({ children }) {
     }
 
     // Check if user needs onboarding (any role) but honor temporary cookie set immediately after completion
-    // Guides and admins are always considered onboarded (all info collected during registration)
-    const roleSkipsOnboarding = ['guide', 'admin', 'mainadmin', 'hod', 'principal', 'project_coordinator', 'pc'].includes(session.user.role)
+    // Students, guides, and admins are always considered onboarded (all info collected during registration)
+    const roleSkipsOnboarding = ['student', 'guide', 'admin', 'mainadmin', 'hod', 'principal', 'project_coordinator', 'pc'].includes(session.user.role)
     let cookieOnboarded = false
     try {
       const cookieStr = document.cookie || ''
@@ -79,34 +79,25 @@ export default function DashboardLayout({ children }) {
     // Students stay on their dashboard (StudentDashboard) page
   }, [session, status, router, pathname])
 
-  // Separate effect for redirects to avoid issues
+  // Separate effect for redirects to avoid issues (skip if mustChangePassword)
   useEffect(() => {
-    if (status === 'loading' || !session) return
+    if (status === 'loading' || !session || session.user.mustChangePassword) return
     const role = session.user.role
     // Admin, principal, HOD, and project coordinator go to /dashboard/admin
     if (pathname === '/dashboard' && (role === 'admin' || role === 'mainadmin' || role === 'principal' || role === 'hod' || role === 'project_coordinator')) {
       router.replace('/dashboard/admin')
     }
+    // Students go directly to projects
+    if (pathname === '/dashboard' && role === 'student') {
+      router.replace('/dashboard/projects')
+    }
   }, [session, status, router, pathname])
 
-  // Poll notifications for all roles
+// Poll notifications - DISABLED to stop refresh
   useEffect(() => {
-    let timer
-    const fetchNotifications = async () => {
-      if (!session) return
-      try {
-        const res = await fetch('/api/notifications')
-        if (res.ok) {
-          const data = await res.json()
-          setNotifications(data.notifications || [])
-          setUnreadCount(data.unreadCount || 0)
-        }
-      } catch {}
-      timer = setTimeout(fetchNotifications, 15000)
-    }
-    fetchNotifications()
-    return () => { if (timer) clearTimeout(timer) }
-  }, [session])
+    // DISABLED - was causing constant refresh every 15s
+    return () => {}
+  }, [])
 
   // Click-outside handler for notification panel
   useEffect(() => {
@@ -184,8 +175,8 @@ export default function DashboardLayout({ children }) {
     return null
   }
 
-  // Don't render layout during admin redirect
-  if (pathname === '/dashboard' && ['admin','mainadmin','principal','hod','project_coordinator'].includes(session.user.role)) {
+  // Don't render layout during admin redirect (skip if mustChangePassword)
+  if (pathname === '/dashboard' && !session.user.mustChangePassword && ['admin','mainadmin','principal','hod','project_coordinator'].includes(session.user.role)) {
     return null
   }
 

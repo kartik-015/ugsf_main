@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
 import dbConnect from '@/lib/mongodb'
 import ProjectGroup from '@/models/ProjectGroup'
+import { getDepartmentStudentIds } from '@/lib/projectAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,9 +31,11 @@ export async function GET(request) {
 
     let filter = {}
     if (role === 'hod' || role === 'project_coordinator') {
-      filter.department = (session.user.department || '').toUpperCase()
+      const departmentStudentIds = await getDepartmentStudentIds(session.user.department)
+      filter = departmentStudentIds.length ? { $and: [{ 'members.student': { $in: departmentStudentIds } }] } : { _id: null }
+    } else if (qDept) {
+      filter.department = qDept.toUpperCase()
     }
-    if (qDept) filter.department = qDept.toUpperCase()
     if (qSemester) filter.semester = Number(qSemester)
 
     const projects = await ProjectGroup.find(filter)

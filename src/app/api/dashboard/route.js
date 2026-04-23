@@ -170,6 +170,19 @@ async function getGuideStats(userId) {
     .populate('members.student', 'academicInfo.name academicInfo.rollNumber email')
   const totalStudents = guidedProjects.reduce((sum, p) => sum + (p.members?.length || 0), 0)
   const pendingReview = guidedProjects.filter(p => p.status === 'submitted' || p.guideStatus === 'pending').length
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+  const pendingSubmission = guidedProjects.filter(p => {
+    // Count projects that are active for reporting but have no turned-in report this month.
+    if (p.hodApproval !== 'approved' || p.guideStatus !== 'accepted') return false
+    const hasSubmittedThisMonth = (p.monthlyReports || []).some(r => {
+      const sameMonth = r?.month === currentMonth && r?.year === currentYear
+      const isTurnedIn = r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded'
+      return sameMonth && isTurnedIn
+    })
+    return !hasSubmittedThisMonth
+  }).length
   const reportsToGrade = guidedProjects.reduce((sum, p) => {
     return sum + (p.monthlyReports?.filter(r => r.status === 'submitted')?.length || 0)
   }, 0)
@@ -232,6 +245,7 @@ async function getGuideStats(userId) {
     totalProjects: guidedProjects.length,
     totalStudents,
     pendingReview,
+    pendingSubmission,
     reportsToGrade,
     acceptedProjects: guidedProjects.filter(p => p.guideStatus === 'accepted').length,
     domainBreakdown,

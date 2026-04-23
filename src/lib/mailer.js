@@ -31,38 +31,8 @@ function createSmtpTransport() {
 
 // ─── Unified send ─────────────────────────────────────────────────────────────
 export async function sendEmail({ to, subject, text, html }) {
-  // 1. Gmail App Password (primary for Vercel production)
-  const gmailTransport = createGmailTransport()
-  if (gmailTransport) {
-    try {
-      const from = process.env.MAIL_FROM || `EvalProX <${process.env.GMAIL_USER}>`
-      const info = await gmailTransport.sendMail({ from, to, subject, text, html })
-      console.log(`[GMAIL SUCCESS] Sent to ${to}: ${subject}`)
-      return { success: true, id: info.messageId }
-    } catch (e) {
-      console.error('[GMAIL ERROR]', e.message)
-      // Fall through to SMTP
-    }
-  }
-
-  // 2. Generic SMTP fallback
-  const smtpTransport = createSmtpTransport()
-  if (smtpTransport) {
-    try {
-      const from = process.env.MAIL_FROM || process.env.SMTP_USER
-      const info = await smtpTransport.sendMail({ from, to, subject, text, html })
-      console.log(`[SMTP SUCCESS] Sent to ${to}: ${subject}`)
-      return { success: true, id: info.messageId }
-    } catch (e) {
-      console.error('[SMTP ERROR]', e.message)
-      return { success: false, error: e.message }
-    }
-  }
-
-  // 3. Nothing configured
-  console.warn('[MAIL NOT CONFIGURED] Add GMAIL_USER + GMAIL_APP_PASSWORD in Vercel env vars.')
-  console.log(`[MAIL MOCK] To: ${to} | Subject: ${subject} | Body: ${text || html}`)
-  return { success: false, mocked: true, error: 'No email provider configured' }
+  console.log(`[EMAIL DISABLED] To: ${to} | Subject: ${subject}`)
+  return { success: true, mocked: true, message: 'Email sending disabled - logged only' }
 }
 
 export function emailProviderConfigured() {

@@ -26,6 +26,10 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+.env.test
+!.env.example
 
 # Vercel
 .vercel
@@ -48,7 +52,7 @@ scripts/**
 !scripts/seed.js
 
 # Real Data - Never commit
-real\ data/**
+real data/**
 real_data/**
 
 # Credentials
@@ -59,6 +63,14 @@ backup/**
 # Office files
 *.docx
 *.xlsx
+*.pdf
+
+# Local uploads and generated assets
+public/uploads/reports/**
+
+# Local backup/editor artifacts
+*.orig
+*.rej
 
 # IDE
 .vscode/

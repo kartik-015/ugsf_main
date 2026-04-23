@@ -301,20 +301,26 @@ function ProjectListView({ filterBy, filterValue, title, onBack }) {
     return (p.title?.toLowerCase().includes(q) || p.domain?.toLowerCase().includes(q) || p.guideName?.toLowerCase().includes(q) || p.groupId?.toLowerCase().includes(q))
   })
 
-  const statusBg = (p) => {
-    // Compute display: "Submitted" if all reports graded, else "Under Review"
-    const totalReports = p.totalReports ?? 0
+  const getDisplayStatus = (p) => {
+    if (p.hodApproval !== 'approved') return 'Pending Approval'
+
+    const submittedReports = p.submittedReports ?? 0
     const gradedReports = p.gradedReports ?? 0
-    const isSubmitted = totalReports > 0 && gradedReports === totalReports
-    return isSubmitted
-      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+
+    if (submittedReports === 0) return 'Pending'
+    return gradedReports === submittedReports ? 'Graded' : 'Submitted'
   }
 
-  const getDisplayStatus = (p) => {
-    const totalReports = p.totalReports ?? 0
-    const gradedReports = p.gradedReports ?? 0
-    return totalReports > 0 && gradedReports === totalReports ? 'Submitted' : 'Under Review'
+  const statusBg = (p) => {
+    const displayStatus = getDisplayStatus(p)
+
+    if (displayStatus === 'Graded') {
+      return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+    }
+    if (displayStatus === 'Submitted') {
+      return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+    }
+    return 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
   }
 
   return (
@@ -777,11 +783,21 @@ function AllProjectsSection() {
 
   const getDisplayStatus = (p) => {
     const reports = p.monthlyReports || []
-    if (p.status === 'completed') return { label: 'Completed', cls: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' }
-    if (reports.length === 0) return { label: 'In Progress', cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' }
-    const allGraded = reports.every(r => r.status === 'graded')
-    if (allGraded) return { label: 'Submitted', cls: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300' }
-    return { label: 'Under Review', cls: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' }
+    if (p.hodApproval !== 'approved') {
+      return { label: 'Pending Approval', cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' }
+    }
+
+    const turnedInReports = reports.filter(r => r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded')
+    if (turnedInReports.length === 0) {
+      return { label: 'Pending', cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' }
+    }
+
+    const allGraded = turnedInReports.every(r => r.status === 'graded')
+    if (allGraded) {
+      return { label: 'Graded', cls: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' }
+    }
+
+    return { label: 'Submitted', cls: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' }
   }
 
   const filtered = projects.filter(p => {
@@ -1171,13 +1187,17 @@ export default function AdminDashboard() {
     if (status === 'loading') return
     if (!session) { router.push('/'); return }
     // Admin, mainadmin, and principal can access the dashboard in read-only mode
-    const allowed = ['admin', 'mainadmin', 'principal']
+    const allowed = ['admin', 'mainadmin', 'principal', 'hod', 'project_coordinator']
     if (!allowed.includes(session.user.role)) { router.push('/dashboard'); return }
   }, [session, status, router])
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/stats', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' } })
+      const res = await fetch('/api/admin/stats', { 
+        cache: 'no-store', 
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+        next: { revalidate: 300 }  // 5 min cache
+      })
       if (res.ok) setStats(await res.json())
       else toast.error('Failed to load statistics')
     } catch (e) {

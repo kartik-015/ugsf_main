@@ -46,11 +46,15 @@ function generatePassword() {
   return crypto.randomBytes(5).toString('hex') // 10 chars hex
 }
 
-// Parse guide name to email: "Mr. Sachin Patel" -> "sachin.patel@charusat.ac.in"
-function guideNameToEmail(name) {
+// Parse guide name to email: "Mr. Sachin Patel" -> "sachinpatel.dit@charusat.ac.in"
+// Format: namesurname.deptcode@charusat.ac.in (matches GUIDE_EMAIL_REGEX)
+function guideNameToEmail(name, department = 'IT') {
   const cleaned = name.replace(/^(Mr\.?|Ms\.?|Mrs\.?|Dr\.?|Prof\.?)\s*/i, '').trim()
   const parts = cleaned.split(/\s+/).map(p => p.toLowerCase())
-  return parts.join('.') + '@charusat.ac.in'
+  const namePart = parts.join('') // concatenate without dots: "sachinpatel"
+  const deptCodeMap = { IT: 'dit', CSE: 'dcs', CE: 'dce' }
+  const deptCode = deptCodeMap[department] || 'dit'
+  return namePart + '.' + deptCode + '@charusat.ac.in'
 }
 
 // Parse guide name to clean name: "Mr. Sachin Patel" -> "Sachin Patel"
@@ -301,14 +305,14 @@ async function main() {
   console.log('\n👨‍🏫 Creating guide users...')
   const guideCredentials = new Map()
   const guideUserMap = new Map() // email -> User doc
+  const defaultGuidePassword = 'depstar@123'
   
   for (const [email, info] of guideMap) {
-    const password = generatePassword()
-    guideCredentials.set(email, password)
+    guideCredentials.set(email, defaultGuidePassword)
     
     const guide = new User({
       email,
-      password: password,
+      password: defaultGuidePassword,
       role: 'guide',
       department: info.department,
       university: 'Charusat University',
@@ -321,17 +325,17 @@ async function main() {
       isApproved: true,
       approvalStatus: 'approved',
       isActive: true,
+      mustChangePassword: true,
     })
     await guide.save({ validateBeforeSave: false }) // Skip email validation for @charusat.ac.in
     guideUserMap.set(email, guide)
-    console.log(`  ✅ ${info.name} (${email}) - Password: ${password}`)
+    console.log(`  ✅ ${info.name} (${email}) - Password: ${defaultGuidePassword}`)
   }
   
   // Also create a test guide for kartik.guleria@gmail.com
-  const testGuidePassword = generatePassword()
   const testGuide = new User({
     email: 'kartik.guleria@gmail.com',
-    password: testGuidePassword,
+    password: defaultGuidePassword,
     role: 'guide',
     department: 'IT',
     university: 'Charusat University',
@@ -344,10 +348,11 @@ async function main() {
     isApproved: true,
     approvalStatus: 'approved',
     isActive: true,
+    mustChangePassword: true,
   })
   await testGuide.save({ validateBeforeSave: false })
-  guideCredentials.set('kartik.guleria@gmail.com', testGuidePassword)
-  console.log(`  ✅ Test Guide: kartik.guleria@gmail.com - Password: ${testGuidePassword}`)
+  guideCredentials.set('kartik.guleria@gmail.com', defaultGuidePassword)
+  console.log(`  ✅ Test Guide: kartik.guleria@gmail.com - Password: ${defaultGuidePassword}`)
   
   // Create student users - each team gets ONE shared password
   console.log('\n👨‍🎓 Creating student users (team-shared passwords)...')

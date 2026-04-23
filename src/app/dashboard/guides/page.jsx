@@ -36,6 +36,7 @@ export default function GuidesPage(){
   const [showCredentials, setShowCredentials] = useState(false)
   const [sendingEmails, setSendingEmails] = useState(false)
   const [copiedIdx, setCopiedIdx] = useState(null)
+  const [contextMenu, setContextMenu] = useState(null)
 
   const departments = ['CSE','CE','IT']
   const roleOptions = ['guide','project_coordinator']
@@ -71,6 +72,19 @@ export default function GuidesPage(){
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    const handleCloseMenu = () => setContextMenu(null)
+    const handleEscape = (e) => { if (e.key === 'Escape') setContextMenu(null) }
+    window.addEventListener('click', handleCloseMenu)
+    window.addEventListener('scroll', handleCloseMenu, true)
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      window.removeEventListener('click', handleCloseMenu)
+      window.removeEventListener('scroll', handleCloseMenu, true)
+      window.removeEventListener('keydown', handleEscape)
+    }
   }, [])
 
   const buildQuery = () => {
@@ -218,6 +232,26 @@ export default function GuidesPage(){
       setCopiedIdx(idx)
       setTimeout(() => setCopiedIdx(null), 2000)
     } catch { /* ignore */ }
+  }
+
+  const updateProjectCoordinator = async (guide, action) => {
+    try {
+      const res = await fetch('/api/guides', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guideId: guide._id, action }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data.message || 'Failed to update project coordinator')
+        return
+      }
+      toast.success(data.message || 'Project coordinator updated')
+      setContextMenu(null)
+      await fetchGuides()
+    } catch {
+      toast.error('Failed to update project coordinator')
+    }
   }
 
   const submit = e => { e.preventDefault(); fetchGuides() }
@@ -401,13 +435,32 @@ export default function GuidesPage(){
                   </thead>
                   <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
                     {results.map((f, index) => (
-                      <motion.tr key={f._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.05 }} className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150'>
+                      <motion.tr
+                        key={f._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-context-menu'
+                        onContextMenu={(e) => {
+                          e.preventDefault()
+                          if (!canManageGuides || session?.user?.role !== 'hod') return
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            guide: f,
+                          })
+                        }}
+                      >
                         <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100'>{f.academicInfo?.name || f.email.split('@')[0]}</td>
                         {visibleFields.includes('email') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.email}</td>}
                         {visibleFields.includes('specialization') && <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300'>{f.specialization || '—'}</td>}
                         {visibleFields.includes('status') && (
                           <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                            {guideProjectMap[String(f._id)] ? (
+                            {f.role === 'project_coordinator' ? (
+                              <span className='inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200' title='Project Coordinator'>
+                                Project Coordinator
+                              </span>
+                            ) : guideProjectMap[String(f._id)] ? (
                               <span className='inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' title={guideProjectMap[String(f._id)].join(', ')}>
                                 Assigned ({guideProjectMap[String(f._id)].length} group{guideProjectMap[String(f._id)].length !== 1 ? 's' : ''})
                               </span>
@@ -424,6 +477,26 @@ export default function GuidesPage(){
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {contextMenu && canManageGuides && session?.user?.role === 'hod' && (
+          <div
+            className='fixed inset-0 z-50'
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div
+              className='absolute min-w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden'
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+            >
+              <button
+                type='button'
+                className='w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+                onClick={() => updateProjectCoordinator(contextMenu.guide, contextMenu.guide.role === 'project_coordinator' ? 'remove' : 'assign')}
+              >
+                {contextMenu.guide.role === 'project_coordinator' ? 'Remove as Project Coordinator' : 'Make Project Coordinator'}
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

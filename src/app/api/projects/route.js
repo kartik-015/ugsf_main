@@ -7,6 +7,7 @@ import ProjectGroup from '@/models/ProjectGroup'
 import User from '@/models/User'
 import Notification from '@/models/Notification'
 import { canWrite } from '@/lib/permissions'
+import { getDepartmentStudentIds } from '@/lib/projectAccess'
 
 // Create a project group (student leader submits)
 export async function POST(request) {
@@ -117,6 +118,7 @@ export async function GET(request) {
     const qYear = searchParams.get('year')
     const role = session.user.role
     let filter = {}
+    let departmentScopedStudentIds = []
 
     if (role === 'student') {
       // Students can only see projects where they are a member
@@ -124,8 +126,9 @@ export async function GET(request) {
     } else if (role === 'guide') {
       filter = { internalGuide: session.user.id }
     } else if (role === 'hod' || role === 'project_coordinator') {
-      filter = { department: (session.user.department || '').toUpperCase() }
-      if (qDept) filter.department = qDept.toUpperCase()
+      // HOD/PC can see any project that includes a student from their department
+      departmentScopedStudentIds = await getDepartmentStudentIds(session.user.department)
+      filter = departmentScopedStudentIds.length ? { $and: [{ 'members.student': { $in: departmentScopedStudentIds } }] } : { _id: null }
     } else if (role === 'admin') {
       // Admin sees all projects (not restricted to HOD-approved only)
       if (qDept) filter.department = qDept.toUpperCase()
@@ -137,7 +140,12 @@ export async function GET(request) {
     if (qStatus) filter.status = qStatus
     if (qYear && ['admin', 'hod', 'principal', 'mainadmin', 'project_coordinator'].includes(role)) {
       const yearUsers = await User.find({ admissionYear: Number(qYear) }).select('_id')
-      filter['members.student'] = { $in: yearUsers.map(u => u._id) }
+      const yearStudentIds = yearUsers.map(u => u._id)
+      if (['hod', 'project_coordinator'].includes(role)) {
+        filter.$and = [...(filter.$and || []), { 'members.student': { $in: yearStudentIds } }]
+      } else {
+        filter['members.student'] = { $in: yearStudentIds }
+      }
     }
 
     const projects = await ProjectGroup.find(filter)
@@ -203,13 +211,22 @@ export async function PATCH(request) {
       if (role !== 'hod' && role !== 'project_coordinator') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only HOD or Project Coordinator' } }, { status: 403 })
       if (project.department !== (session.user.department || '').toUpperCase()) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Wrong department' } }, { status: 403 })
 
+      if (project.hodApproval === 'approved' && body.hodApproval === 'rejected') {
+        return NextResponse.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'Approved project cannot be rejected' } }, { status: 400 })
+      }
+
       if (body.hodApproval === 'rejected') {
-        // Notify members before deletion
+        project.hodApproval = 'rejected'
+        project.hodRemarks = body.hodRemarks || ''
+        project.hodApprovedBy = session.user.id
+        project.hodApprovedAt = new Date()
+        project.status = 'rejected'
+        await project.save()
+
+        // Notify members after rejection is persisted
         const memberIds = project.members.map(m => m.student._id || m.student)
         await Notification.createBulk(memberIds, { type: 'project-rejected', title: 'Project Rejected', message: `Your project "${project.title}" was rejected by HOD.${body.hodRemarks ? ' Remarks: ' + body.hodRemarks : ''}`, link: '/dashboard/projects', relatedProject: project._id })
-        // Delete the project from DB — do not persist rejected state
-        await ProjectGroup.findByIdAndDelete(project._id)
-        return NextResponse.json({ ok: true, message: 'Project rejected and removed' })
+        return NextResponse.json({ ok: true, data: project })
       }
 
       project.hodApproval = body.hodApproval
@@ -263,6 +280,8 @@ export async function PATCH(request) {
 
     // SUBMIT MONTHLY REPORT (create draft or replace existing draft)
     if (body.submitReport) {
+      // Block report submission until HOD approves the project
+      if (project.hodApproval !== 'approved') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Cannot submit reports until the HOD approves your project' } }, { status: 403 })
       const isMember = project.members.some(m => String(m.student._id || m.student) === String(session.user.id))
       if (!isMember) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only members can submit' } }, { status: 403 })
       const { month, year, title, pdfUrl } = body.submitReport
@@ -285,6 +304,8 @@ export async function PATCH(request) {
 
     // TURN IN REPORT (locks it, makes it visible to guide)
     if (body.turnInReport) {
+      // Block turning in reports until HOD approves the project
+      if (project.hodApproval !== 'approved') return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Cannot turn in reports until the HOD approves your project' } }, { status: 403 })
       const isMember = project.members.some(m => String(m.student._id || m.student) === String(session.user.id))
       if (!isMember) return NextResponse.json({ ok: false, error: { code: 'FORBIDDEN', message: 'Only members can turn in' } }, { status: 403 })
       const report = project.monthlyReports.id(body.turnInReport)

@@ -1,10 +1,12 @@
 import crypto from 'crypto'
 
 export function generateOTP(length = 6) {
-  const digits = '0123456789'
-  let otp = ''
-  for (let i = 0; i < length; i++) otp += digits[Math.floor(Math.random() * 10)]
-  return otp
+  // TODO: Re-enable random OTP generation when email sending is enabled
+  // const digits = '0123456789'
+  // let otp = ''
+  // for (let i = 0; i < length; i++) otp += digits[Math.floor(Math.random() * 10)]
+  // return otp
+  return '123456' // Fixed OTP while email is disabled
 }
 
 export function hashOTP(otp) {
