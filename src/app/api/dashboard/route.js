@@ -7,6 +7,17 @@ import ProjectGroup from '@/models/ProjectGroup'
 
 export const dynamic = 'force-dynamic'
 
+function buildGuideProjectFilter(userId, email) {
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  return {
+    $or: [
+      { internalGuide: userId },
+      { 'externalGuide.user': userId },
+      ...(normalizedEmail ? [{ 'externalGuide.email': normalizedEmail }] : []),
+    ],
+  }
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -41,8 +52,8 @@ export async function GET() {
         break
       
       case 'guide':
-        stats = await getGuideStats(userId)
-        activities = await getGuideActivities(userId)
+        stats = await getGuideStats(userId, session.user.email)
+        activities = await getGuideActivities(userId, session.user.email)
         break
       
       default:
@@ -165,8 +176,8 @@ async function getStudentStats(userId) {
   }
 }
 
-async function getGuideStats(userId) {
-  const guidedProjects = await ProjectGroup.find({ internalGuide: userId })
+async function getGuideStats(userId, guideEmail) {
+  const guidedProjects = await ProjectGroup.find(buildGuideProjectFilter(userId, guideEmail))
     .populate('members.student', 'academicInfo.name academicInfo.rollNumber email')
   const totalStudents = guidedProjects.reduce((sum, p) => sum + (p.members?.length || 0), 0)
   const pendingReview = guidedProjects.filter(p => p.status === 'submitted' || p.guideStatus === 'pending').length
@@ -174,8 +185,13 @@ async function getGuideStats(userId) {
   const currentMonth = now.getMonth() + 1
   const currentYear = now.getFullYear()
   const pendingSubmission = guidedProjects.filter(p => {
-    // Count projects that are active for reporting but have no turned-in report this month.
-    if (p.hodApproval !== 'approved' || p.guideStatus !== 'accepted') return false
+    // Count active projects that should submit monthly report but have no turned-in report this month.
+    const isInternalGuideProject = String(p.internalGuide || '') === String(userId)
+    const isExternalGuideProject =
+      String(p.externalGuide?.user || '') === String(userId) ||
+      (guideEmail && String(p.externalGuide?.email || '').toLowerCase() === String(guideEmail).toLowerCase())
+    const isActiveForReporting = p.hodApproval === 'approved' && (isExternalGuideProject || p.guideStatus === 'accepted' || isInternalGuideProject)
+    if (!isActiveForReporting) return false
     const hasSubmittedThisMonth = (p.monthlyReports || []).some(r => {
       const sameMonth = r?.month === currentMonth && r?.year === currentYear
       const isTurnedIn = r?.turnedIn || r?.status === 'submitted' || r?.status === 'graded'
@@ -287,8 +303,8 @@ async function getStudentActivities(userId) {
   }))
 }
 
-async function getGuideActivities(userId) {
-  const guidedProjects = await ProjectGroup.find({ internalGuide: userId })
+async function getGuideActivities(userId, guideEmail) {
+  const guidedProjects = await ProjectGroup.find(buildGuideProjectFilter(userId, guideEmail))
     .sort({ updatedAt: -1 })
     .limit(5)
     .select('title status updatedAt groupId')
